@@ -66,7 +66,7 @@ def _parse_text(text: str, week_of: str) -> list[dict]:
 
         # Match price: standalone number or range like 180-200 or ₱210
         price_match = re.search(
-            r"₱?\s*(\d{2,4}(?:\.\d{1,2})?(?:\s*[-–]\s*\d{2,4}(?:\.\d{1,2})?)?)",
+            r"₱?\s*(\d{3,4}(?:\.\d{1,2})?(?:\s*[-–]\s*\d{3,4}(?:\.\d{1,2})?)?)",
             line
         )
         if not price_match:

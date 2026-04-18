@@ -27,30 +27,71 @@ def run_sync() -> dict:
         log_error("sync", f"PDF fetch failed: {e}")
         return {"status": "failed", "stage": "fetch", "error": str(e)}
 
-    # Stage 2: Extract prices (docling first, llamaparse fallback)
-    extractor = "docling"
+    # Stage 2: Extract prices (LLAMAPARSE PRIMARY → DOCLING FALLBACK)
+    extractor = "llamaparse"
     rows = []
+
     try:
-        rows = extract_with_docling(pdf_path)
-        if not rows:
-            raise ValueError("docling returned 0 commodity rows")
-        logger.info(f"docling extracted {len(rows)} raw rows")
+        # --- Primary: LlamaParse ---
+        rows = extract_with_llamaparse(pdf_path)
+
+        if not isinstance(rows, list) or len(rows) == 0:
+            raise ValueError("llamaparse returned 0 commodity rows")
+
+        logger.info(f"llamaparse extracted {len(rows)} raw rows")
+
     except Exception as e:
-        logger.warning(f"docling failed ({e}) — switching to llamaparse")
-        log_error("sync", f"docling failed: {e}")
-        extractor = "llamaparse"
-        try:
-            rows = extract_with_llamaparse(pdf_path)
-            if not rows:
-                raise ValueError("llamaparse returned 0 commodity rows")
-            logger.info(f"llamaparse extracted {len(rows)} raw rows")
-        except Exception as e2:
-            log_error("sync", f"llamaparse also failed: {e2}")
-            _write_sync_log(extractor, "failed", f"Both extractors failed: {e2}")
-            if pdf_path: cleanup_pdf(pdf_path)
-            return {"status": "failed", "extractor": extractor, "error": str(e2)}
+        error_msg = str(e).lower()
+        log_error("sync", f"llamaparse failed: {e}")
+
+        # --- Fallback condition: ONLY quota/token/API issues ---
+        fallback_triggers = [
+            "token",
+            "rate limit",
+            "quota",
+            "unauthorized",
+            "429",
+            "too many requests"
+        ]
+
+        if any(trigger in error_msg for trigger in fallback_triggers):
+            logger.warning(f"llamaparse quota/token issue ({e}) — switching to docling")
+            extractor = "docling"
+
+            try:
+                rows = extract_with_docling(pdf_path)
+
+                if not isinstance(rows, list) or len(rows) == 0:
+                    raise ValueError("docling returned 0 commodity rows")
+
+                logger.info(f"docling extracted {len(rows)} raw rows")
+
+            except Exception as e2:
+                log_error("sync", f"docling also failed: {e2}")
+                _write_sync_log("docling", "failed", f"Both extractors failed: {e2}")
+                if pdf_path:
+                    cleanup_pdf(pdf_path)
+                return {
+                    "status": "failed",
+                    "extractor": "docling",
+                    "error": str(e2)
+                }
+
+        else:
+            # --- Non-recoverable error: DO NOT fallback ---
+            logger.error(f"llamaparse failed with non-recoverable error: {e}")
+            _write_sync_log("llamaparse", "failed", str(e))
+            if pdf_path:
+                cleanup_pdf(pdf_path)
+            return {
+                "status": "failed",
+                "extractor": "llamaparse",
+                "error": str(e)
+            }
+
     finally:
-        if pdf_path: cleanup_pdf(pdf_path)
+        if pdf_path:
+            cleanup_pdf(pdf_path)
 
     # Stage 3: Normalize — match names → slugs, validate price range
     normalized = normalize_rows(rows)
@@ -64,13 +105,19 @@ def run_sync() -> dict:
     # Stage 5: Log success
     _write_sync_log(extractor, "success", f"Upserted {len(normalized)} prices")
     logger.info(f"Sync complete — {len(normalized)} prices via {extractor}")
-    return {"status": "success", "extractor": extractor, "count": len(normalized)}
+
+    return {
+        "status": "success",
+        "extractor": extractor,
+        "count": len(normalized)
+    }
 
 
 def _upsert_prices(rows: list[dict]):
     """Insert new price_record rows for today's sync."""
     sb = get_supabase()
     today = date.today().isoformat()
+
     for row in rows:
         product = (
             sb.table("products")
@@ -79,8 +126,10 @@ def _upsert_prices(rows: list[dict]):
             .single()
             .execute()
         )
+
         if not product.data:
             continue
+
         sb.table("price_records").insert({
             "product_id": product.data["id"],
             "price_per_kg": row["price"],

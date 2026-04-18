@@ -45,5 +45,5 @@ def get_price_by_slug(slug: str):
 @router.get("/prices")
 def get_all_prices():
     """Return latest SRP for all three commodities."""
-    slugs = ["whole_chicken", "bangus_local", "pork_liempo"]
+    slugs = ["whole_chicken", "tilapia_local", "pork_liempo"]
     return [get_price_by_slug(s) for s in slugs]

@@ -6,7 +6,7 @@ import io
 MODEL_PATH = "weights/best.pt"
 LABELS = {
     0: {"slug": "whole_chicken",  "display_name": "Whole Chicken"},
-    1: {"slug": "bangus_local",   "display_name": "Bangus (Local)"},
+    1: {"slug": "tilapia",   "display_name": "Tilapia"},
     2: {"slug": "pork_liempo",    "display_name": "Pork Belly Liempo"},
 }
 

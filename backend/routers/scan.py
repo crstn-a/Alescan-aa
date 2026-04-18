@@ -9,8 +9,8 @@ CONFIDENCE_THRESHOLD = 0.60
 def _mock_inference(image_bytes: bytes) -> dict:
     return {
         "product_id": 1,
-        "product_slug": "bangus_local",
-        "display_name": "Bangus (Local)",
+        "product_slug": "bangus_large",
+        "display_name": "Bangus (Large)",
         "confidence": 0.91
     }
 
