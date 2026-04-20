@@ -241,7 +241,6 @@ logs
 *.sqlite3
 
 # Model weights and data
-weights/
 data/
 models/
 

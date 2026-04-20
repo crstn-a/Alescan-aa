@@ -31,6 +31,8 @@ app.include_router(admin.router,  prefix="/admin", tags=["admin"])
 @app.on_event("startup")
 def on_startup():
     start_scheduler()
+    from services.vision import warmup
+    warmup() 
 
 @app.get("/health")
 def health():
