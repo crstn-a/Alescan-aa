@@ -242,7 +242,7 @@ logs
 
 # Model weights and data
 data/
-models/
+model/
 
 # Build directories
 build/

@@ -29,7 +29,7 @@ def get_latest_price(product_slug: str) -> dict | None:
         sb.table("products")
         .select("id")
         .eq("slug", product_slug)
-        .limit(1)
+        .single()
         .execute()
     )
     if not product.data:
@@ -38,7 +38,7 @@ def get_latest_price(product_slug: str) -> dict | None:
     price = (
         sb.table("price_records")
         .select("price_per_kg, week_of, source")
-        .eq("product_id", product.data[0]["id"])
+        .eq("product_id", product.data["id"])
         .order("week_of", desc=True)
         .limit(1)
         .execute()

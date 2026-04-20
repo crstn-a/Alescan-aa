@@ -7,20 +7,22 @@ router = APIRouter()
 def get_price_by_slug(slug: str):
     """Return latest SRP for one commodity by its slug."""
     sb = get_supabase()
-    product = (
-        sb.table("products")
-        .select("id, display_name")
-        .eq("slug", slug)
-        .limit(1)
-        .execute()
-    )
-    if not product.data:
+    try:
+        product = (
+            sb.table("products")
+            .select("id, display_name")
+            .eq("slug", slug)
+            .single()
+            .execute()
+        )
+    except Exception as e:
+        log_error("scan", str(e))
         raise HTTPException(status_code=404, detail="Product not found")
 
     price = (
         sb.table("price_records")
         .select("price_per_kg, week_of, source")
-        .eq("product_id", product.data[0]["id"])
+        .eq("product_id", product.data["id"])
         .order("week_of", desc=True)
         .limit(1)
         .execute()
