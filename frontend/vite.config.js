@@ -22,7 +22,7 @@ export default defineConfig({
     proxy: {
       '/scan':   'http://localhost:8000',
       '/prices': 'http://localhost:8000',
-      '/admin':  'http://localhost:8000',
+      '/admin/api':  'http://localhost:8000',
       '/health': 'http://localhost:8000',
     },
     // https: true   ← uncomment if you need real camera on LAN devices
