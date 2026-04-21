@@ -8,6 +8,8 @@ annotated-types==0.7.0
 antlr4-python3-runtime==4.9.3
 anyio==4.13.0
 APScheduler==3.11.2
+argon2-cffi==25.1.0
+argon2-cffi-bindings==25.1.0
 async-timeout==5.0.1
 attrs==26.1.0
 banks==2.4.1
@@ -92,7 +94,6 @@ opencv-python==4.13.0.92
 openpyxl==3.1.5
 packaging==26.1
 pandas==2.3.3
-passlib==1.7.4
 pillow==12.2.0
 platformdirs==4.9.6
 pluggy==1.6.0

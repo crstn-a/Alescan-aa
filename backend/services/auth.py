@@ -1,19 +1,23 @@
 # backend/services/auth.py
 import os
+import bcrypt
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from services.db import get_supabase
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-SECRET_KEY  = os.getenv("JWT_SECRET")
+SECRET_KEY  = os.getenv("JWT_SECRET", "change-this-in-production-env")
 ALGORITHM   = "HS256"
-EXPIRE_MINS = 480   # 8 hours — enough for a full admin session
+EXPIRE_MINS = 480   # 8 hours
+
+
+def hash_password(plain: str) -> str:
+    """Hash a plain password with bcrypt. Use this to seed admin_users."""
+    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    """Verify a plain password against a stored bcrypt hash."""
+    return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
 
 
 def authenticate_admin(username: str, password: str) -> dict | None:
