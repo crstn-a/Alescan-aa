@@ -1,3 +1,6 @@
+// frontend/src/pages/AdminDashboard.jsx
+// ⚠️  Place Alescan-Logo.png in your /public folder
+
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAdminAuth } from '../hooks/useAdminAuth'
@@ -23,7 +26,6 @@ const IC = {
   logout:  { d:"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" },
   refresh: { d:"M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" },
   menu:    { d:"M3 12h18M3 6h18M3 18h18" },
-  check:   { d:"M20 6L9 17l-5-5" },
   arrow:   { d:"M5 12h14M12 5l7 7-7 7" },
 }
 
@@ -38,7 +40,7 @@ const C = {
 }
 
 const SIDEBAR_FULL = 240
-const SIDEBAR_MINI = 64
+const SIDEBAR_MINI = 68
 
 const NAV = [
   { id:0, label:'Overview',      icon:'home'  },
@@ -84,29 +86,29 @@ const fmtDt = (ts) => ts
 function StatCard({ label, value, sub, trend, icon, accent, loading }) {
   return (
     <div style={{
-      background: accent ? `linear-gradient(135deg,${C.g800},${C.g700})` : C.white,
-      borderRadius:16, padding:'20px',
+      background: accent ? `linear-gradient(135deg,${C.g900},${C.g800})` : C.white,
+      borderRadius:14, padding:'20px',
       border: accent ? 'none' : `1px solid ${C.k100}`,
-      boxShadow: accent ? '0 8px 24px rgba(22,101,52,.28)' : '0 1px 4px rgba(0,0,0,.06)',
+      boxShadow: accent ? '0 8px 24px rgba(5,46,22,.3)' : '0 1px 4px rgba(0,0,0,.06)',
       display:'flex', flexDirection:'column', gap:12,
       position:'relative', overflow:'hidden', minWidth:0,
     }}>
-      {accent && <div style={{ position:'absolute',top:-28,right:-28,width:100,height:100,borderRadius:'50%',background:'rgba(255,255,255,.06)' }} />}
+      {accent && <div style={{ position:'absolute',top:-28,right:-28,width:100,height:100,borderRadius:'50%',background:'rgba(255,255,255,.05)' }} />}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
-        <p style={{ fontSize:11,fontWeight:700,letterSpacing:'.05em',textTransform:'uppercase',margin:0, color: accent?'rgba(255,255,255,.65)':C.k400 }}>{label}</p>
-        <div style={{ width:32,height:32,borderRadius:9,flexShrink:0, background: accent?'rgba(255,255,255,.15)':C.g50, display:'flex',alignItems:'center',justifyContent:'center', color: accent?'#fff':C.g600 }}>
+        <p style={{ fontSize:11,fontWeight:700,letterSpacing:'.07em',textTransform:'uppercase',margin:0, color: accent?'rgba(255,255,255,.55)':C.k400 }}>{label}</p>
+        <div style={{ width:32,height:32,borderRadius:9,flexShrink:0, background: accent?'rgba(255,255,255,.12)':C.g50, display:'flex',alignItems:'center',justifyContent:'center', color: accent?'rgba(255,255,255,.8)':C.g600 }}>
           <Svg d={IC[icon]?.d} d2={IC[icon]?.d2} size={15} />
         </div>
       </div>
       {loading
-        ? <div style={{ height:38,width:90,borderRadius:8,background:accent?'rgba(255,255,255,.15)':C.k100, animation:'pulse 1.4s infinite' }} />
+        ? <div style={{ height:38,width:90,borderRadius:8,background:accent?'rgba(255,255,255,.1)':C.k100, animation:'pulse 1.4s infinite' }} />
         : <div>
-            <p style={{ fontSize:34,fontWeight:800,margin:0,lineHeight:1, color:accent?'#fff':C.k900, fontVariantNumeric:'tabular-nums' }}>{value??'—'}</p>
-            {sub && <p style={{ fontSize:12,margin:'5px 0 0', color:accent?'rgba(255,255,255,.55)':C.k400 }}>{sub}</p>}
+            <p style={{ fontSize:36,fontWeight:800,margin:0,lineHeight:1, color:accent?'#fff':C.k900, fontVariantNumeric:'tabular-nums' }}>{value??'—'}</p>
+            {sub && <p style={{ fontSize:12,margin:'5px 0 0', color:accent?'rgba(255,255,255,.5)':C.k400 }}>{sub}</p>}
           </div>
       }
       {trend && !loading && (
-        <span style={{ display:'inline-flex',alignItems:'center',gap:4,fontSize:11,fontWeight:600,alignSelf:'flex-start', background:accent?'rgba(255,255,255,.18)':C.g50, color:accent?'#fff':C.g700, padding:'3px 10px',borderRadius:99 }}>{trend}</span>
+        <span style={{ display:'inline-flex',alignItems:'center',gap:4,fontSize:11,fontWeight:600,alignSelf:'flex-start', background:accent?'rgba(255,255,255,.14)':C.g50, color:accent?'rgba(255,255,255,.85)':C.g700, padding:'3px 10px',borderRadius:99 }}>{trend}</span>
       )}
     </div>
   )
@@ -181,12 +183,12 @@ function LogoutModal({ onConfirm, onCancel }) {
           Are you sure you want to sign out of the Alescan admin panel?
         </p>
         <div style={{ display:'flex',gap:10 }}>
-          <button onClick={onCancel} style={{ flex:1,padding:'11px',borderRadius:10,border:`1px solid ${C.k200}`,background:C.white,fontSize:14,fontWeight:600,color:C.k700,cursor:'pointer',transition:'all .15s' }}
+          <button onClick={onCancel} style={{ flex:1,padding:'11px',borderRadius:10,border:`1px solid ${C.k200}`,background:C.white,fontSize:14,fontWeight:600,color:C.k700,cursor:'pointer' }}
             onMouseEnter={e=>e.currentTarget.style.background=C.k50}
             onMouseLeave={e=>e.currentTarget.style.background=C.white}>
             No, stay
           </button>
-          <button onClick={onConfirm} style={{ flex:1,padding:'11px',borderRadius:10,border:'none',background:C.r600,fontSize:14,fontWeight:600,color:'#fff',cursor:'pointer',transition:'all .15s' }}
+          <button onClick={onConfirm} style={{ flex:1,padding:'11px',borderRadius:10,border:'none',background:C.r600,fontSize:14,fontWeight:600,color:'#fff',cursor:'pointer' }}
             onMouseEnter={e=>e.currentTarget.style.background=C.r700}
             onMouseLeave={e=>e.currentTarget.style.background=C.r600}>
             Yes, sign out
@@ -197,7 +199,7 @@ function LogoutModal({ onConfirm, onCancel }) {
   )
 }
 
-/* ── Recent Scans widget (overview) ─────────────────────────────────── */
+/* ── Recent Scans ───────────────────────────────────────────────────── */
 function RecentScans({ onUnauth }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
@@ -255,14 +257,12 @@ export default function AdminDashboard() {
 
   const SW = expanded ? SIDEBAR_FULL : SIDEBAR_MINI
 
-  // ── load accurate stats ──────────────────────────────────────────
   const loadStats = useCallback(async () => {
     setStatsLoading(true)
     try {
       setStats(await getStats())
     } catch (e) {
       if (e.message === 'unauthorized') { logout(); navigate('/admin/login') }
-      console.error('Stats error:', e.message)
     } finally {
       setStatsLoading(false)
     }
@@ -270,7 +270,6 @@ export default function AdminDashboard() {
 
   useEffect(() => { loadStats() }, [loadStats])
 
-  // ── load tab data ────────────────────────────────────────────────
   const loadTab = useCallback(async (t) => {
     if (t === 0) return
     setTabLoading(true); setData([])
@@ -279,7 +278,6 @@ export default function AdminDashboard() {
       setData(await fn())
     } catch (e) {
       if (e.message === 'unauthorized') { logout(); navigate('/admin/login') }
-      console.error('Tab error:', e.message)
     } finally {
       setTabLoading(false)
     }
@@ -287,7 +285,6 @@ export default function AdminDashboard() {
 
   useEffect(() => { loadTab(active) }, [active, loadTab])
 
-  // ── sync ─────────────────────────────────────────────────────────
   async function handleSync() {
     setSyncing(true); setToast(null)
     try {
@@ -309,7 +306,6 @@ export default function AdminDashboard() {
     }
   }
 
-  // ── table columns ────────────────────────────────────────────────
   const COLS = {
     1: [
       { key:'products',    label:'Commodity',    render: v => <span style={{ fontWeight:600,color:C.k900 }}>{v?.display_name||<em style={{ color:C.k400,fontWeight:400 }}>Unidentified</em>}</span> },
@@ -332,7 +328,7 @@ export default function AdminDashboard() {
     4: [
       { key:'module',      label:'Module',  render: v => <span style={{ fontFamily:'monospace',fontSize:12,background:C.r50,color:C.r600,padding:'3px 8px',borderRadius:6 }}>{v}</span> },
       { key:'message',     label:'Message', render: v => <span style={{ color:C.k700,display:'block',maxWidth:360,overflow:'hidden',textOverflow:'ellipsis' }}>{v}</span> },
-      { key:'occurred_at', label:'Time',    render: v => <span style={{ color:C.k400,fontSize:12 }}>{fmtDt(v)}</span> },
+      { key:'occurred_at', label:'Date',    render: v => <span style={{ color:C.k400,fontSize:12 }}>{fmtDt(v)}</span> },
     ],
   }
 
@@ -361,6 +357,7 @@ export default function AdminDashboard() {
         .qb:hover{border-color:#86efac!important;box-shadow:0 4px 14px rgba(22,163,74,.12)!important}
         .rbtn:hover{background:${C.k100}!important}
         .sbtn:hover{opacity:.88}
+        .logout-nav:hover{background:${C.r50}!important}
       `}</style>
 
       {/* ── SIDEBAR ───────────────────────────────────────────────── */}
@@ -379,28 +376,33 @@ export default function AdminDashboard() {
           borderBottom:`1px solid ${C.k100}`, flexShrink:0,
         }}>
           {expanded && (
-            <div style={{ display:'flex',alignItems:'center',gap:10 }}>
-              <div style={{ width:34,height:34,borderRadius:9,flexShrink:0, background:`linear-gradient(135deg,${C.g800},${C.g500})`, display:'flex',alignItems:'center',justifyContent:'center', boxShadow:'0 3px 10px rgba(22,163,74,.28)' }}>
-                <span style={{ color:'#fff',fontSize:16,fontWeight:800 }}>A</span>
-              </div>
-              <div>
-                <p style={{ fontSize:14,fontWeight:700,color:C.k900,lineHeight:1.2 }}>Alescan</p>
-                <p style={{ fontSize:11,color:C.k400,lineHeight:1.2 }}>Admin Panel</p>
-              </div>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <img
+                src="/Alescan-Logo.png"
+                alt="Alescan"
+                style={{ width:36, height:36, objectFit:'contain', flexShrink:0 }}
+              />
+              <span style={{ fontSize:16, fontWeight:800, color:C.g800, letterSpacing:'.04em' }}>ALESCAN</span>
             </div>
           )}
+          {!expanded && (
+            <img src="/Alescan-Logo.png" alt="Alescan" style={{ width:32, height:32, objectFit:'contain' }} />
+          )}
           <button onClick={() => setExpanded(o=>!o)} style={{
-            width:30,height:30,borderRadius:7,border:'none',
+            width:28,height:28,borderRadius:7,border:'none',
             background:C.k100, color:C.k500, flexShrink:0,
             display:'flex',alignItems:'center',justifyContent:'center',
+            marginLeft: expanded ? 0 : 0,
           }}>
-            <Svg d={IC.menu.d} size={14} />
+            <Svg d={IC.menu.d} size={13} />
           </button>
         </div>
 
         {/* Nav */}
         <nav style={{ flex:1,padding:'12px 8px',overflowY:'auto',overflowX:'hidden' }}>
-          {expanded && <p style={{ fontSize:10,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:C.k300||'#d1d5db',padding:'0 8px',marginBottom:6 }}>MENU</p>}
+          {expanded && (
+            <p style={{ fontSize:10,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'#d1d5db',padding:'0 8px',marginBottom:6 }}>MENU</p>
+          )}
           {NAV.map(item => {
             const on = active===item.id
             return (
@@ -432,8 +434,11 @@ export default function AdminDashboard() {
           })}
 
           <div style={{ borderTop:`1px solid ${C.k100}`,marginTop:10,paddingTop:10 }}>
-            {expanded && <p style={{ fontSize:10,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:C.k300||'#d1d5db',padding:'0 8px',marginBottom:6 }}>GENERAL</p>}
+            {expanded && (
+              <p style={{ fontSize:10,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'#d1d5db',padding:'0 8px',marginBottom:6 }}>GENERAL</p>
+            )}
             <button onClick={() => setShowLogout(true)}
+              className="logout-nav"
               title={!expanded ? 'Sign out' : undefined}
               style={{
                 width:'100%', display:'flex', alignItems:'center',
@@ -441,27 +446,42 @@ export default function AdminDashboard() {
                 padding: expanded?'9px 8px':'9px', borderRadius:10,
                 border:'none', background:'transparent',
                 color:'#ef4444', fontSize:13, fontWeight:500,
+                transition:'all .15s',
               }}>
               <div style={{ width:30,height:30,borderRadius:8,flexShrink:0,background:C.r50,display:'flex',alignItems:'center',justifyContent:'center',color:'#ef4444' }}>
                 <Svg d={IC.logout.d} size={14} />
               </div>
-              {expanded && 'Sign out'}
+              {expanded && 'Sign Out'}
             </button>
           </div>
         </nav>
 
-        {/* User card */}
+        {/* Admin label at bottom */}
         {expanded && (
-          <div style={{ margin:'0 8px 10px',padding:'12px 14px',background:`linear-gradient(135deg,${C.g800},${C.g700})`,borderRadius:12 }}>
-            <div style={{ display:'flex',alignItems:'center',gap:10 }}>
-              <div style={{ width:32,height:32,borderRadius:'50%',background:'rgba(255,255,255,.18)',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff' }}>
+          <div style={{
+            margin:'0 8px 10px',
+            padding:'14px 16px',
+            background:C.g900,
+            borderRadius:12,
+            display:'flex', alignItems:'center', gap:12,
+          }}>
+            <div style={{
+              width:34,height:34,borderRadius:8,
+              background:'rgba(255,255,255,.12)', flexShrink:0,
+              display:'flex',alignItems:'center',justifyContent:'center',
+            }}>
+              <span style={{ color:'#fff',fontSize:14,fontWeight:800,letterSpacing:'.02em' }}>
                 {(user||'A')[0].toUpperCase()}
-              </div>
-              <div style={{ overflow:'hidden' }}>
-                <p style={{ fontSize:13,fontWeight:600,color:'#fff',margin:0 }}>{user||'Admin'}</p>
-                <p style={{ fontSize:11,color:'rgba(255,255,255,.5)',margin:0 }}>Administrator</p>
-              </div>
+              </span>
             </div>
+            <span style={{ fontSize:14,fontWeight:800,color:'#fff',letterSpacing:'.06em',textTransform:'uppercase' }}>
+              {user || 'ADMIN'}
+            </span>
+          </div>
+        )}
+        {!expanded && (
+          <div style={{ margin:'0 auto 14px',width:40,height:40,borderRadius:10,background:C.g900,display:'flex',alignItems:'center',justifyContent:'center' }}>
+            <span style={{ color:'#fff',fontSize:14,fontWeight:800 }}>{(user||'A')[0].toUpperCase()}</span>
           </div>
         )}
       </aside>
@@ -478,13 +498,13 @@ export default function AdminDashboard() {
           <div style={{ minWidth:0 }}>
             <h1 style={{ fontSize:17,fontWeight:700,color:C.k900,margin:0,whiteSpace:'nowrap' }}>{title}</h1>
             <p style={{ fontSize:11,color:C.k400,margin:0 }}>
-              {active===0 ? 'Live system overview' : `Showing latest ${title.toLowerCase()}`}
+              {active===0 ? 'Live System Overview' : `Showing latest ${title.toLowerCase()}`}
             </p>
           </div>
           <div style={{ display:'flex',alignItems:'center',gap:8,flexShrink:0 }}>
             {active!==0 && (
               <button className="rbtn" onClick={() => loadTab(active)} disabled={tabLoading} style={{
-                display:'flex',alignItems:'center',gap:6,padding:'8px 13px',
+                display:'flex',alignItems:'center',gap:6,padding:'8px 14px',
                 borderRadius:8,border:`1px solid ${C.k200}`,background:C.white,
                 color:C.k500,fontSize:13,fontWeight:500,transition:'all .15s',
               }}>
@@ -494,9 +514,9 @@ export default function AdminDashboard() {
             )}
             <button className="sbtn" onClick={handleSync} disabled={syncing} style={{
               display:'flex',alignItems:'center',gap:7,padding:'8px 16px',
-              borderRadius:8,border:'none',background:C.g600,color:'#fff',
-              fontSize:13,fontWeight:600,transition:'all .15s',whiteSpace:'nowrap',
-              boxShadow:'0 2px 8px rgba(22,163,74,.3)',
+              borderRadius:8,border:'none',background:C.g800,color:'#fff',
+              fontSize:13,fontWeight:700,transition:'all .15s',whiteSpace:'nowrap',
+              letterSpacing:'.02em',
             }}>
               <div style={{ animation:syncing?'spin .8s linear infinite':'none',display:'flex' }}>
                 <Svg d={IC.sync.d} size={14} />
@@ -515,7 +535,7 @@ export default function AdminDashboard() {
               <StatCard label="Total Scans"    icon="scan"   accent
                 value={stats?.total_scans ?? '…'}
                 sub="All time consumer scans"
-                trend={stats?.total_scans != null ? `${stats.total_scans} logged` : null}
+                trend={stats?.total_scans != null ? `${stats.total_scans} Logged` : null}
                 loading={statsLoading} />
               <StatCard label="Active Prices"  icon="price"
                 value={stats?.active_prices ?? '…'}
@@ -560,7 +580,7 @@ export default function AdminDashboard() {
             <div>
               <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12 }}>
                 <p style={{ fontSize:14,fontWeight:700,color:C.k900,margin:0 }}>Recent Scans</p>
-                <button onClick={() => setActive(1)} style={{ fontSize:12,color:C.g600,fontWeight:600,border:'none',background:'none',display:'flex',alignItems:'center',gap:4 }}>
+                <button onClick={() => setActive(1)} style={{ fontSize:12,color:C.g600,fontWeight:600,border:'none',background:'none',display:'flex',alignItems:'center',gap:4,cursor:'pointer' }}>
                   View all <Svg d={IC.arrow.d} size={11} />
                 </button>
               </div>
