@@ -147,6 +147,7 @@ def _parse_text(text: str, week_of: str) -> list[dict]:
             carry_lines_remaining = 0
             continue
 
+        window = " ".join(lines[i:i+4])  # lookahead window
         slug = match_commodity_name(line)
 
         if slug:

@@ -7,7 +7,7 @@ from ultralytics import YOLO
 logger = logging.getLogger(__name__)
 
 # ── Config ─────────────────────────────────────────────────────────
-WEIGHTS_PATH      = Path("weights/best.pt")
+WEIGHTS_PATH      = Path("model/runs/detect/runs/alescan_v1/weights/best.pt")
 CONFIDENCE_THRESHOLD = 0.50
 
 # Class index → slug + display name
