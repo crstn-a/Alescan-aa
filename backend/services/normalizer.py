@@ -7,23 +7,22 @@ for one of our three monitored commodities.
 """
 
 COMMODITY_ALIASES: dict[str, list[str]] = {
-    "whole_chicken": [
+    "pork_liempo": [
         # ── Exact strings from Bantay Presyo PDF ──────────────────────
-        "whole chicken, local",        # exact PDF text
-        "whole chicken local",
-        "whole chicken",
-        # ── Common variants across report weeks ───────────────────────
-        "chicken, whole",
-        "whole dressed chicken",
-        "chicken (whole)",
-        "chicken (whole, local)",
-        "dressed chicken",
-        "broiler chicken",
-        "chicken (dressed)",
-        "chicken, dressed",
-        "manok",
+        "pork belly (liempo), local",   # exact PDF text — most specific
+        "pork belly liempo, local",
+        "pork belly (liempo)",
+        "pork belly liempo",
+        # ── Common variants ───────────────────────────────────────────
+        "liempo, local",
+        "liempo local",
+        "liempo",
+        "pork belly, local",
+        "pork liempo, local",
+        "pork liempo",
+        "pork, liempo",
+        "liempo (pork belly)",
     ],
-
     "tilapia_local": [
         # ── Exact strings from Bantay Presyo PDF ──────────────────────
         "tilapia",                      # most common — just "Tilapia"
@@ -43,24 +42,21 @@ COMMODITY_ALIASES: dict[str, list[str]] = {
         "tiiapia",
         "tilapla",
     ],
-
-    "pork_liempo": [
+    "whole_chicken": [
         # ── Exact strings from Bantay Presyo PDF ──────────────────────
-        # NOTE: "pork belly (liempo), local" listed BEFORE shorter
-        # "pork belly (liempo)" so longer alias wins in substring search.
-        "pork belly (liempo), local",   # exact PDF text — most specific
-        "pork belly liempo, local",
-        "pork belly (liempo)",
-        "pork belly liempo",
-        # ── Common variants ───────────────────────────────────────────
-        "liempo, local",
-        "liempo local",
-        "liempo",
-        "pork belly, local",
-        "pork liempo, local",
-        "pork liempo",
-        "pork, liempo",
-        "liempo (pork belly)",
+        "whole chicken, local",        # exact PDF text
+        "whole chicken local",
+        "whole chicken",
+        # ── Common variants across report weeks ───────────────────────
+        "chicken, whole",
+        "whole dressed chicken",
+        "chicken (whole)",
+        "chicken (whole, local)",
+        "dressed chicken",
+        "broiler chicken",
+        "chicken (dressed)",
+        "chicken, dressed",
+        "manok",
     ],
 }
 
@@ -126,7 +122,7 @@ def normalize_rows(raw_rows: list[dict]) -> list[dict]:
 
     Returns a list of 0–3 clean dicts ready for Supabase upsert.
     """
-    VALID_SLUGS = {"whole_chicken", "tilapia_local", "pork_liempo"}
+    VALID_SLUGS = {"pork_liempo", "tilapia_local", "whole_chicken"}
     seen: dict[str, dict] = {}
 
     for row in raw_rows:

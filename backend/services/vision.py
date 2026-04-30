@@ -16,9 +16,9 @@ CONFIDENCE_THRESHOLD = 0.50
 #   1: tilapia_local
 #   2: pork_liempo
 LABELS: dict[int, dict] = {
-    0: {"slug": "whole_chicken", "display_name": "Whole Chicken"},
+    0: {"slug": "pork_liempo",    "display_name": "Pork Belly Liempo"},
     1: {"slug": "tilapia_local",  "display_name": "Tilapia (Local)"},
-    2: {"slug": "pork_liempo",    "display_name": "Pork Belly Liempo"},
+    2: {"slug": "whole_chicken",  "display_name": "Whole Chicken"},
 }
 
 # ── Singleton model ────────────────────────────────────────────────
@@ -33,7 +33,7 @@ def get_model() -> YOLO:
                 f"Weights not found at {WEIGHTS_PATH}. "
                 "Run Phase 5 training and copy best.pt to backend/weights/"
             )
-        logger.info(f"Loading YOLO26 weights from {WEIGHTS_PATH}")
+        logger.info(f"Loading YOLO11 weights from {WEIGHTS_PATH}")
         _model = YOLO(str(WEIGHTS_PATH))
         logger.info("Model loaded successfully")
     return _model
@@ -42,7 +42,7 @@ def get_model() -> YOLO:
 # ── Inference ──────────────────────────────────────────────────────
 def run_inference(image_bytes: bytes) -> dict:
     """
-    Run YOLO26 inference on raw image bytes from the PWA scan.
+    Run YOLO11 inference on raw image bytes from the PWA scan.
 
     Returns a dict with:
         product_id    int   — row id in products table
@@ -112,6 +112,6 @@ def warmup():
     try:
         blank = Image.new("RGB", (640, 640), color=(127, 127, 127))
         get_model()(blank, verbose=False)
-        logger.info("YOLO26 warm-up complete")
+        logger.info("YOLO11 warm-up complete")
     except Exception as e:
         logger.warning(f"Warm-up failed (non-fatal): {e}")
