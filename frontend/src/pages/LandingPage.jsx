@@ -1,7 +1,6 @@
 // frontend/src/pages/LandingPage.jsx
-// ⚠️  Place Alescan-Logo.png in your /public folder
-
 import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 
 const C = {
   primary:    '#22c55e',
@@ -30,10 +29,40 @@ const Icons = {
   database:    "M4 6c0 1.657 3.582 3 8 3s8-1.343 8-3 M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6 M4 12c0 1.657 3.582 3 8 3s8-1.343 8-3",
   shield:      "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
   zap:         "M13 2L3 14h8l-2 8 10-12h-8l2-8z",
+  menu:        "M3 12h18M3 6h18M3 18h18",
+  close:       "M18 6L6 18M6 18L18 6M6 6l12 12",
 }
 
 export default function LandingPage() {
   const navigate = useNavigate()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detect screen size for responsive menu rendering
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkIfMobile()
+    window.addEventListener('resize', checkIfMobile)
+    return () => window.removeEventListener('resize', checkIfMobile)
+  }, [])
+
+  // Close mobile menu when clicking a link or resizing to desktop
+  const closeMobileMenu = () => setMobileMenuOpen(false)
+
+  const handleNavClick = (e, targetId) => {
+    e.preventDefault()
+    if (targetId === 'scanner') {
+      navigate('/scanner')
+    } else {
+      const element = document.getElementById(targetId)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+    closeMobileMenu()
+  }
 
   return (
     <div style={{
@@ -53,9 +82,58 @@ export default function LandingPage() {
         .start-scanning-btn:hover{background:${C.g800}!important}
         .step-card{transition:all .15s}
         .step-card:hover{transform:translateY(-2px);box-shadow:0 12px 24px -8px rgba(0,0,0,.1)}
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+          section {
+            padding: 40px 16px !important;
+          }
+          .stats-row {
+            gap: 24px !important;
+            justify-content: space-between;
+          }
+          .stats-row > div {
+            flex: 1;
+            min-width: 100px;
+          }
+          .stats-row p:first-child {
+            font-size: 11px !important;
+          }
+          .stats-row p:last-child {
+            font-size: 16px !important;
+          }
+          .hero-title {
+            font-size: 32px !important;
+            line-height: 1.2 !important;
+          }
+          .cta-buttons {
+            flex-direction: column;
+            gap: 12px !important;
+          }
+          .cta-buttons button {
+            width: 100%;
+            justify-content: center;
+          }
+          .solution-list ol, .challenge-list ul {
+            font-size: 13px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .hero-title {
+            font-size: 28px !important;
+          }
+          .stats-row {
+            flex-wrap: wrap;
+            gap: 20px !important;
+          }
+          .stats-row > div {
+            flex-basis: calc(50% - 20px);
+          }
+        }
       `}</style>
 
-      {/* ── Navigation Bar ─────────────────────────────────────────── */}
+      {/* Responsive Header: Desktop or Mobile */}
       <header style={{
         background: C.surface,
         borderBottom: `1px solid ${C.border}`,
@@ -72,7 +150,7 @@ export default function LandingPage() {
           alignItems: 'center',
           justifyContent: 'space-between',
         }}>
-          {/* Logo */}
+          {/* Logo - common for both layouts */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img
               src="/Alescan-Logo.png"
@@ -81,28 +159,114 @@ export default function LandingPage() {
             />
           </div>
 
-          {/* Nav links */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-            <a href="#home" className="nav-link" style={{ fontSize: 14, fontWeight: 600, color: C.text, textDecoration: 'none' }}>Home</a>
-            <a href="#how-it-works" className="nav-link" style={{ fontSize: 14, fontWeight: 500, color: C.textSecondary, textDecoration: 'none' }}>How it works</a>
-            <a href="#about" className="nav-link" style={{ fontSize: 14, fontWeight: 500, color: C.textSecondary, textDecoration: 'none' }}>About</a>
-            <button
-              className="use-scanner-btn"
-              onClick={() => navigate('/scanner')}
-              style={{
-                background: C.primaryDark,
-                border: 'none',
-                borderRadius: 8,
-                padding: '10px 20px',
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#fff',
-                transition: 'all 0.15s',
-              }}
-            >
-              Use Scanner
-            </button>
-          </nav>
+          {!isMobile ? (
+            // Desktop Navigation: horizontal links + button
+            <nav style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+              <a href="#home" className="nav-link" style={{ fontSize: 14, fontWeight: 600, color: C.text, textDecoration: 'none' }}>Home</a>
+              <a href="#how-it-works" className="nav-link" style={{ fontSize: 14, fontWeight: 500, color: C.textSecondary, textDecoration: 'none' }}>How it works</a>
+              <a href="#about" className="nav-link" style={{ fontSize: 14, fontWeight: 500, color: C.textSecondary, textDecoration: 'none' }}>About</a>
+              <button
+                className="use-scanner-btn"
+                onClick={() => navigate('/scanner')}
+                style={{
+                  background: C.primaryDark,
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 20px',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: '#fff',
+                  transition: 'all 0.15s',
+                }}
+              >
+                Use Scanner
+              </button>
+            </nav>
+          ) : (
+            // Mobile Navigation: Hamburger button + collapsible menu
+            <>
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: C.text,
+                  cursor: 'pointer',
+                }}
+                aria-label="Menu"
+              >
+                <Icon d={mobileMenuOpen ? Icons.close : Icons.menu} size={28} />
+              </button>
+
+              {/* Mobile Dropdown Menu */}
+              {mobileMenuOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: 72,
+                  left: 0,
+                  right: 0,
+                  background: C.surface,
+                  borderBottom: `1px solid ${C.border}`,
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.05)',
+                  padding: '20px 24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
+                  zIndex: 100,
+                }}>
+                  <a
+                    href="#home"
+                    className="nav-link"
+                    onClick={(e) => handleNavClick(e, 'home')}
+                    style={{ fontSize: 16, fontWeight: 600, color: C.text, textDecoration: 'none', padding: '8px 0' }}
+                  >
+                    Home
+                  </a>
+                  <a
+                    href="#how-it-works"
+                    className="nav-link"
+                    onClick={(e) => handleNavClick(e, 'how-it-works')}
+                    style={{ fontSize: 16, fontWeight: 500, color: C.textSecondary, textDecoration: 'none', padding: '8px 0' }}
+                  >
+                    How it works
+                  </a>
+                  <a
+                    href="#about"
+                    className="nav-link"
+                    onClick={(e) => handleNavClick(e, 'about')}
+                    style={{ fontSize: 16, fontWeight: 500, color: C.textSecondary, textDecoration: 'none', padding: '8px 0' }}
+                  >
+                    About
+                  </a>
+                  <button
+                    className="use-scanner-btn"
+                    onClick={() => {
+                      navigate('/scanner')
+                      closeMobileMenu()
+                    }}
+                    style={{
+                      background: C.primaryDark,
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '12px 20px',
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: '#fff',
+                      transition: 'all 0.15s',
+                      marginTop: 8,
+                      width: '100%',
+                    }}
+                  >
+                    Use Scanner
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </header>
 
@@ -125,7 +289,7 @@ export default function LandingPage() {
 
             {/* Title */}
             <h1 style={{
-              fontSize: 'clamp(36px, 7vw, 56px)',
+              fontSize: 'clamp(32px, 7vw, 56px)',
               fontWeight: 800,
               lineHeight: 1.15,
               color: C.g900,
@@ -148,8 +312,8 @@ export default function LandingPage() {
               Department of Agriculture Bantay Presyo.
             </p>
 
-            {/* CTA */}
-            <div style={{ display: 'flex', gap: 14, marginTop: 20 }}>
+            {/* CTA Buttons */}
+            <div className="cta-buttons" style={{ display: 'flex', gap: 14, marginTop: 20, flexWrap: 'wrap' }}>
               <button
                 className="start-scanning-btn"
                 onClick={() => navigate('/scanner')}
@@ -189,8 +353,8 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* Stats row */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginTop: 48 }}>
+            {/* Stats row (responsive) */}
+            <div className="stats-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginTop: 48 }}>
               {[
                 { top: 'Updated Weekly',    bot: 'DA Bantay Presyo' },
                 { top: 'Powered by',        bot: 'YOLOv11 Vision AI' },
@@ -210,7 +374,7 @@ export default function LandingPage() {
       <section id="how-it-works" style={{ padding: '60px 24px', background: C.surface }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <h2 style={{ fontSize: 34, fontWeight: 800, color: C.g900, marginBottom: 10 }}>How it Works</h2>
+            <h2 style={{ fontSize: 'clamp(28px, 5vw, 34px)', fontWeight: 800, color: C.g900, marginBottom: 10 }}>How it Works</h2>
             <p style={{ fontSize: 17, color: C.textSecondary }}>Simple, fast, and accessible to everyone.</p>
           </div>
 
@@ -247,7 +411,7 @@ export default function LandingPage() {
       <section id="about" style={{ padding: '60px 24px' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <h2 style={{ fontSize: 34, fontWeight: 800, color: C.g900, marginBottom: 10 }}>About</h2>
+            <h2 style={{ fontSize: 'clamp(28px, 5vw, 34px)', fontWeight: 800, color: C.g900, marginBottom: 10 }}>About</h2>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, alignItems: 'flex-start' }}>
             {/* Challenge */}
