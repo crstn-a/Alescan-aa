@@ -4,6 +4,12 @@ from pathlib import Path
 from PIL import Image
 from ultralytics import YOLO
 
+import torch
+from ultralytics.nn.tasks import DetectionModel
+
+# 🔧 fix for PyTorch 2.6+
+torch.serialization.add_safe_globals([DetectionModel])
+
 logger = logging.getLogger(__name__)
 
 # ── Config ─────────────────────────────────────────────────────────
