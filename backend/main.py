@@ -21,8 +21,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://alescan.vercel.app/",
-        "https://alescan.vercel.app/admin/login",
+        "https://alescan.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
