@@ -2,22 +2,17 @@ fastapi
 uvicorn[standard]
 python-multipart
 
-# Core backend
 supabase
 python-dotenv
 requests
 beautifulsoup4
 apscheduler
 
-# Auth
 python-jose[cryptography]
 bcrypt
 
-# Image + ML (ONLY what you need)
 ultralytics==8.2.0
 opencv-python-headless==4.9.0.80
 pillow
 
-# PDF extraction (keep if actually used)
-docling
 llama-parse
