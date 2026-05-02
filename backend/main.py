@@ -23,8 +23,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "https://alescan.up.railway.app/admin/login",
+        "https://alescan.up.railway.app",
         FRONTEND_URL
     ],
     allow_credentials=True,
