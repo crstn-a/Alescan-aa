@@ -6,10 +6,6 @@ export function saveToken(token)  { sessionStorage.setItem(TOKEN_KEY, token) }
 export function clearToken()      { sessionStorage.removeItem(TOKEN_KEY) }
 export function hasToken()        { return !!sessionStorage.getItem(TOKEN_KEY) }
 
-if (!API) {
-  throw new Error('VITE_API_URL is not set')
-}
-
 async function adminFetch(path, options = {}) {
   const token = sessionStorage.getItem(TOKEN_KEY)
   const resp = await fetch(`${API}${path}`, {
@@ -45,4 +41,4 @@ export const triggerSync     = ()            => adminFetch('/admin/api/sync', { 
 export const getScanLogs     = (limit = 50)  => adminFetch(`/admin/api/logs/scan?limit=${limit}`)
 export const getSyncLogs     = (limit = 20)  => adminFetch(`/admin/api/logs/sync?limit=${limit}`)
 export const getErrorLogs    = (limit = 20)  => adminFetch(`/admin/api/logs/errors?limit=${limit}`)
-export const getPriceRecords = () => adminFetch('/prices')
+export const getPriceRecords = ()            => fetch(`${API}/prices`).then(r => r.json())
