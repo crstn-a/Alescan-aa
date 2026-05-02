@@ -94,10 +94,17 @@ def run_inference(image_bytes: bytes) -> dict:
         f"Inference: {label['slug']} "
         f"class={class_id} conf={confidence:.2%}"
     )
-
+    CLASS_TO_PRODUCT_ID = {
+        0: 3,
+        1: 2,
+        2: 1
+    }
+    
+    product_id = CLASS_TO_PRODUCT_ID[class_id]
+    
     # product_id maps 1:1 to class_id + 1 (products table uses serial 1,2,3)
     return {
-        "product_id":   class_id + 1,
+        "product_id":   product_id,
         "product_slug": label["slug"],
         "display_name": label["display_name"],
         "confidence":   confidence,
