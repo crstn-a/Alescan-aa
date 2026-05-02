@@ -23,7 +23,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://alescan.up.railway.app",
+        "https://alescan.vercel.app",
         FRONTEND_URL
     ],
     allow_credentials=True,
