@@ -216,7 +216,7 @@ export default function Result() {
         background:C.white, borderTop:`1px solid ${C.k100}`,
         boxShadow:'0 -4px 16px rgba(0,0,0,.04)',
       }}>
-        <button className="scan-again-btn" onClick={() => navigate('/')} style={{
+        <button className="scan-again-btn" onClick={() => navigate('/scanner')} style={{
           width:'100%', padding:'14px', borderRadius:12,
           border:'none', background:C.g600, color:'#fff',
           fontSize:15, fontWeight:700, cursor:'pointer',
