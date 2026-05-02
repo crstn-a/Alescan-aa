@@ -1,12 +1,13 @@
 FROM python:3.11-slim
 
-# Install system dependencies required by OpenCV
+# Install ALL required system dependencies for OpenCV + YOLO
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender1 \
     libxcb1 \
+    libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
