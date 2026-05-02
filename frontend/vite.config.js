@@ -13,7 +13,13 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,ico,webp}'],
         // Don't cache API calls — always fresh from backend
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api/, /^\/scan/, /^\/prices/, /^\/admin/],
+        navigateFallbackDenylist: [
+          /^\/api/,
+          /^\/scan/,
+          /^\/prices/,
+          /^\/admin/,
+          /\\.(png|jpg|jpeg|svg|gif|webp|ico)$/  // 🔥 CRITICAL FIX
+        ],
         runtimeCaching: [
           {
             // Cache price data for 1 hour (SRP doesn't change mid-day)
