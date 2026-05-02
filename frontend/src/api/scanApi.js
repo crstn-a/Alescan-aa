@@ -1,4 +1,4 @@
-const API = import.meta.env.VITE_API_URL || ''
+const API = import.meta.env.VITE_API_URL
 
 /**
  * Send a captured image blob to POST /scan.

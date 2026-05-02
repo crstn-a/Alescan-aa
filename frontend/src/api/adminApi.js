@@ -1,10 +1,14 @@
 // frontend/src/api/adminApi.js
-const API = import.meta.env.VITE_API_URL || ''
+const API = import.meta.env.VITE_API_URL
 const TOKEN_KEY = 'alescan_admin_token'
 
 export function saveToken(token)  { sessionStorage.setItem(TOKEN_KEY, token) }
 export function clearToken()      { sessionStorage.removeItem(TOKEN_KEY) }
 export function hasToken()        { return !!sessionStorage.getItem(TOKEN_KEY) }
+
+if (!API) {
+  throw new Error('VITE_API_URL is not set')
+}
 
 async function adminFetch(path, options = {}) {
   const token = sessionStorage.getItem(TOKEN_KEY)
