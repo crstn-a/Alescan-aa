@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      disable:true,
       registerType: 'autoUpdate',
       manifest: false,          // we use our own public/manifest.json
       workbox: {
