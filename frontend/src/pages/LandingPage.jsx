@@ -270,101 +270,135 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ── Hero ──────────────────────────────────────────────────── */}
+      {/* ── Hero ── with right panel image ───────────────────────── */}
       <section id="home" style={{ padding: '60px 24px' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 820 }}>
-
-            {/* Badge */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: C.primaryLight, borderRadius: 40,
-              padding: '4px 14px', width: 'fit-content',
-              border: `1px solid ${C.border}`,
-            }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: C.g800 }}>
-                Bantay Presyo • Department of Agriculture
-              </span>
-            </div>
-
-            {/* Title */}
-            <h1 style={{
-              fontSize: 'clamp(32px, 7vw, 56px)',
-              fontWeight: 800,
-              lineHeight: 1.15,
-              color: C.g900,
-              margin: 0,
-            }}>
-              Verify SRP Prices<br />
-              <span style={{ color: C.primaryDark }}>Instantly with your Camera</span>
-            </h1>
-
-            {/* Subtitle */}
-            <p style={{
-              fontSize: 17,
-              color: C.textSecondary,
-              lineHeight: 1.65,
-              margin: '12px 0 4px',
-              maxWidth: 620,
-            }}>
-              A Vision-Based Centralized SRP Verification Scanner for Public Markets
-              Using Computer Vision and Automated Price Synchronization from the
-              Department of Agriculture Bantay Presyo.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="cta-buttons" style={{ display: 'flex', gap: 14, marginTop: 20, flexWrap: 'wrap' }}>
-              <button
-                className="start-scanning-btn"
-                onClick={() => navigate('/scanner')}
-                style={{
-                  background: C.primaryDark,
-                  border: 'none',
-                  borderRadius: 12,
-                  padding: '15px 30px',
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: '#fff',
-                  transition: 'all 0.15s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  boxShadow: '0 4px 16px rgba(22,101,52,.25)',
-                }}
-              >
-                <Icon d={Icons.camera} size={18} />
-                Start Scanning
-              </button>
-              <button
-                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-                style={{
-                  background: C.surface,
-                  border: `1.5px solid ${C.border}`,
-                  borderRadius: 12,
-                  padding: '15px 30px',
-                  fontSize: 15,
-                  fontWeight: 500,
-                  color: C.text,
-                  transition: 'all 0.15s',
-                }}
-                className="hover-lift"
-              >
-                Learn More
-              </button>
-            </div>
-
-            {/* Stats row (responsive) */}
-            <div className="stats-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginTop: 48 }}>
-              {[
-                { top: 'Updated Weekly',    bot: 'DA Bantay Presyo' },
-                { top: 'Powered by',        bot: 'YOLOv11 Vision AI' },
-                { top: 'No Installation',   bot: 'Works with Browser' },
-              ].map((s, i) => (
-                <div key={i}>
-                  <p style={{ fontSize: 13, color: C.textMuted, marginBottom: 4 }}>{s.top}</p>
-                  <p style={{ fontSize: 20, fontWeight: 800, color: C.g900 }}>{s.bot}</p>
+          {/* Two-column layout: left text + right image, responsive via isMobile */}
+          <div style={{
+            display: 'grid',
+            gap: 40,
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            alignItems: 'center',
+          }}>
+            {/* Left column: content with constrained max-width for readability */}
+            <div>
+              <div style={{ maxWidth: 640 }}>
+                {/* Badge */}
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: C.primaryLight, borderRadius: 40,
+                  padding: '4px 14px', width: 'fit-content',
+                  border: `1px solid ${C.border}`,
+                }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: C.g800 }}>
+                    Bantay Presyo • Department of Agriculture
+                  </span>
                 </div>
-              ))}
+
+                {/* Title */}
+                <h1 style={{
+                  fontSize: 'clamp(32px, 7vw, 56px)',
+                  fontWeight: 800,
+                  lineHeight: 1.15,
+                  color: C.g900,
+                  margin: '16px 0 0 0',
+                }}>
+                  Verify SRP Prices<br />
+                  <span style={{ color: C.primaryDark }}>Instantly with your Camera</span>
+                </h1>
+
+                {/* Subtitle */}
+                <p style={{
+                  fontSize: 17,
+                  color: C.textSecondary,
+                  lineHeight: 1.65,
+                  margin: '16px 0 4px',
+                }}>
+                  A Vision-Based Centralized SRP Verification Scanner for Public Markets
+                  Using Computer Vision and Automated Price Synchronization from the
+                  Department of Agriculture Bantay Presyo.
+                </p>
+
+                {/* CTA Buttons */}
+                <div className="cta-buttons" style={{ display: 'flex', gap: 14, marginTop: 20, flexWrap: 'wrap' }}>
+                  <button
+                    className="start-scanning-btn"
+                    onClick={() => navigate('/scanner')}
+                    style={{
+                      background: C.primaryDark,
+                      border: 'none',
+                      borderRadius: 12,
+                      padding: '15px 30px',
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: '#fff',
+                      transition: 'all 0.15s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      boxShadow: '0 4px 16px rgba(22,101,52,.25)',
+                    }}
+                  >
+                    <Icon d={Icons.camera} size={18} />
+                    Start Scanning
+                  </button>
+                  <button
+                    onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                    style={{
+                      background: C.surface,
+                      border: `1.5px solid ${C.border}`,
+                      borderRadius: 12,
+                      padding: '15px 30px',
+                      fontSize: 15,
+                      fontWeight: 500,
+                      color: C.text,
+                      transition: 'all 0.15s',
+                    }}
+                    className="hover-lift"
+                  >
+                    Learn More
+                  </button>
+                </div>
+
+                {/* Stats row (responsive) */}
+                <div className="stats-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginTop: 48 }}>
+                  {[
+                    { top: 'Updated Weekly',    bot: 'DA Bantay Presyo' },
+                    { top: 'Powered by',        bot: 'YOLOv11 Vision AI' },
+                    { top: 'No Installation',   bot: 'Works with Browser' },
+                  ].map((s, i) => (
+                    <div key={i}>
+                      <p style={{ fontSize: 13, color: C.textMuted, marginBottom: 4 }}>{s.top}</p>
+                      <p style={{ fontSize: 20, fontWeight: 800, color: C.g900 }}>{s.bot}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right column: market image with corner radius */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+            }}>
+              <img
+                src="/OlongapoCityPublicMarket.jpg"
+                alt="Olongapo Public Market - SRP reference and price verification example"
+                style={{
+                  width: '100%',
+                  maxWidth: '90%',
+                  borderRadius: '28px',
+                  boxShadow: '0 20px 30px -12px rgba(0,0,0,0.2)',
+                  border: `1px solid ${C.border}`,
+                  objectFit: 'cover',
+                  transition: 'transform 0.2s ease',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.01)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                className="hover-lift"
+              />
             </div>
           </div>
         </div>
