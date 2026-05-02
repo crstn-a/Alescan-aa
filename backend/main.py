@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import scan, prices, admin
@@ -6,6 +7,8 @@ from scheduler import start_scheduler
 from dotenv import load_dotenv
 
 load_dotenv()
+    
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 app = FastAPI(
     title="Alescan API",
@@ -21,7 +24,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://alescan.vercel.app"
+        FRONTEND_URL
     ],
     allow_credentials=True,
     allow_methods=["*"],
