@@ -1,20 +1,26 @@
 // frontend/src/pages/AdminDashboard.jsx
 // ⚠️  Place Alescan-Logo.png in your /public folder
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAdminAuth } from '../hooks/useAdminAuth'
 import {
   getStats, getScanLogs, getSyncLogs,
   getErrorLogs, getPriceRecords, triggerSync,
+  getAnalyticsPrices, getAnalyticsScans, getAnalyticsEvaluations
 } from '../api/adminApi'
+import {
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
+} from 'recharts'
 
 /* ── Icons ──────────────────────────────────────────────────────────── */
-const Svg = ({ d, d2, size = 16 }) => (
+const Svg = ({ d, d2, d3, size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="1.8"
     strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />{d2 && <path d={d2} />}
+    <path d={d} />{d2 && <path d={d2} />}{d3 && <path d={d3} />}
   </svg>
 )
 const IC = {
@@ -27,6 +33,8 @@ const IC = {
   refresh: { d: "M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" },
   menu: { d: "M3 12h18M3 6h18M3 18h18" },
   arrow: { d: "M5 12h14M12 5l7 7-7 7" },
+  analytics: { d: "M3 3v18h18", d2: "M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" },
+  eval: { d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" }
 }
 
 /* ── Palette ────────────────────────────────────────────────────────── */
@@ -44,6 +52,8 @@ const SIDEBAR_MINI = 68
 
 const NAV = [
   { id: 0, label: 'Overview', icon: 'home' },
+  { id: 5, label: 'Analytics', icon: 'analytics' },
+  { id: 6, label: 'AI Evaluation', icon: 'eval' },
   { id: 1, label: 'Scan Logs', icon: 'scan' },
   { id: 2, label: 'Price Records', icon: 'price' },
   { id: 3, label: 'Sync Logs', icon: 'sync' },
@@ -274,8 +284,15 @@ export default function AdminDashboard() {
     if (t === 0) return
     setTabLoading(true); setData([])
     try {
-      const fn = [null, getScanLogs, getPriceRecords, getSyncLogs, getErrorLogs][t]
-      setData(await fn())
+      if (t === 5) {
+        const [prices, scans] = await Promise.all([getAnalyticsPrices(), getAnalyticsScans()]);
+        setData({ prices, scans });
+      } else if (t === 6) {
+        setData(await getAnalyticsEvaluations());
+      } else {
+        const fn = [null, getScanLogs, getPriceRecords, getSyncLogs, getErrorLogs][t]
+        if (fn) setData(await fn())
+      }
     } catch (e) {
       if (e.message === 'unauthorized') { logout(); navigate('/admin/login') }
     } finally {
@@ -598,21 +615,160 @@ export default function AdminDashboard() {
             </div>
           </>)}
 
-          {/* DATA TABS */}
-          {active !== 0 && (
+          {/* OPERATIONAL ANALYTICS */}
+          {active === 5 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {tabLoading ? <div style={{ padding: 40, textAlign: 'center', color: C.k400 }}>Loading analytics...</div> : <>
+                <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
+                  <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Commodity Price Trends</h3>
+                  <div style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={data?.prices || []}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
+                        <XAxis dataKey="date" tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
+                        <YAxis tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} tickFormatter={v => `₱${v}`} />
+                        <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}`, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: 13, paddingTop: 10 }} />
+                        <Line type="monotone" dataKey="Whole Chicken" stroke={C.a700} strokeWidth={3} dot={{r:4}} activeDot={{r:6}} />
+                        <Line type="monotone" dataKey="Tilapia (Local)" stroke={C.g600} strokeWidth={3} dot={{r:4}} activeDot={{r:6}} />
+                        <Line type="monotone" dataKey="Pork Belly Liempo" stroke={C.r600} strokeWidth={3} dot={{r:4}} activeDot={{r:6}} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 20 }}>
+                  <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
+                    <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Detection Performance</h3>
+                    <div style={{ height: 250 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={data?.scans?.detection_split || []} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                            <Cell fill={C.g600} />
+                            <Cell fill={C.a700} />
+                            <Cell fill={C.r600} />
+                          </Pie>
+                          <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
+                          <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
+                    <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Daily Scan Volume</h3>
+                    <div style={{ height: 250 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={data?.scans?.daily_volume || []}>
+                          <defs>
+                            <linearGradient id="colorScans" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor={C.g600} stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor={C.g600} stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
+                          <XAxis dataKey="date" tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
+                          <YAxis tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
+                          <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
+                          <Area type="monotone" dataKey="scans" stroke={C.g600} fillOpacity={1} fill="url(#colorScans)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
+                  <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Per-Commodity Detections</h3>
+                  <div style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data?.scans?.commodity_performance || []}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
+                        <XAxis dataKey="name" tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
+                        <YAxis tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
+                        <Tooltip cursor={{fill: C.k50}} contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
+                        <Bar dataKey="Success" stackId="a" fill={C.g600} radius={[0, 0, 4, 4]} />
+                        <Bar dataKey="Failed/Low Conf" stackId="a" fill={C.r600} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </>}
+            </div>
+          )}
+
+          {/* AI EVALUATION */}
+          {active === 6 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {tabLoading ? <div style={{ padding: 40, textAlign: 'center', color: C.k400 }}>Loading evaluations...</div> : <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(350px,1fr))', gap: 20 }}>
+                  <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
+                    <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Model Performance Radar</h3>
+                    <div style={{ height: 300 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
+                          { subject: 'Accuracy', A: (data?.models?.[data.models.length-1]?.accuracy || 0) * 100 },
+                          { subject: 'Precision', A: (data?.models?.[data.models.length-1]?.precision || 0) * 100 },
+                          { subject: 'Recall', A: (data?.models?.[data.models.length-1]?.recall || 0) * 100 },
+                          { subject: 'F1 Score', A: (data?.models?.[data.models.length-1]?.f1_score || 0) * 100 },
+                          { subject: 'Confidence', A: (data?.models?.[data.models.length-1]?.avg_confidence || 0) * 100 },
+                        ]}>
+                          <PolarGrid stroke={C.k200} />
+                          <PolarAngleAxis dataKey="subject" tick={{fontSize: 12, fill: C.k700, fontWeight: 600}} />
+                          <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{fontSize: 10}} />
+                          <Radar name="Latest Model" dataKey="A" stroke={C.g600} fill={C.g600} fillOpacity={0.5} />
+                          <Tooltip formatter={(v) => `${Number(v).toFixed(1)}%`} />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div style={{ textAlign: 'center', marginTop: 10 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: C.k500 }}>Active Version: <span style={{ color: C.g700 }}>{data?.models?.[data.models.length-1]?.model_version || 'Unknown'}</span></span>
+                    </div>
+                  </div>
+
+                  <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
+                    <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Extraction Pipeline Metrics</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 340, overflowY: 'auto' }}>
+                      {(data?.extractors || []).map((ext, i) => (
+                        <div key={i} style={{ padding: 16, borderRadius: 12, border: `1px solid ${C.k100}`, background: C.k50 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <strong style={{ fontSize: 14, color: C.k900 }}>{ext.extractor_version}</strong>
+                            <span style={{ fontSize: 12, color: C.k400 }}>{new Date(ext.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
+                            <div><span style={{ color: C.k500 }}>Accuracy:</span> <span style={{ fontWeight: 600, color: C.g700 }}>{(ext.extraction_accuracy*100).toFixed(1)}%</span></div>
+                            <div><span style={{ color: C.k500 }}>CER:</span> <span style={{ fontWeight: 600 }}>{ext.character_error_rate}</span></div>
+                            <div><span style={{ color: C.k500 }}>WER:</span> <span style={{ fontWeight: 600 }}>{ext.word_error_rate}</span></div>
+                            <div><span style={{ color: C.k500 }}>Norm Rate:</span> <span style={{ fontWeight: 600 }}>{(ext.normalization_success_rate*100).toFixed(1)}%</span></div>
+                          </div>
+                          <p style={{ margin: '8px 0 0', fontSize: 12, color: C.k500, fontStyle: 'italic' }}>"{ext.notes}"</p>
+                        </div>
+                      ))}
+                      {(!data?.extractors || data.extractors.length === 0) && (
+                         <p style={{ fontSize: 13, color: C.k500, textAlign: 'center', padding: 20 }}>No extraction evaluation records found.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>}
+            </div>
+          )}
+
+          {/* DATA TABS (Scan Logs, Price Records, etc.) */}
+          {active !== 0 && active !== 5 && active !== 6 && (
             <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden' }}>
               <div style={{ padding: '15px 20px', borderBottom: `1px solid ${C.k100}`, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 34, height: 34, borderRadius: 9, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600 }}>
-                  <Svg d={IC[NAV[active]?.icon]?.d} d2={IC[NAV[active]?.icon]?.d2} size={16} />
+                  <Svg d={IC[NAV.find(n=>n.id===active)?.icon]?.d} d2={IC[NAV.find(n=>n.id===active)?.icon]?.d2} size={16} />
                 </div>
                 <div>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: C.k900 }}>{title}</p>
                   <p style={{ margin: 0, fontSize: 12, color: C.k400 }}>
-                    {tabLoading ? 'Loading...' : `${data.length} record${data.length !== 1 ? 's' : ''}`}
+                    {tabLoading ? 'Loading...' : `${Array.isArray(data) ? data.length : 0} record${Array.isArray(data) && data.length !== 1 ? 's' : ''}`}
                   </p>
                 </div>
               </div>
-              <DataTable columns={COLS[active] || []} rows={data} loading={tabLoading} />
+              <DataTable columns={COLS[active] || []} rows={Array.isArray(data) ? data : []} loading={tabLoading} />
             </div>
           )}
         </main>

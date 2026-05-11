@@ -42,7 +42,7 @@ async function adminFetch(path, options = {}) {
     try {
       const data = await resp.json();
       message = data.detail || message;
-    } catch {}
+    } catch { }
     throw new Error(message);
   }
 
@@ -76,11 +76,16 @@ export async function loginAdmin(username, password) {
 }
 
 // 🔹 Admin endpoints
-export const getStats        = () => adminFetch('/admin/api/stats');
-export const triggerSync     = () => adminFetch('/admin/api/sync', { method: 'POST' });
-export const getScanLogs     = (limit = 50) => adminFetch(`/admin/api/logs/scan?limit=${limit}`);
-export const getSyncLogs     = (limit = 20) => adminFetch(`/admin/api/logs/sync?limit=${limit}`);
-export const getErrorLogs    = (limit = 20) => adminFetch(`/admin/api/logs/errors?limit=${limit}`);
+export const getStats = () => adminFetch('/admin/api/stats');
+export const triggerSync = () => adminFetch('/admin/api/sync', { method: 'POST' });
+export const getScanLogs = (limit = 50) => adminFetch(`/admin/api/logs/scan?limit=${limit}`);
+export const getSyncLogs = (limit = 20) => adminFetch(`/admin/api/logs/sync?limit=${limit}`);
+export const getErrorLogs = (limit = 20) => adminFetch(`/admin/api/logs/errors?limit=${limit}`);
 
 // 🔹 Prices (use same handler for consistency)
 export const getPriceRecords = () => adminFetch('/prices');
+
+// 🔹 Analytics
+export const getAnalyticsPrices = () => adminFetch('/admin/api/analytics/prices');
+export const getAnalyticsScans = () => adminFetch('/admin/api/analytics/scans');
+export const getAnalyticsEvaluations = () => adminFetch('/admin/api/analytics/evaluations');

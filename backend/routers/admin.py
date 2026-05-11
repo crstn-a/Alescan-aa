@@ -158,3 +158,19 @@ def error_logs(
     except Exception as e:
         log_error("admin", f"error_logs query failed: {e}")
         raise
+
+
+# ── ANALYTICS ENDPOINTS ────────────────────────────────────────────────
+from services.analytics import get_analytics_prices, get_analytics_scans, get_analytics_evaluations
+
+@router.get("/analytics/prices")
+def analytics_prices():
+    return get_analytics_prices()
+
+@router.get("/analytics/scans")
+def analytics_scans():
+    return get_analytics_scans()
+
+@router.get("/analytics/evaluations")
+def analytics_evaluations():
+    return get_analytics_evaluations()
