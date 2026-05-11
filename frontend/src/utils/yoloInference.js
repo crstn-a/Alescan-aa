@@ -17,7 +17,7 @@ export async function loadModel() {
   try {
     // Remove the custom wasmPaths override so it defaults to CDN or local Vite bundled paths
     ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
-    
+
     session = await ort.InferenceSession.create('/model.onnx', { executionProviders: ['wasm'] });
     console.log("✅ ONNX Model loaded successfully.");
   } catch (err) {
@@ -33,14 +33,14 @@ export async function detectActiveCommodity(videoElement) {
   canvas.width = 640;
   canvas.height = 640;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  
+
   // Draw video frame to canvas
   ctx.drawImage(videoElement, 0, 0, 640, 640);
   const imageData = ctx.getImageData(0, 0, 640, 640).data;
 
   // Prepare input tensor: [1, 3, 640, 640] Float32Array
   const float32Data = new Float32Array(3 * 640 * 640);
-  
+
   // YOLO expects RGB channels separated, normalized to 0.0 - 1.0
   for (let i = 0; i < 640 * 640; i++) {
     float32Data[i] = imageData[i * 4] / 255.0;                   // R
@@ -54,7 +54,7 @@ export async function detectActiveCommodity(videoElement) {
     const feeds = {};
     feeds[session.inputNames[0]] = inputTensor;
     const output = await session.run(feeds);
-    
+
     // Output shape is [1, 7, 8400]
     const outputTensor = output[session.outputNames[0]];
     const data = outputTensor.data;
@@ -87,7 +87,7 @@ export async function detectActiveCommodity(videoElement) {
     }
 
     // console.log(`Best class: ${bestClass}, conf: ${bestConf}`);
-    
+
     if (bestConf > 0.35 && bestClass !== -1) {
       // console.log(`Active Detection: ${LABELS[bestClass]} at ${(bestConf * 100).toFixed(1)}%`);
       return {
@@ -95,7 +95,7 @@ export async function detectActiveCommodity(videoElement) {
         confidence: bestConf
       };
     }
-    
+
     return null;
   } catch (e) {
     console.error("Inference error:", e);
