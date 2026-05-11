@@ -1,7 +1,7 @@
-// frontend/src/pages/Scanner.jsx
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { scanImage } from '../api/scanApi'
+import { loadModel, detectActiveCommodity } from '../utils/yoloInference'
 
 // ── Colour Palette (White & Green) ────────────────────────────────────
 const C = {
@@ -41,6 +41,8 @@ export default function Scanner() {
   const [feedback, setFeedback] = useState(null)
   const [flash, setFlash] = useState(false)
   const [showExitConfirm, setShowExitConfirm] = useState(false)   // new state
+  const [activeCommodity, setActiveCommodity] = useState(null)
+  const [showUnrecognizedPopup, setShowUnrecognizedPopup] = useState(false)
 
   const startCamera = useCallback(async () => {
     try {
@@ -133,6 +135,40 @@ export default function Scanner() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [startCamera, stopCamera])
 
+  useEffect(() => {
+    loadModel()
+  }, [])
+
+  useEffect(() => {
+    if (cameraState !== 'ready' || scanning) {
+      setActiveCommodity(null)
+      return
+    }
+    
+    let isDetecting = false
+    const interval = setInterval(async () => {
+      if (isDetecting) return
+      isDetecting = true
+      try {
+        const result = await detectActiveCommodity(videoRef.current)
+        if (result) {
+          setActiveCommodity(result.className)
+        } else {
+          setActiveCommodity(null)
+        }
+      } catch (err) {
+        console.error(err)
+      } finally {
+        isDetecting = false
+      }
+    }, 600) // ~1.5 FPS for lightweight active detection
+
+    return () => {
+      clearInterval(interval)
+      setActiveCommodity(null)
+    }
+  }, [cameraState, scanning])
+
   const captureFrame = useCallback(() => {
     if (!videoRef.current || cameraState !== 'ready') return null
     const video = videoRef.current
@@ -170,11 +206,15 @@ export default function Scanner() {
     }
 
     if (result.type === 'low_confidence') {
-      setFeedback({ type: 'warn', text: `${result.confidence}% confidence — move closer and try again` })
+      setShowUnrecognizedPopup(true)
     } else {
       setFeedback({ type: 'error', text: result.message })
     }
     setScanning(false)
+  }
+
+  const closeUnrecognizedPopup = () => {
+    setShowUnrecognizedPopup(false)
   }
 
   const isReady = cameraState === 'ready'
@@ -322,9 +362,33 @@ export default function Scanner() {
         )}
 
         {isReady && !scanning && (
-          <div style={{ position: 'absolute', bottom: 'calc(50% - min(37.5vw, 37.5vh, 140px))', left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-            <div style={{ background: 'rgba(255,255,255,.85)', backdropFilter: 'blur(8px)', borderRadius: 20, padding: '6px 16px', border: `1px solid ${C.border}` }}>
-              <p style={{ fontSize: 12, color: C.textSecondary, margin: 0, fontWeight: 500 }}>Point at the commodity and tap Scan</p>
+          <div style={{ position: 'absolute', bottom: 'calc(50% - min(37.5vw, 37.5vh, 140px))', left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', transition: 'all 0.3s ease' }}>
+            <div style={{ 
+              background: activeCommodity ? C.primary : 'rgba(255,255,255,.85)', 
+              backdropFilter: 'blur(8px)', 
+              borderRadius: 20, 
+              padding: '6px 16px', 
+              border: `1px solid ${activeCommodity ? C.primaryDark : C.border}`,
+              boxShadow: activeCommodity ? '0 4px 12px rgba(34,197,94,0.3)' : 'none',
+              transform: activeCommodity ? 'scale(1.05)' : 'scale(1)',
+              transition: 'all 0.3s ease'
+            }}>
+              <p style={{ 
+                fontSize: 13, 
+                color: activeCommodity ? '#fff' : C.textSecondary, 
+                margin: 0, 
+                fontWeight: activeCommodity ? 700 : 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                {activeCommodity ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    {activeCommodity} Detected
+                  </>
+                ) : 'Point at the commodity and tap Scan'}
+              </p>
             </div>
           </div>
         )}
@@ -374,8 +438,8 @@ export default function Scanner() {
           </div>
         </div>
 
-        <p style={{ fontSize: 12, color: C.textMuted, margin: 0, fontWeight: 500 }}>
-          {scanning ? 'Identifying commodity...' : isReady ? 'Tap to scan' : 'Starting camera...'}
+        <p style={{ fontSize: 12, color: activeCommodity && !scanning ? C.primaryDark : C.textMuted, margin: 0, fontWeight: activeCommodity && !scanning ? 700 : 500, transition: 'color 0.3s' }}>
+          {scanning ? 'Identifying commodity...' : isReady ? (activeCommodity ? 'Tap to scan' : 'Looking for commodity...') : 'Starting camera...'}
         </p>
       </div>
 
@@ -462,6 +526,75 @@ export default function Scanner() {
                 Exit
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Unrecognized Pop-up ── */}
+      {showUnrecognizedPopup && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 200,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(4px)',
+          padding: 20,
+        }}
+        onClick={closeUnrecognizedPopup}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              padding: '24px 20px',
+              maxWidth: 320,
+              width: '100%',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+              textAlign: 'center',
+              animation: 'fadeIn .2s ease',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              background: 'rgba(245,158,11,.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: C.warning,
+              margin: '0 auto 16px',
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <p style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 12 }}>
+              Not Recognized
+            </p>
+            <p style={{ fontSize: 14, color: C.textSecondary, marginBottom: 24, lineHeight: 1.5, padding: '0 10px' }}>
+              The detected object is not included in the list of commodities or try to move closer and try again
+            </p>
+            <button
+              onClick={closeUnrecognizedPopup}
+              style={{
+                width: '100%',
+                padding: '12px 0',
+                borderRadius: 12,
+                border: 'none',
+                background: C.primary,
+                color: '#fff',
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Okay
+            </button>
           </div>
         </div>
       )}
