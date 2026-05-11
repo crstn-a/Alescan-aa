@@ -150,6 +150,9 @@ export default function Scanner() {
       if (isDetecting) return
       isDetecting = true
       try {
+        // Yield thread for 50ms before heavy computation to process UI clicks (Scan / Exit)
+        await new Promise(r => setTimeout(r, 50))
+        
         const result = await detectActiveCommodity(videoRef.current)
         if (result) {
           setActiveCommodity(result.className)
@@ -161,7 +164,7 @@ export default function Scanner() {
       } finally {
         isDetecting = false
       }
-    }, 600) // ~1.5 FPS for lightweight active detection
+    }, 800) // Lower frequency + UI yielding makes the app responsive
 
     return () => {
       clearInterval(interval)

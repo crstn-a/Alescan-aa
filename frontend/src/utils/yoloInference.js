@@ -25,21 +25,25 @@ export async function loadModel() {
   }
 }
 
+let canvas = null;
+let ctx = null;
+let float32Data = null;
+
 export async function detectActiveCommodity(videoElement) {
   if (!session || !videoElement || videoElement.readyState < 2) return null;
 
-  // Create an offscreen canvas to resize the frame to 640x640
-  const canvas = document.createElement('canvas');
-  canvas.width = 640;
-  canvas.height = 640;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  // Reuse memory to prevent garbage collection blocking the main thread
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 640;
+    ctx = canvas.getContext('2d', { willReadFrequently: true });
+    float32Data = new Float32Array(3 * 640 * 640);
+  }
 
   // Draw video frame to canvas
   ctx.drawImage(videoElement, 0, 0, 640, 640);
   const imageData = ctx.getImageData(0, 0, 640, 640).data;
-
-  // Prepare input tensor: [1, 3, 640, 640] Float32Array
-  const float32Data = new Float32Array(3 * 640 * 640);
 
   // YOLO expects RGB channels separated, normalized to 0.0 - 1.0
   for (let i = 0; i < 640 * 640; i++) {
