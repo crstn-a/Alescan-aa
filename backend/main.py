@@ -47,6 +47,11 @@ def on_startup():
     from services.vision import warmup
     warmup()
 
+@app.on_event("shutdown")
+def on_shutdown():
+    from scheduler import stop_scheduler
+    stop_scheduler()
+
 @app.get("/health")
 def health():
     return {"status": "ok", "project": "alescan"}
