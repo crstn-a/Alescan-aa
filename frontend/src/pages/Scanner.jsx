@@ -150,9 +150,9 @@ export default function Scanner() {
       if (isDetecting) return
       isDetecting = true
       try {
-        // Yield thread for 50ms before heavy computation to process UI clicks (Scan / Exit)
-        await new Promise(r => setTimeout(r, 50))
-        
+        // Yield thread for 30ms before heavy computation to process UI clicks (Scan / Exit)
+        await new Promise(r => setTimeout(r, 30))
+
         const result = await detectActiveCommodity(videoRef.current)
         if (result) {
           setActiveCommodity(result.className)
