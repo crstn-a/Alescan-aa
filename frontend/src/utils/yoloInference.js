@@ -15,12 +15,13 @@ const LABELS = {
 export async function loadModel() {
   if (session) return;
   try {
-    // Specify the path to the wasm files to ensure they load correctly from public folder
-    ort.env.wasm.wasmPaths = '/';
+    // Remove the custom wasmPaths override so it defaults to CDN or local Vite bundled paths
+    ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
+    
     session = await ort.InferenceSession.create('/model.onnx', { executionProviders: ['wasm'] });
-    console.log("ONNX Model loaded.");
+    console.log("✅ ONNX Model loaded successfully.");
   } catch (err) {
-    console.error("Failed to load ONNX model:", err);
+    console.error("❌ Failed to load ONNX model:", err);
   }
 }
 
@@ -85,7 +86,10 @@ export async function detectActiveCommodity(videoElement) {
       }
     }
 
-    if (bestConf > 0.45 && bestClass !== -1) {
+    // console.log(`Best class: ${bestClass}, conf: ${bestConf}`);
+    
+    if (bestConf > 0.35 && bestClass !== -1) {
+      // console.log(`Active Detection: ${LABELS[bestClass]} at ${(bestConf * 100).toFixed(1)}%`);
       return {
         className: LABELS[bestClass],
         confidence: bestConf
