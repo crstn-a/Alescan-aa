@@ -33,7 +33,6 @@ async def scan_commodity(image: UploadFile = File(...)):
 
     # ── Step 3: Confidence gate ───────────────────────────────────
     if result["confidence"] < CONFIDENCE_THRESHOLD:
-        log_scan_event(result, None)   # still log low-confidence attempts
         raise HTTPException(
             status_code=422,
             detail={
