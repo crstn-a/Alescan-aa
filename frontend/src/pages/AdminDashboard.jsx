@@ -735,11 +735,8 @@ export default function AdminDashboard() {
                             <strong style={{ fontSize: 14, color: C.k900 }}>{ext.extractor_version}</strong>
                             <span style={{ fontSize: 12, color: C.k400 }}>{new Date(ext.created_at).toLocaleDateString()}</span>
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
-                            <div><span style={{ color: C.k500 }}>Accuracy:</span> <span style={{ fontWeight: 600, color: C.g700 }}>{(ext.extraction_accuracy*100).toFixed(1)}%</span></div>
-                            <div><span style={{ color: C.k500 }}>CER:</span> <span style={{ fontWeight: 600 }}>{ext.character_error_rate}</span></div>
-                            <div><span style={{ color: C.k500 }}>WER:</span> <span style={{ fontWeight: 600 }}>{ext.word_error_rate}</span></div>
-                            <div><span style={{ color: C.k500 }}>Norm Rate:</span> <span style={{ fontWeight: 600 }}>{(ext.normalization_success_rate*100).toFixed(1)}%</span></div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, fontSize: 13 }}>
+                            <div><span style={{ color: C.k500 }}>OCR Accuracy:</span> <span style={{ fontWeight: 600, color: C.g700, fontSize: 16 }}>{(ext.extraction_accuracy*100).toFixed(1)}%</span></div>
                           </div>
                           <p style={{ margin: '8px 0 0', fontSize: 12, color: C.k500, fontStyle: 'italic' }}>"{ext.notes}"</p>
                         </div>
