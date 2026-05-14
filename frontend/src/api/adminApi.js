@@ -157,13 +157,37 @@ export const updateViolation = async (violationId, formData) => {
   return resp.json();
 };
 
-export const updateViolationStatus = (violationId, status) => {
+export const updateViolationStatus = async (violationId, status) => {
+  const token = sessionStorage.getItem(TOKEN_KEY);
   const formData = new FormData();
   formData.append('status', status);
   
-  return adminFetch(`/admin/api/violations/${violationId}/status`, {
-    method: 'PATCH',
-    headers: {}, // Remove Content-Type to let browser set it for FormData
-    body: formData,
-  });
+  let resp;
+  try {
+    resp = await fetch(`${API}/admin/api/violations/${violationId}/status`, {
+      method: 'PATCH',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        // Don't set Content-Type - let browser set it for FormData
+      },
+      body: formData,
+    });
+  } catch {
+    throw new Error("Network error — cannot reach backend");
+  }
+
+  if (resp.status === 401 || resp.status === 403) {
+    throw new Error("unauthorized");
+  }
+
+  if (!resp.ok) {
+    let message = `HTTP ${resp.status}`;
+    try {
+      const data = await resp.json();
+      message = data.detail || message;
+    } catch { }
+    throw new Error(message);
+  }
+
+  return resp.json();
 };
