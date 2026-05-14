@@ -201,12 +201,13 @@ async def create_violation(
                 # Get public URL
                 image_url = sb.storage.from_("violation-images").get_public_url(unique_filename).data["publicUrl"]
         
-        # Insert violation record
+        # Insert violation record with "submitted" status
         violation_data = {
             "name": name,
             "store_number": store_number,
             "complaint_description": complaint_description,
             "image_url": image_url,
+            "status": "submitted",
             "created_at": "now()"
         }
         
@@ -235,7 +236,79 @@ def get_violations(limit: int = Query(50, ge=1, le=200)):
         log_error("admin", f"get_violations query failed: {e}")
         raise
 
-@router.patch("/violations/{violation_id}")
+@router.put("/violations/{violation_id}")
+async def update_violation(
+    violation_id: int,
+    name: str = Form(...),
+    store_number: str = Form(...),
+    complaint_description: str = Form(...),
+    status: str = Form(...),
+    image: Optional[UploadFile] = File(None)
+):
+    try:
+        sb = get_supabase()
+        
+        # Get existing violation to preserve image if no new one uploaded
+        existing = (
+            sb.table("violations")
+            .select("image_url")
+            .eq("id", violation_id)
+            .single()
+            .execute()
+        )
+        
+        if not existing.data:
+            raise HTTPException(status_code=404, detail="Violation not found")
+        
+        image_url = existing.data["image_url"]  # Keep existing image by default
+        
+        # Handle new image upload if provided
+        if image:
+            # Generate unique filename
+            file_extension = image.filename.split('.')[-1] if '.' in image.filename else 'jpg'
+            unique_filename = f"violations/{uuid.uuid4()}.{file_extension}"
+            
+            # Read file content
+            file_content = await image.read()
+            
+            # Upload to Supabase storage
+            storage_response = sb.storage.from_("violation-images").upload(
+                unique_filename, 
+                file_content,
+                file_options={"content-type": image.content_type}
+            )
+            
+            if storage_response.data:
+                # Get public URL
+                image_url = sb.storage.from_("violation-images").get_public_url(unique_filename).data["publicUrl"]
+        
+        # Update violation record
+        violation_data = {
+            "name": name,
+            "store_number": store_number,
+            "complaint_description": complaint_description,
+            "image_url": image_url,
+            "status": status
+        }
+        
+        result = (
+            sb.table("violations")
+            .update(violation_data)
+            .eq("id", violation_id)
+            .execute()
+        )
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Violation not found")
+            
+        logger.info(f"Violation {violation_id} updated: {name} - Store {store_number} - Status: {status}")
+        return {"status": "success", "data": result.data[0]}
+        
+    except Exception as e:
+        log_error("admin", f"update_violation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.patch("/violations/{violation_id}/status")
 def update_violation_status(violation_id: int, status: str = Form(...)):
     try:
         sb = get_supabase()

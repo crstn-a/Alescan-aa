@@ -125,11 +125,43 @@ export const createViolation = async (formData) => {
   return resp.json();
 };
 
+export const updateViolation = async (violationId, formData) => {
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  
+  let resp;
+  try {
+    resp = await fetch(`${API}/admin/api/violations/${violationId}`, {
+      method: 'PUT',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData, // FormData object
+    });
+  } catch {
+    throw new Error("Network error — cannot reach backend");
+  }
+
+  if (resp.status === 401 || resp.status === 403) {
+    throw new Error("unauthorized");
+  }
+
+  if (!resp.ok) {
+    let message = `HTTP ${resp.status}`;
+    try {
+      const data = await resp.json();
+      message = data.detail || message;
+    } catch { }
+    throw new Error(message);
+  }
+
+  return resp.json();
+};
+
 export const updateViolationStatus = (violationId, status) => {
   const formData = new FormData();
   formData.append('status', status);
   
-  return adminFetch(`/admin/api/violations/${violationId}`, {
+  return adminFetch(`/admin/api/violations/${violationId}/status`, {
     method: 'PATCH',
     headers: {}, // Remove Content-Type to let browser set it for FormData
     body: formData,

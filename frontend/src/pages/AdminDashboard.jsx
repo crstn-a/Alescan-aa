@@ -8,7 +8,7 @@ import {
   getStats, getScanLogs, getSyncLogs,
   getErrorLogs, getPriceRecords, triggerSync,
   getAnalyticsPrices, getAnalyticsScans, getAnalyticsEvaluations,
-  getViolations, createViolation, updateViolationStatus
+  getViolations, createViolation, updateViolation, updateViolationStatus
 } from '../api/adminApi'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -403,6 +403,201 @@ function ViolationsForm({ onSubmit, onUnauth }) {
   )
 }
 
+/* ── Edit Violation Modal ───────────────────────────────────────────── */
+function EditViolationModal({ violation, onSave, onCancel, onUnauth }) {
+  const [formData, setFormData] = useState({
+    name: violation?.name || '',
+    store_number: violation?.store_number || '',
+    complaint_description: violation?.complaint_description || '',
+    status: violation?.status || 'submitted',
+    image: null
+  })
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!formData.name || !formData.store_number || !formData.complaint_description) {
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const formDataToSend = new FormData()
+      formDataToSend.append('name', formData.name)
+      formDataToSend.append('store_number', formData.store_number)
+      formDataToSend.append('complaint_description', formData.complaint_description)
+      formDataToSend.append('status', formData.status)
+      if (formData.image) {
+        formDataToSend.append('image', formData.image)
+      }
+
+      await updateViolation(violation.id, formDataToSend)
+      onSave()
+    } catch (e) {
+      if (e.message === 'unauthorized') onUnauth()
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    setFormData(prev => ({ ...prev, image: file }))
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,.45)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, animation: 'fadeIn .15s ease' }}>
+      <div style={{ background: C.white, borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,.18)', animation: 'scaleIn .18s ease' }}>
+        <h2 style={{ fontSize: 19, fontWeight: 700, color: C.k900, margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600 }}>
+            <Svg d={IC.violation.d} size={16} />
+          </div>
+          Edit Violation
+        </h2>
+        
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.k700, marginBottom: '6px' }}>
+                Consumer Name *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                required
+                style={{
+                  width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+                  fontSize: 14, color: C.k900, background: C.white,
+                  outline: 'none', transition: 'border-color .15s'
+                }}
+                onFocus={(e) => e.target.style.borderColor = C.g500}
+                onBlur={(e) => e.target.style.borderColor = C.k200}
+              />
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.k700, marginBottom: '6px' }}>
+                Store Number *
+              </label>
+              <input
+                type="text"
+                value={formData.store_number}
+                onChange={(e) => setFormData(prev => ({ ...prev, store_number: e.target.value }))}
+                required
+                style={{
+                  width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+                  fontSize: 14, color: C.k900, background: C.white,
+                  outline: 'none', transition: 'border-color .15s'
+                }}
+                onFocus={(e) => e.target.style.borderColor = C.g500}
+                onBlur={(e) => e.target.style.borderColor = C.k200}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.k700, marginBottom: '6px' }}>
+              Status
+            </label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+                fontSize: 14, color: C.k900, background: C.white,
+                outline: 'none', transition: 'border-color .15s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = C.g500}
+              onBlur={(e) => e.target.style.borderColor = C.k200}
+            >
+              <option value="submitted">Submitted</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.k700, marginBottom: '6px' }}>
+              Complaint Description *
+            </label>
+            <textarea
+              value={formData.complaint_description}
+              onChange={(e) => setFormData(prev => ({ ...prev, complaint_description: e.target.value }))}
+              required
+              rows={4}
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+                fontSize: 14, color: C.k900, background: C.white, resize: 'vertical',
+                outline: 'none', transition: 'border-color .15s', fontFamily: 'inherit'
+              }}
+              onFocus={(e) => e.target.style.borderColor = C.g500}
+              onBlur={(e) => e.target.style.borderColor = C.k200}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.k700, marginBottom: '6px' }}>
+              Update Image (Optional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+                fontSize: 14, color: C.k900, background: C.white,
+                outline: 'none', transition: 'border-color .15s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = C.g500}
+              onBlur={(e) => e.target.style.borderColor = C.k200}
+            />
+            {violation?.image_url && !formData.image && (
+              <p style={{ fontSize: 12, color: C.k500, margin: '4px 0 0' }}>
+                Current: <a href={violation.image_url} target="_blank" rel="noopener noreferrer" style={{ color: C.g600 }}>View existing image</a>
+              </p>
+            )}
+            {formData.image && (
+              <p style={{ fontSize: 12, color: C.k500, margin: '4px 0 0' }}>
+                New image selected: {formData.image.name}
+              </p>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={onCancel}
+              style={{
+                flex: 1, padding: '11px', borderRadius: 10, border: `1px solid ${C.k200}`,
+                background: C.white, fontSize: 14, fontWeight: 600, color: C.k700, cursor: 'pointer'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = C.k50}
+              onMouseLeave={e => e.currentTarget.style.background = C.white}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting || !formData.name || !formData.store_number || !formData.complaint_description}
+              style={{
+                flex: 1, padding: '11px', borderRadius: 10, border: 'none',
+                background: submitting ? C.k200 : C.g600, color: '#fff',
+                fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer'
+              }}
+              onMouseEnter={e => !submitting && (e.currentTarget.style.background = C.g700)}
+              onMouseLeave={e => !submitting && (e.currentTarget.style.background = C.g600)}
+            >
+              {submitting ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 /* ── MAIN ────────────────────────────────────────────────────────────── */
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -417,6 +612,8 @@ export default function AdminDashboard() {
   const [syncing, setSyncing] = useState(false)
   const [toast, setToast] = useState(null)
   const [showLogout, setShowLogout] = useState(false)
+  const [editingViolation, setEditingViolation] = useState(null)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   if (!authed) return <Navigate to="/admin/login" replace />
 
@@ -480,6 +677,26 @@ export default function AdminDashboard() {
     }
   }
 
+  // Handle status change for violations
+  const handleStatusChange = async (violationId, newStatus) => {
+    try {
+      await updateViolationStatus(violationId, newStatus)
+      setToast({ type: 'ok', text: `Status updated to ${newStatus}` })
+      loadTab(7) // Reload violations data
+    } catch (e) {
+      if (e.message === 'unauthorized') { logout(); navigate('/admin/login') }
+      setToast({ type: 'err', text: 'Failed to update status' })
+    } finally {
+      setTimeout(() => setToast(null), 3000)
+    }
+  }
+
+  // Handle edit violation
+  const handleEditViolation = (violation) => {
+    setEditingViolation(violation)
+    setShowEditModal(true)
+  }
+
   const COLS = {
     1: [
       { key: 'products', label: 'Commodity', render: v => <span style={{ fontWeight: 600, color: C.k900 }}>{v?.display_name || <em style={{ color: C.k400, fontWeight: 400 }}>Unidentified</em>}</span> },
@@ -509,8 +726,49 @@ export default function AdminDashboard() {
       { key: 'store_number', label: 'Store Number', render: v => <span style={{ fontWeight: 600, color: C.g700 }}>{v}</span> },
       { key: 'complaint_description', label: 'Complaint', render: v => <span style={{ color: C.k700, display: 'block', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis' }}>{v}</span> },
       { key: 'image_url', label: 'Image', render: v => v ? <a href={v} target="_blank" rel="noopener noreferrer" style={{ color: C.g600, textDecoration: 'none', fontSize: 12 }}>View Image</a> : <span style={{ color: C.k400 }}>—</span> },
-      { key: 'status', label: 'Status', render: v => <StatusBadge val={v || 'pending'} /> },
+      { key: 'status', label: 'Status', render: (v, row) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <StatusBadge val={v || 'submitted'} />
+          {v !== 'archived' && (
+            <select
+              value={v || 'submitted'}
+              onChange={(e) => handleStatusChange(row.id, e.target.value)}
+              style={{
+                padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.k200}`,
+                fontSize: 11, background: C.white, color: C.k700
+              }}
+            >
+              <option value="submitted">Submitted</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="archived">Archive</option>
+            </select>
+          )}
+        </div>
+      ) },
       { key: 'created_at', label: 'Submitted', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
+      { key: 'actions', label: 'Actions', render: (v, row) => (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => handleEditViolation(row)}
+            style={{
+              padding: '6px 10px', borderRadius: 6, border: `1px solid ${C.k200}`,
+              background: C.white, color: C.k600, fontSize: 11, fontWeight: 500,
+              cursor: 'pointer', transition: 'all .15s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = C.g50
+              e.target.style.color = C.g700
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = C.white
+              e.target.style.color = C.k600
+            }}
+          >
+            Edit
+          </button>
+        </div>
+      ) },
     ],
   }
 
@@ -963,6 +1221,23 @@ export default function AdminDashboard() {
 
       <Toast toast={toast} />
       {showLogout && <LogoutModal onConfirm={() => { logout(); navigate('/admin/login') }} onCancel={() => setShowLogout(false)} />}
+      {showEditModal && editingViolation && (
+        <EditViolationModal
+          violation={editingViolation}
+          onSave={() => {
+            setShowEditModal(false)
+            setEditingViolation(null)
+            setToast({ type: 'ok', text: 'Violation updated successfully' })
+            loadTab(7)
+            setTimeout(() => setToast(null), 3000)
+          }}
+          onCancel={() => {
+            setShowEditModal(false)
+            setEditingViolation(null)
+          }}
+          onUnauth={() => { logout(); navigate('/admin/login') }}
+        />
+      )}
     </div>
   )
 }
