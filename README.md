@@ -30,16 +30,16 @@ ALESCAN is a city-level public service tool designed to help ordinary consumers 
 
 ## Tech Stack
 
-| Layer     | Technology                                      |
-|-----------|-------------------------------------------------|
+| Layer     | Technology                                         |
+| --------- | -------------------------------------------------- |
 | Frontend  | React 19, Vite, Vanilla CSS, PWA (vite-plugin-pwa) |
-| Backend   | Python 3.11, FastAPI, Uvicorn                   |
-| AI/Vision | YOLOv11 (Ultralytics), ONNX Runtime Web         |
-| Database  | Supabase (PostgreSQL)                           |
-| Auth      | JWT (python-jose), bcrypt                       |
-| Scheduler | APScheduler (CronTrigger)                       |
-| PDF Parse | LlamaParse (LlamaIndex Cloud)                   |
-| Deploy    | Vercel (Frontend) · Railway (Backend via Docker)|
+| Backend   | Python 3.11, FastAPI, Uvicorn                      |
+| AI/Vision | YOLOv11 (Ultralytics), ONNX Runtime Web            |
+| Database  | Supabase (PostgreSQL)                              |
+| Auth      | JWT (python-jose), bcrypt                          |
+| Scheduler | APScheduler (CronTrigger)                          |
+| PDF Parse | LlamaParse (LlamaIndex Cloud)                      |
+| Deploy    | Vercel (Frontend) · Railway (Backend via Docker)   |
 
 ---
 
@@ -93,13 +93,13 @@ Alescan-aa/
 
 Ensure the following are installed on your machine before proceeding:
 
-| Requirement       | Version    | Notes                                      |
-|-------------------|------------|--------------------------------------------|
-| Python            | 3.11+      | Required for the backend                   |
-| Node.js           | 18+        | Required for the frontend                  |
-| npm               | 9+         | Comes bundled with Node.js                 |
-| Git               | Any        | For cloning the repository                 |
-| pip               | Latest     | Python package manager                     |
+| Requirement | Version | Notes                      |
+| ----------- | ------- | -------------------------- |
+| Python      | 3.11+   | Required for the backend   |
+| Node.js     | 18+     | Required for the frontend  |
+| npm         | 9+      | Comes bundled with Node.js |
+| Git         | Any     | For cloning the repository |
+| pip         | Latest  | Python package manager     |
 
 ---
 
@@ -177,24 +177,24 @@ Create a `.env` file in the `frontend/` directory with the required keys (see [E
 
 ### Backend — `backend/.env`
 
-| Variable            | Description                                           | Example / Default                              |
-|---------------------|-------------------------------------------------------|------------------------------------------------|
-| `SUPABASE_URL`      | Your Supabase project URL                             | `https://xxxx.supabase.co`                     |
-| `SUPABASE_KEY`      | Supabase **service_role** key (not anon key)          | `eyJhbGci...`                                  |
-| `LLAMACLOUD_API_KEY`| LlamaCloud API key for LlamaParse PDF extraction      | `llx-...`                                      |
-| `JWT_SECRET`        | Secret key used to sign admin JWT tokens              | `your-strong-random-secret`                    |
-| `FRONTEND_URL`      | Allowed CORS origin (your frontend URL)               | `https://alescan.vercel.app`                   |
-| `MODEL_URL`         | Google Drive link to download `best.pt` model weights | `https://drive.google.com/file/d/...`          |
+| Variable             | Description                                           | Example / Default                     |
+| -------------------- | ----------------------------------------------------- | ------------------------------------- |
+| `SUPABASE_URL`       | Your Supabase project URL                             | `https://xxxx.supabase.co`            |
+| `SUPABASE_KEY`       | Supabase **service_role** key (not anon key)          | `eyJhbGci...`                         |
+| `LLAMACLOUD_API_KEY` | LlamaCloud API key for LlamaParse PDF extraction      | `llx-...`                             |
+| `JWT_SECRET`         | Secret key used to sign admin JWT tokens              | `your-strong-random-secret`           |
+| `FRONTEND_URL`       | Allowed CORS origin (your frontend URL)               | `https://alescan.vercel.app`          |
+| `MODEL_URL`          | Google Drive link to download `best.pt` model weights | `https://drive.google.com/file/d/...` |
 
 > ⚠️ **Security:** Never commit your `.env` file to version control. It is already listed in `.gitignore`.
 
 ### Frontend — `frontend/.env`
 
-| Variable            | Description                           | Example                                      |
-|---------------------|---------------------------------------|----------------------------------------------|
-| `VITE_API_URL`      | Backend API base URL                  | `https://alescan.up.railway.app`             |
-| `VITE_SUPABASE_URL` | Supabase project URL (for client SDK) | `https://xxxx.supabase.co`                   |
-| `VITE_SUPABASE_ANON_KEY` | Supabase **anon** (public) key   | `eyJhbGci...`                                |
+| Variable                 | Description                           | Example                          |
+| ------------------------ | ------------------------------------- | -------------------------------- |
+| `VITE_API_URL`           | Backend API base URL                  | `https://alescan.up.railway.app` |
+| `VITE_SUPABASE_URL`      | Supabase project URL (for client SDK) | `https://xxxx.supabase.co`       |
+| `VITE_SUPABASE_ANON_KEY` | Supabase **anon** (public) key        | `eyJhbGci...`                    |
 
 ---
 
@@ -247,13 +247,13 @@ ALESCAN defines two distinct user roles. There is no public registration; the sy
 
 **Capabilities:**
 
-| Action                        | Description                                                                 |
-|-------------------------------|-----------------------------------------------------------------------------|
-| **View Landing Page**         | Access the public home page with instructions and SRP information           |
-| **Open Camera Scanner**       | Launch the live camera view to scan a commodity                             |
-| **Scan a Commodity**          | Point the camera at pork liempo, whole chicken, or tilapia and tap Scan     |
-| **View Scan Results**         | See the product name, official SRP (₱/kg), confidence score, and data week  |
-| **Use Offline (PWA)**         | Install the app on a phone for offline access; price cache is stored locally |
+| Action                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| **View Landing Page**   | Access the public home page with instructions and SRP information            |
+| **Open Camera Scanner** | Launch the live camera view to scan a commodity                              |
+| **Scan a Commodity**    | Point the camera at pork liempo, whole chicken, or tilapia and tap Scan      |
+| **View Scan Results**   | See the product name, official SRP (₱/kg), confidence score, and data week   |
+| **Use Offline (PWA)**   | Install the app on a phone for offline access; price cache is stored locally |
 
 **Consumer Flow:**
 
@@ -262,6 +262,7 @@ Landing Page → Open Scanner → Point Camera → Tap Scan → View Result
 ```
 
 **Limitations:**
+
 - Cannot access the Admin Dashboard or any `/admin/*` routes.
 - Cannot add, edit, or delete any price or product data.
 - Scans with confidence below 50% will show a "Not Recognized" prompt — no data is saved.
@@ -278,18 +279,19 @@ Landing Page → Open Scanner → Point Camera → Tap Scan → View Result
 
 **Capabilities:**
 
-| Action                            | Description                                                                                  |
-|-----------------------------------|----------------------------------------------------------------------------------------------|
-| **Log In / Log Out**              | Authenticate via the Admin Login page at `/admin/login`                                      |
-| **View Dashboard Overview**       | See total scans, product count, active prices, error count, and last sync status             |
-| **Trigger Manual Price Sync**     | Manually initiate the DA Bantay Presyo PDF fetch → extract → normalize → upsert pipeline     |
-| **Monitor Automated Sync**        | Scheduled sync runs every **Monday at 8:00 AM Philippine Time (PHT)** automatically         |
-| **View Scan Logs**                | Browse the last 200 scan events including product, confidence score, and timestamp           |
-| **View Sync Logs**                | Review sync history including extractor used, status, and notes                             |
-| **View Error Logs**               | Inspect system-level errors from any backend module                                         |
-| **View Analytics — Prices**       | Interactive line chart of weekly SRP trends per commodity                                    |
-| **View Analytics — Scans**        | Daily scan volume, detection confidence split, and per-commodity performance                 |
-| **View Analytics — AI Evaluation**| Model and extractor benchmark results (accuracy, F1, precision, recall)                      |
+| Action                             | Description                                                                              |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| **Log In / Log Out**               | Authenticate via the Admin Login page at `/admin/login`                                  |
+| **View Dashboard Overview**        | See total scans, product count, active prices, error count, and last sync status         |
+| **Trigger Manual Price Sync**      | Manually initiate the DA Bantay Presyo PDF fetch → extract → normalize → upsert pipeline |
+| **Monitor Automated Sync**         | Scheduled sync runs every **Monday at 8:00 AM Philippine Time (PHT)** automatically      |
+| **View Scan Logs**                 | Browse the last 200 scan events including product, confidence score, and timestamp       |
+| **View Sync Logs**                 | Review sync history including extractor used, status, and notes                          |
+| **View Error Logs**                | Inspect system-level errors from any backend module                                      |
+| **View Analytics — Prices**        | Interactive line chart of weekly SRP trends per commodity                                |
+| **View Analytics — Scans**         | Daily scan volume, detection confidence split, and per-commodity performance             |
+| **View Analytics — AI Evaluation** | Model and extractor benchmark results (accuracy, F1, precision, recall)                  |
+| **Manage Violations**              | Submit and track consumer complaints with store details and supporting images            |
 
 **Admin Flow:**
 
@@ -298,17 +300,18 @@ Landing Page → Open Scanner → Point Camera → Tap Scan → View Result
 ```
 
 **Admin Route Protection:**
+
 - All `/admin/api/*` endpoints (except `/admin/api/login`) require a valid JWT `Bearer` token.
 - Tokens are validated server-side by `AdminAuthMiddleware` on every protected request.
 - Tokens expire after **8 hours** and must be re-authenticated.
 
 **Supported Commodities (Current Model):**
 
-| Class ID | Slug            | Display Name       |
-|----------|-----------------|--------------------|
-| 0        | `pork_liempo`   | Pork Belly Liempo  |
-| 1        | `tilapia_local` | Tilapia (Local)    |
-| 2        | `whole_chicken` | Whole Chicken      |
+| Class ID | Slug            | Display Name      |
+| -------- | --------------- | ----------------- |
+| 0        | `pork_liempo`   | Pork Belly Liempo |
+| 1        | `tilapia_local` | Tilapia (Local)   |
+| 2        | `whole_chicken` | Whole Chicken     |
 
 ---
 
@@ -319,6 +322,7 @@ Landing Page → Open Scanner → Point Camera → Tap Scan → View Result
 The backend is containerized via `backend/Dockerfile`. Deploy to Railway by connecting your GitHub repository and pointing it to the `backend/` directory. Railway auto-detects the Dockerfile.
 
 Key production settings:
+
 - Port: `8000` (defined in the `CMD` directive)
 - Set all required environment variables via Railway's Variables panel.
 
@@ -332,4 +336,4 @@ Live production URL: **https://alescan.vercel.app**
 
 ---
 
-*Last updated: May 2026 | Alescan — Olongapo City Agriculture Office*
+_Last updated: May 2026 | Alescan — Olongapo City Agriculture Office_

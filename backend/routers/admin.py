@@ -1,10 +1,13 @@
 # backend/routers/admin.py
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from services.db import get_supabase, log_error
 from services.sync import run_sync
 from services.auth import authenticate_admin, create_access_token
 import logging
+from typing import Optional
+import uuid
+import os
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -160,6 +163,99 @@ def error_logs(
         raise
 
 
+# ── VIOLATIONS ENDPOINTS ──────────────────────────────────────────────
+
+class ViolationRequest(BaseModel):
+    name: str
+    store_number: str
+    complaint_description: str
+
+@router.post("/violations")
+async def create_violation(
+    name: str = Form(...),
+    store_number: str = Form(...),
+    complaint_description: str = Form(...),
+    image: Optional[UploadFile] = File(None)
+):
+    try:
+        sb = get_supabase()
+        
+        # Handle image upload if provided
+        image_url = None
+        if image:
+            # Generate unique filename
+            file_extension = image.filename.split('.')[-1] if '.' in image.filename else 'jpg'
+            unique_filename = f"violations/{uuid.uuid4()}.{file_extension}"
+            
+            # Read file content
+            file_content = await image.read()
+            
+            # Upload to Supabase storage
+            storage_response = sb.storage.from_("violation-images").upload(
+                unique_filename, 
+                file_content,
+                file_options={"content-type": image.content_type}
+            )
+            
+            if storage_response.data:
+                # Get public URL
+                image_url = sb.storage.from_("violation-images").get_public_url(unique_filename).data["publicUrl"]
+        
+        # Insert violation record
+        violation_data = {
+            "name": name,
+            "store_number": store_number,
+            "complaint_description": complaint_description,
+            "image_url": image_url,
+            "created_at": "now()"
+        }
+        
+        result = sb.table("violations").insert(violation_data).execute()
+        
+        logger.info(f"Violation created: {name} - Store {store_number}")
+        return {"status": "success", "data": result.data[0]}
+        
+    except Exception as e:
+        log_error("admin", f"create_violation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/violations")
+def get_violations(limit: int = Query(50, ge=1, le=200)):
+    try:
+        data = (
+            get_supabase()
+            .table("violations")
+            .select("id, name, store_number, complaint_description, image_url, created_at, status")
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return data.data
+    except Exception as e:
+        log_error("admin", f"get_violations query failed: {e}")
+        raise
+
+@router.patch("/violations/{violation_id}")
+def update_violation_status(violation_id: int, status: str = Form(...)):
+    try:
+        sb = get_supabase()
+        result = (
+            sb.table("violations")
+            .update({"status": status})
+            .eq("id", violation_id)
+            .execute()
+        )
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Violation not found")
+            
+        logger.info(f"Violation {violation_id} status updated to: {status}")
+        return {"status": "success", "data": result.data[0]}
+        
+    except Exception as e:
+        log_error("admin", f"update_violation_status failed: {e}")
+        raise
+
 # ── ANALYTICS ENDPOINTS ────────────────────────────────────────────────
 from services.analytics import get_analytics_prices, get_analytics_scans, get_analytics_evaluations
 
@@ -173,4 +269,4 @@ def analytics_scans():
 
 @router.get("/analytics/evaluations")
 def analytics_evaluations():
-    return get_analytics_evaluations()
+    return get_analytics_evaluations()

@@ -7,7 +7,8 @@ import { useAdminAuth } from '../hooks/useAdminAuth'
 import {
   getStats, getScanLogs, getSyncLogs,
   getErrorLogs, getPriceRecords, triggerSync,
-  getAnalyticsPrices, getAnalyticsScans, getAnalyticsEvaluations
+  getAnalyticsPrices, getAnalyticsScans, getAnalyticsEvaluations,
+  getViolations, createViolation, updateViolationStatus
 } from '../api/adminApi'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -34,7 +35,8 @@ const IC = {
   menu: { d: "M3 12h18M3 6h18M3 18h18" },
   arrow: { d: "M5 12h14M12 5l7 7-7 7" },
   analytics: { d: "M3 3v18h18", d2: "M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" },
-  eval: { d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" }
+  eval: { d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" },
+  violation: { d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" }
 }
 
 /* ── Palette ────────────────────────────────────────────────────────── */
@@ -54,6 +56,7 @@ const NAV = [
   { id: 0, label: 'Overview', icon: 'home' },
   { id: 5, label: 'Analytics', icon: 'analytics' },
   { id: 6, label: 'AI Evaluation', icon: 'eval' },
+  { id: 7, label: 'Violations', icon: 'violation' },
   { id: 1, label: 'Scan Logs', icon: 'scan' },
   { id: 2, label: 'Price Records', icon: 'price' },
   { id: 3, label: 'Sync Logs', icon: 'sync' },
@@ -248,6 +251,158 @@ function RecentScans({ onUnauth }) {
   )
 }
 
+/* ── Violations Form ────────────────────────────────────────────────── */
+function ViolationsForm({ onSubmit, onUnauth }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    store_number: '',
+    complaint_description: '',
+    image: null
+  })
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!formData.name || !formData.store_number || !formData.complaint_description) {
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const formDataToSend = new FormData()
+      formDataToSend.append('name', formData.name)
+      formDataToSend.append('store_number', formData.store_number)
+      formDataToSend.append('complaint_description', formData.complaint_description)
+      if (formData.image) {
+        formDataToSend.append('image', formData.image)
+      }
+
+      await createViolation(formDataToSend)
+      setFormData({ name: '', store_number: '', complaint_description: '', image: null })
+      onSubmit()
+    } catch (e) {
+      if (e.message === 'unauthorized') onUnauth()
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    setFormData(prev => ({ ...prev, image: file }))
+  }
+
+  return (
+    <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.k100}`, boxShadow: '0 1px 4px rgba(0,0,0,.05)', padding: '24px', marginBottom: '20px' }}>
+      <h3 style={{ fontSize: 16, fontWeight: 700, color: C.k900, margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600 }}>
+          <Svg d={IC.violation.d} size={16} />
+        </div>
+        Submit Consumer Complaint
+      </h3>
+      
+      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.k700, marginBottom: '6px' }}>
+              Consumer Name *
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              required
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+                fontSize: 14, color: C.k900, background: C.white,
+                outline: 'none', transition: 'border-color .15s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = C.g500}
+              onBlur={(e) => e.target.style.borderColor = C.k200}
+            />
+          </div>
+          
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.k700, marginBottom: '6px' }}>
+              Store Number *
+            </label>
+            <input
+              type="text"
+              value={formData.store_number}
+              onChange={(e) => setFormData(prev => ({ ...prev, store_number: e.target.value }))}
+              required
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+                fontSize: 14, color: C.k900, background: C.white,
+                outline: 'none', transition: 'border-color .15s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = C.g500}
+              onBlur={(e) => e.target.style.borderColor = C.k200}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.k700, marginBottom: '6px' }}>
+            Complaint Description *
+          </label>
+          <textarea
+            value={formData.complaint_description}
+            onChange={(e) => setFormData(prev => ({ ...prev, complaint_description: e.target.value }))}
+            required
+            rows={4}
+            style={{
+              width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+              fontSize: 14, color: C.k900, background: C.white, resize: 'vertical',
+              outline: 'none', transition: 'border-color .15s', fontFamily: 'inherit'
+            }}
+            onFocus={(e) => e.target.style.borderColor = C.g500}
+            onBlur={(e) => e.target.style.borderColor = C.k200}
+          />
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.k700, marginBottom: '6px' }}>
+            Supporting Image (Optional)
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            style={{
+              width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+              fontSize: 14, color: C.k900, background: C.white,
+              outline: 'none', transition: 'border-color .15s'
+            }}
+            onFocus={(e) => e.target.style.borderColor = C.g500}
+            onBlur={(e) => e.target.style.borderColor = C.k200}
+          />
+          {formData.image && (
+            <p style={{ fontSize: 12, color: C.k500, margin: '4px 0 0' }}>
+              Selected: {formData.image.name}
+            </p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting || !formData.name || !formData.store_number || !formData.complaint_description}
+          style={{
+            padding: '12px 24px', borderRadius: 8, border: 'none',
+            background: submitting ? C.k200 : C.g600, color: '#fff',
+            fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer',
+            transition: 'all .15s', alignSelf: 'flex-start'
+          }}
+          onMouseEnter={(e) => !submitting && (e.target.style.background = C.g700)}
+          onMouseLeave={(e) => !submitting && (e.target.style.background = C.g600)}
+        >
+          {submitting ? 'Submitting...' : 'Submit Complaint'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 /* ── MAIN ────────────────────────────────────────────────────────────── */
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -289,6 +444,8 @@ export default function AdminDashboard() {
         setData({ prices, scans });
       } else if (t === 6) {
         setData(await getAnalyticsEvaluations());
+      } else if (t === 7) {
+        setData(await getViolations());
       } else {
         const fn = [null, getScanLogs, getPriceRecords, getSyncLogs, getErrorLogs][t]
         if (fn) setData(await fn())
@@ -346,6 +503,14 @@ export default function AdminDashboard() {
       { key: 'module', label: 'Module', render: v => <span style={{ fontFamily: 'monospace', fontSize: 12, background: C.r50, color: C.r600, padding: '3px 8px', borderRadius: 6 }}>{v}</span> },
       { key: 'message', label: 'Message', render: v => <span style={{ color: C.k700, display: 'block', maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis' }}>{v}</span> },
       { key: 'occurred_at', label: 'Date', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
+    ],
+    7: [
+      { key: 'name', label: 'Consumer Name', render: v => <span style={{ fontWeight: 600, color: C.k900 }}>{v}</span> },
+      { key: 'store_number', label: 'Store Number', render: v => <span style={{ fontWeight: 600, color: C.g700 }}>{v}</span> },
+      { key: 'complaint_description', label: 'Complaint', render: v => <span style={{ color: C.k700, display: 'block', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis' }}>{v}</span> },
+      { key: 'image_url', label: 'Image', render: v => v ? <a href={v} target="_blank" rel="noopener noreferrer" style={{ color: C.g600, textDecoration: 'none', fontSize: 12 }}>View Image</a> : <span style={{ color: C.k400 }}>—</span> },
+      { key: 'status', label: 'Status', render: v => <StatusBadge val={v || 'pending'} /> },
+      { key: 'created_at', label: 'Submitted', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
     ],
   }
 
@@ -751,8 +916,33 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* VIOLATIONS */}
+          {active === 7 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <ViolationsForm 
+                onSubmit={() => loadTab(7)} 
+                onUnauth={() => { logout(); navigate('/admin/login') }} 
+              />
+              
+              <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden' }}>
+                <div style={{ padding: '15px 20px', borderBottom: `1px solid ${C.k100}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 9, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600 }}>
+                    <Svg d={IC.violation.d} size={16} />
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: C.k900 }}>Consumer Complaints</p>
+                    <p style={{ margin: 0, fontSize: 12, color: C.k400 }}>
+                      {tabLoading ? 'Loading...' : `${Array.isArray(data) ? data.length : 0} complaint${Array.isArray(data) && data.length !== 1 ? 's' : ''}`}
+                    </p>
+                  </div>
+                </div>
+                <DataTable columns={COLS[7] || []} rows={Array.isArray(data) ? data : []} loading={tabLoading} />
+              </div>
+            </div>
+          )}
+
           {/* DATA TABS (Scan Logs, Price Records, etc.) */}
-          {active !== 0 && active !== 5 && active !== 6 && (
+          {active !== 0 && active !== 5 && active !== 6 && active !== 7 && (
             <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden' }}>
               <div style={{ padding: '15px 20px', borderBottom: `1px solid ${C.k100}`, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 34, height: 34, borderRadius: 9, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600 }}>

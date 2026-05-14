@@ -89,3 +89,49 @@ export const getPriceRecords = () => adminFetch('/prices');
 export const getAnalyticsPrices = () => adminFetch('/admin/api/analytics/prices');
 export const getAnalyticsScans = () => adminFetch('/admin/api/analytics/scans');
 export const getAnalyticsEvaluations = () => adminFetch('/admin/api/analytics/evaluations');
+
+// 🔹 Violations
+export const getViolations = (limit = 50) => adminFetch(`/admin/api/violations?limit=${limit}`);
+
+export const createViolation = async (formData) => {
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  
+  let resp;
+  try {
+    resp = await fetch(`${API}/admin/api/violations`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData, // FormData object
+    });
+  } catch {
+    throw new Error("Network error — cannot reach backend");
+  }
+
+  if (resp.status === 401 || resp.status === 403) {
+    throw new Error("unauthorized");
+  }
+
+  if (!resp.ok) {
+    let message = `HTTP ${resp.status}`;
+    try {
+      const data = await resp.json();
+      message = data.detail || message;
+    } catch { }
+    throw new Error(message);
+  }
+
+  return resp.json();
+};
+
+export const updateViolationStatus = (violationId, status) => {
+  const formData = new FormData();
+  formData.append('status', status);
+  
+  return adminFetch(`/admin/api/violations/${violationId}`, {
+    method: 'PATCH',
+    headers: {}, // Remove Content-Type to let browser set it for FormData
+    body: formData,
+  });
+};
