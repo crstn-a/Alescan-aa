@@ -190,16 +190,14 @@ async def create_violation(
             # Read file content
             file_content = await image.read()
             
-            # Upload to Supabase storage
-            storage_response = sb.storage.from_("violation-images").upload(
-                unique_filename, 
+            # Upload to Supabase storage (raises on failure in supabase-py v2)
+            sb.storage.from_("violation-images").upload(
+                unique_filename,
                 file_content,
                 file_options={"content-type": image.content_type}
             )
-            
-            if storage_response.data:
-                # Get public URL (supabase-py v2 returns a plain string)
-                image_url = sb.storage.from_("violation-images").get_public_url(unique_filename)
+            # get_public_url returns a plain string in supabase-py v2
+            image_url = sb.storage.from_("violation-images").get_public_url(unique_filename)
         
         # Insert violation record with "submitted" status
         violation_data = {
@@ -271,16 +269,14 @@ async def update_violation(
             # Read file content
             file_content = await image.read()
             
-            # Upload to Supabase storage
-            storage_response = sb.storage.from_("violation-images").upload(
-                unique_filename, 
+            # Upload to Supabase storage (raises on failure in supabase-py v2)
+            sb.storage.from_("violation-images").upload(
+                unique_filename,
                 file_content,
                 file_options={"content-type": image.content_type}
             )
-            
-            if storage_response.data:
-                # Get public URL (supabase-py v2 returns a plain string)
-                image_url = sb.storage.from_("violation-images").get_public_url(unique_filename)
+            # get_public_url returns a plain string in supabase-py v2
+            image_url = sb.storage.from_("violation-images").get_public_url(unique_filename)
         
         # Update violation record
         violation_data = {
