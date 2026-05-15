@@ -3,17 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
 const C = {
-  primary:    '#22c55e',
-  primaryDark:'#16a34a',
-  g900:       '#052e16',
-  g800:       '#14532d',
-  primaryLight:'#f0fdf4',
-  bg:         '#f9fafb',
-  surface:    '#ffffff',
-  border:     '#f3f4f6',
-  text:       '#111827',
-  textSecondary:'#6b7280',
-  textMuted:  '#9ca3af',
+  primary: '#22c55e',
+  primaryDark: '#16a34a',
+  g900: '#052e16',
+  g800: '#14532d',
+  primaryLight: '#f0fdf4',
+  bg: '#f9fafb',
+  surface: '#ffffff',
+  border: '#f3f4f6',
+  text: '#111827',
+  textSecondary: '#6b7280',
+  textMuted: '#9ca3af',
 }
 
 const Icon = ({ d, size = 20 }) => (
@@ -24,13 +24,13 @@ const Icon = ({ d, size = 20 }) => (
 )
 
 const Icons = {
-  camera:      "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  camera: "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
   checkCircle: "M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3",
-  database:    "M4 6c0 1.657 3.582 3 8 3s8-1.343 8-3 M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6 M4 12c0 1.657 3.582 3 8 3s8-1.343 8-3",
-  shield:      "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
-  zap:         "M13 2L3 14h8l-2 8 10-12h-8l2-8z",
-  menu:        "M3 12h18M3 6h18M3 18h18",
-  close:       "M18 6L6 18M6 18L18 6M6 6l12 12",
+  database: "M4 6c0 1.657 3.582 3 8 3s8-1.343 8-3 M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6 M4 12c0 1.657 3.582 3 8 3s8-1.343 8-3",
+  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  zap: "M13 2L3 14h8l-2 8 10-12h-8l2-8z",
+  menu: "M3 12h18M3 6h18M3 18h18",
+  close: "M18 6L6 18M6 18L18 6M6 6l12 12",
 }
 
 export default function LandingPage() {
@@ -291,7 +291,7 @@ export default function LandingPage() {
                   border: `1px solid ${C.border}`,
                 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: C.g800 }}>
-                    Bantay Presyo • Department of Agriculture
+                    Olongapo City Public Market • Department of Agriculture Bantay Presyo
                   </span>
                 </div>
 
@@ -363,9 +363,9 @@ export default function LandingPage() {
                 {/* Stats row (responsive) */}
                 <div className="stats-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginTop: 48 }}>
                   {[
-                    { top: 'Updated Weekly',    bot: 'DA Bantay Presyo' },
-                    { top: 'Powered by',        bot: 'YOLOv11 Vision AI' },
-                    { top: 'No Installation',   bot: 'Works with Browser' },
+                    { top: 'Updated Weekly', bot: 'DA Bantay Presyo' },
+                    { top: 'Powered by', bot: 'YOLOv11 Vision AI' },
+                    { top: 'No Installation', bot: 'Works with Browser' },
                   ].map((s, i) => (
                     <div key={i}>
                       <p style={{ fontSize: 13, color: C.textMuted, marginBottom: 4 }}>{s.top}</p>
@@ -414,10 +414,10 @@ export default function LandingPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(230px,1fr))', gap: 24 }}>
             {[
-              { icon: Icons.camera,      title: '1. Open Scanner',  desc: 'Access the scanner directly from your phone or tablet browser. No app installation required.' },
-              { icon: Icons.shield,      title: '2. Point Camera',  desc: 'Hold your camera over the commodity. Our AI identifies the item in real-time.' },
-              { icon: Icons.checkCircle, title: '3. Verify Price',  desc: 'Instantly see the official SRP from the latest DA Bantay Presyo data.' },
-              { icon: Icons.database,    title: '4. Stay Informed', desc: 'All scans are logged to help track market price compliance.' },
+              { icon: Icons.camera, title: '1. Open Scanner', desc: 'Access the scanner directly from your phone or tablet browser. No app installation required.' },
+              { icon: Icons.shield, title: '2. Point Camera', desc: 'Hold your camera over the commodity. Our AI identifies the item in real-time.' },
+              { icon: Icons.checkCircle, title: '3. Verify Price', desc: 'Instantly see the official SRP from the latest DA Bantay Presyo data.' },
+              { icon: Icons.database, title: '4. Stay Informed', desc: 'All scans are logged to help track market price compliance.' },
             ].map((step, i) => (
               <div key={i} className="step-card" style={{
                 background: C.bg,
@@ -488,7 +488,7 @@ export default function LandingPage() {
                   {[
                     'Open the Website on any browser-enabled device.',
                     'Camera captures image of the commodity.',
-                    'YOLO26 inference identifies the item.',
+                    'Computer Vision (YOLOv11) identifies the item.',
                     'Latest official price retrieved from database.',
                     'Price displayed clearly on screen.',
                     'Scan event logged for analytics.',
@@ -507,7 +507,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <img src="/Alescan-Logo.png" alt="Alescan" style={{ width: 26, height: 26, objectFit: 'contain' }} />
-            <span style={{ fontSize: 18, color: C.text}}>2026 ALESCAN</span>
+            <span style={{ fontSize: 18, color: C.text }}>2026 ALESCAN</span>
           </div>
         </div>
       </footer>

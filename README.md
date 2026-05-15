@@ -1,6 +1,6 @@
-# ALESCAN — Automated Livestock & Essential Commodity Scanner
+# ALESCAN: Palengke SRP Scanner
 
-> A Progressive Web App (PWA) for real-time SRP (Suggested Retail Price) verification of basic commodities in Olongapo City, powered by YOLOv11 computer vision and sourced from the Department of Agriculture's Bantay Presyo price monitoring data.
+> A Progressive Web App (PWA) for real-time SRP (Suggested Retail Price) verification of basic commodities in Olongapo City Public Market, powered by YOLOv11 computer vision and sourced from the Department of Agriculture's Bantay Presyo price monitoring data.
 
 ---
 
@@ -24,7 +24,7 @@
 
 ## Project Overview
 
-ALESCAN is a city-level public service tool designed to help ordinary consumers — including elderly Filipinos and low-digital-literacy users — verify whether market prices for basic commodities (pork, chicken, tilapia) are within the official government-set SRP. Users point their phone camera at a commodity, and the system instantly identifies the item and displays its official price ceiling.
+ALESCAN is a city-level public service tool designed to help ordinary consumers to verify whether market prices for basic commodities (i.e.,pork, chicken, tilapia) are within the official government-set SRP. Users point their phone camera at a commodity, and the system instantly identifies the item and displays its official price ceiling.
 
 ---
 
@@ -186,8 +186,6 @@ Create a `.env` file in the `frontend/` directory with the required keys (see [E
 | `FRONTEND_URL`       | Allowed CORS origin (your frontend URL)               | `https://alescan.vercel.app`          |
 | `MODEL_URL`          | Google Drive link to download `best.pt` model weights | `https://drive.google.com/file/d/...` |
 
-> ⚠️ **Security:** Never commit your `.env` file to version control. It is already listed in `.gitignore`.
-
 ### Frontend — `frontend/.env`
 
 | Variable                 | Description                           | Example                          |
@@ -261,12 +259,6 @@ ALESCAN defines two distinct user roles. There is no public registration; the sy
 Landing Page → Open Scanner → Point Camera → Tap Scan → View Result
 ```
 
-**Limitations:**
-
-- Cannot access the Admin Dashboard or any `/admin/*` routes.
-- Cannot add, edit, or delete any price or product data.
-- Scans with confidence below 50% will show a "Not Recognized" prompt — no data is saved.
-
 ---
 
 ### Administrator
@@ -335,5 +327,3 @@ Set all `VITE_*` environment variables via Vercel's Environment Variables settin
 Live production URL: **https://alescan.vercel.app**
 
 ---
-
-_Last updated: May 2026 | Alescan — Olongapo City Agriculture Office_
