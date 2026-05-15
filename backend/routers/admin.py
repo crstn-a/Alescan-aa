@@ -198,8 +198,8 @@ async def create_violation(
             )
             
             if storage_response.data:
-                # Get public URL
-                image_url = sb.storage.from_("violation-images").get_public_url(unique_filename).data["publicUrl"]
+                # Get public URL (supabase-py v2 returns a plain string)
+                image_url = sb.storage.from_("violation-images").get_public_url(unique_filename)
         
         # Insert violation record with "submitted" status
         violation_data = {
@@ -279,8 +279,8 @@ async def update_violation(
             )
             
             if storage_response.data:
-                # Get public URL
-                image_url = sb.storage.from_("violation-images").get_public_url(unique_filename).data["publicUrl"]
+                # Get public URL (supabase-py v2 returns a plain string)
+                image_url = sb.storage.from_("violation-images").get_public_url(unique_filename)
         
         # Update violation record
         violation_data = {
