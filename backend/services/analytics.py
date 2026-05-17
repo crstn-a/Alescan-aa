@@ -53,26 +53,28 @@ def get_analytics_scans():
         # Fetch ALL scan events for detection performance (overall totals)
         all_scans = sb.table("scan_events").select("confidence, scanned_at, products(display_name)").execute()
         
-        # 1. Detection performance (pie chart) - overall totals (High vs Low confidence only)
-        high_conf = 0
+        # 1. Detection performance (pie chart) - overall totals
+        success = 0
         low_conf = 0
+        failed = 0
         total = len(all_scans.data)
         
         # 2. Daily volume (last 7 days only)
         seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
         daily_volume = defaultdict(int)
         
-        # 3. Commodity performance (50% threshold: >= 50% = Success, < 50% = Low Confidence)
-        commodity_perf = defaultdict(lambda: {"total": 0, "low_conf": 0, "success": 0})
+        # 3. Commodity performance
+        commodity_perf = defaultdict(lambda: {"total": 0, "failed": 0, "success": 0})
         
         for row in all_scans.data:
             conf = row["confidence"] or 0
+            is_success = conf >= 0.75
+            is_low_conf = 0.5 <= conf < 0.75
+            is_failed = conf < 0.5 or not row.get("products")
             
-            # Detection split: >= 50% = high confidence, < 50% = low confidence
-            if conf >= 0.50:
-                high_conf += 1
-            else:
-                low_conf += 1
+            if is_success: success += 1
+            elif is_low_conf: low_conf += 1
+            else: failed += 1
             
             # Daily volume only for recent scans
             scanned_at = row["scanned_at"]
@@ -80,27 +82,28 @@ def get_analytics_scans():
                 date_str = scanned_at[:10]  # YYYY-MM-DD
                 daily_volume[date_str] += 1
             
-            # Commodity performance: >= 50% = recognized (Success), < 50% = Low Confidence
             prod_name = row.get("products", {}).get("display_name", "Unidentified") if row.get("products") else "Unidentified"
             commodity_perf[prod_name]["total"] += 1
-            if conf >= 0.50:
-                commodity_perf[prod_name]["success"] += 1
+            if is_failed or is_low_conf:
+                commodity_perf[prod_name]["failed"] += 1
             else:
-                commodity_perf[prod_name]["low_conf"] += 1
+                commodity_perf[prod_name]["success"] += 1
 
         volume_chart = [{"date": k, "scans": v} for k, v in sorted(daily_volume.items())]
-        perf_chart = [{"name": k, "Success": v["success"], "Low Confidence": v["low_conf"]} for k, v in commodity_perf.items()]
+        perf_chart = [{"name": k, "Success": v["success"], "Failed/Low Conf": v["failed"]} for k, v in commodity_perf.items()]
         
-        # Convert detection split to percentages (only High and Low confidence)
+        # Convert detection split to percentages
         if total > 0:
             detection_split = [
-                {"name": "High Confidence", "value": round((high_conf / total) * 100, 1)},
+                {"name": "High Confidence", "value": round((success / total) * 100, 1)},
                 {"name": "Low Confidence", "value": round((low_conf / total) * 100, 1)},
+                {"name": "Failed/Unidentified", "value": round((failed / total) * 100, 1)}
             ]
         else:
             detection_split = [
                 {"name": "High Confidence", "value": 0},
                 {"name": "Low Confidence", "value": 0},
+                {"name": "Failed/Unidentified", "value": 0}
             ]
         
         return {

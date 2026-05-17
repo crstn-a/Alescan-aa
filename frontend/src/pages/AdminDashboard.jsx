@@ -301,7 +301,7 @@ function ViolationsForm({ onSubmit, onUnauth }) {
         </div>
         Submit Consumer Complaint
       </h3>
-      
+
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div>
@@ -322,7 +322,7 @@ function ViolationsForm({ onSubmit, onUnauth }) {
               onBlur={(e) => e.target.style.borderColor = C.k200}
             />
           </div>
-          
+
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.k700, marginBottom: '6px' }}>
               Store Number *
@@ -455,7 +455,7 @@ function EditViolationModal({ violation, onSave, onCancel, onUnauth }) {
           </div>
           Edit Violation
         </h2>
-        
+
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
@@ -476,7 +476,7 @@ function EditViolationModal({ violation, onSave, onCancel, onUnauth }) {
                 onBlur={(e) => e.target.style.borderColor = C.k200}
               />
             </div>
-            
+
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.k700, marginBottom: '6px' }}>
                 Store Number *
@@ -730,49 +730,53 @@ export default function AdminDashboard() {
       { key: 'store_number', label: 'Store Number', render: v => <span style={{ fontWeight: 600, color: C.g700 }}>{v}</span> },
       { key: 'complaint_description', label: 'Complaint', render: v => <span style={{ color: C.k700, display: 'block', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis' }}>{v}</span> },
       { key: 'image_url', label: 'Image', render: v => v ? <a href={v} target="_blank" rel="noopener noreferrer" style={{ color: C.g600, textDecoration: 'none', fontSize: 12 }}>View Image</a> : <span style={{ color: C.k400 }}>—</span> },
-      { key: 'status', label: 'Status', render: (v, row) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <StatusBadge val={v || 'submitted'} />
-          {v !== 'archived' && (
-            <select
-              value={v || 'submitted'}
-              onChange={(e) => handleStatusChange(row.id, e.target.value)}
+      {
+        key: 'status', label: 'Status', render: (v, row) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <StatusBadge val={v || 'submitted'} />
+            {v !== 'archived' && (
+              <select
+                value={v || 'submitted'}
+                onChange={(e) => handleStatusChange(row.id, e.target.value)}
+                style={{
+                  padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.k200}`,
+                  fontSize: 11, background: C.white, color: C.k700
+                }}
+              >
+                <option value="submitted">Submitted</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="archived">Archive</option>
+              </select>
+            )}
+          </div>
+        )
+      },
+      { key: 'created_at', label: 'Submitted', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
+      {
+        key: 'actions', label: 'Actions', render: (v, row) => (
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={() => handleEditViolation(row)}
               style={{
-                padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.k200}`,
-                fontSize: 11, background: C.white, color: C.k700
+                padding: '6px 10px', borderRadius: 6, border: `1px solid ${C.k200}`,
+                background: C.white, color: C.k600, fontSize: 11, fontWeight: 500,
+                cursor: 'pointer', transition: 'all .15s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = C.g50
+                e.target.style.color = C.g700
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = C.white
+                e.target.style.color = C.k600
               }}
             >
-              <option value="submitted">Submitted</option>
-              <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
-              <option value="archived">Archive</option>
-            </select>
-          )}
-        </div>
-      ) },
-      { key: 'created_at', label: 'Submitted', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
-      { key: 'actions', label: 'Actions', render: (v, row) => (
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button
-            onClick={() => handleEditViolation(row)}
-            style={{
-              padding: '6px 10px', borderRadius: 6, border: `1px solid ${C.k200}`,
-              background: C.white, color: C.k600, fontSize: 11, fontWeight: 500,
-              cursor: 'pointer', transition: 'all .15s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = C.g50
-              e.target.style.color = C.g700
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = C.white
-              e.target.style.color = C.k600
-            }}
-          >
-            Edit
-          </button>
-        </div>
-      ) },
+              Edit
+            </button>
+          </div>
+        )
+      },
     ],
   }
 
@@ -1052,13 +1056,13 @@ export default function AdminDashboard() {
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={data?.prices || []}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
-                        <XAxis dataKey="date" tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
-                        <YAxis tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} tickFormatter={v => `₱${v}`} />
+                        <XAxis dataKey="date" tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} tickFormatter={v => `₱${v}`} />
                         <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}`, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }} />
                         <Legend iconType="circle" wrapperStyle={{ fontSize: 13, paddingTop: 10 }} />
-                        <Line type="monotone" dataKey="Whole Chicken" stroke={C.a700} strokeWidth={3} dot={{r:4}} activeDot={{r:6}} />
-                        <Line type="monotone" dataKey="Tilapia (Local)" stroke={C.g600} strokeWidth={3} dot={{r:4}} activeDot={{r:6}} />
-                        <Line type="monotone" dataKey="Pork Belly Liempo" stroke={C.r600} strokeWidth={3} dot={{r:4}} activeDot={{r:6}} />
+                        <Line type="monotone" dataKey="Whole Chicken" stroke={C.a700} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                        <Line type="monotone" dataKey="Tilapia (Local)" stroke={C.g600} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                        <Line type="monotone" dataKey="Pork Belly Liempo" stroke={C.r600} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -1078,6 +1082,7 @@ export default function AdminDashboard() {
                           <Pie data={data?.scans?.detection_split || []} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                             <Cell fill={C.g600} />
                             <Cell fill={C.a700} />
+                            <Cell fill={C.r600} />
                           </Pie>
                           <Tooltip formatter={(v) => `${v}%`} contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
                           <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
@@ -1172,13 +1177,13 @@ export default function AdminDashboard() {
                               <AreaChart data={chartData}>
                                 <defs>
                                   <linearGradient id="colorScans" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={C.g600} stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor={C.g600} stopOpacity={0}/>
+                                    <stop offset="5%" stopColor={C.g600} stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor={C.g600} stopOpacity={0} />
                                   </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
-                                <XAxis dataKey="date" tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
-                                <YAxis tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} allowDecimals={false} />
+                                <XAxis dataKey="date" tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} allowDecimals={false} />
                                 <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
                                 <Area type="monotone" dataKey="scans" stroke={C.g600} fillOpacity={1} fill="url(#colorScans)" />
                               </AreaChart>
@@ -1196,12 +1201,12 @@ export default function AdminDashboard() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={data?.scans?.commodity_performance || []}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
-                        <XAxis dataKey="name" tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
-                        <YAxis tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
-                        <Tooltip cursor={{fill: C.k50}} contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
+                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} />
+                        <Tooltip cursor={{ fill: C.k50 }} contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
                         <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
                         <Bar dataKey="Success" stackId="a" fill={C.g600} radius={[0, 0, 4, 4]} />
-                        <Bar dataKey="Low Confidence" stackId="a" fill={C.r600} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Failed/Low Conf" stackId="a" fill={C.r600} radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1219,7 +1224,7 @@ export default function AdminDashboard() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                       <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.k900 }}>Model Performance Metrics</h3>
                       <span style={{ fontSize: 12, fontWeight: 600, color: C.k400, background: C.k100, padding: '4px 10px', borderRadius: 6 }}>
-                        Version: <span style={{ color: C.g700 }}>{data?.models?.[data.models.length-1]?.model_version || 'Unknown'}</span>
+                        Version: <span style={{ color: C.g700 }}>{data?.models?.[data.models.length - 1]?.model_version || 'Unknown'}</span>
                       </span>
                     </div>
                     {(() => {
@@ -1356,13 +1361,13 @@ export default function AdminDashboard() {
                             <span style={{ fontSize: 12, color: C.k400 }}>{new Date(ext.created_at).toLocaleDateString()}</span>
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, fontSize: 13 }}>
-                            <div><span style={{ color: C.k500 }}>OCR Accuracy:</span> <span style={{ fontWeight: 600, color: C.g700, fontSize: 16 }}>{(ext.extraction_accuracy*100).toFixed(1)}%</span></div>
+                            <div><span style={{ color: C.k500 }}>OCR Accuracy:</span> <span style={{ fontWeight: 600, color: C.g700, fontSize: 16 }}>{(ext.extraction_accuracy * 100).toFixed(1)}%</span></div>
                           </div>
                           <p style={{ margin: '8px 0 0', fontSize: 12, color: C.k500, fontStyle: 'italic' }}>"{ext.notes}"</p>
                         </div>
                       ))}
                       {(!data?.extractors || data.extractors.length === 0) && (
-                         <p style={{ fontSize: 13, color: C.k500, textAlign: 'center', padding: 20 }}>No extraction evaluation records found.</p>
+                        <p style={{ fontSize: 13, color: C.k500, textAlign: 'center', padding: 20 }}>No extraction evaluation records found.</p>
                       )}
                     </div>
                   </div>
@@ -1374,11 +1379,11 @@ export default function AdminDashboard() {
           {/* VIOLATIONS */}
           {active === 7 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <ViolationsForm 
-                onSubmit={() => loadTab(7)} 
-                onUnauth={() => { logout(); navigate('/admin/login') }} 
+              <ViolationsForm
+                onSubmit={() => loadTab(7)}
+                onUnauth={() => { logout(); navigate('/admin/login') }}
               />
-              
+
               <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden' }}>
                 <div style={{ padding: '15px 20px', borderBottom: `1px solid ${C.k100}`, display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 34, height: 34, borderRadius: 9, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600 }}>
@@ -1401,7 +1406,7 @@ export default function AdminDashboard() {
             <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden' }}>
               <div style={{ padding: '15px 20px', borderBottom: `1px solid ${C.k100}`, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 34, height: 34, borderRadius: 9, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600 }}>
-                  <Svg d={IC[NAV.find(n=>n.id===active)?.icon]?.d} d2={IC[NAV.find(n=>n.id===active)?.icon]?.d2} size={16} />
+                  <Svg d={IC[NAV.find(n => n.id === active)?.icon]?.d} d2={IC[NAV.find(n => n.id === active)?.icon]?.d2} size={16} />
                 </div>
                 <div>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: C.k900 }}>{title}</p>
