@@ -705,7 +705,9 @@ export default function AdminDashboard() {
 
   // Scan filter state for overview
   const [scanFilterMode, setScanFilterMode] = useState('all')  // 'all' | 'daily' | 'weekly' | 'monthly'
-  const [scanFilterDate, setScanFilterDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [scanFilterDate, setScanFilterDate] = useState(() => {
+    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  })
   const [filteredScanData, setFilteredScanData] = useState(null)
   const [filteredScanLoading, setFilteredScanLoading] = useState(false)
 
@@ -1079,7 +1081,7 @@ export default function AdminDashboard() {
 
           {/* OVERVIEW */}
           {active === 0 && (() => {
-            const fmtISO = (d) => d.toISOString().slice(0, 10)
+            const fmtISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
             const refDate = new Date(scanFilterDate + 'T00:00:00')
 
             const navigateDate = (dir) => {
