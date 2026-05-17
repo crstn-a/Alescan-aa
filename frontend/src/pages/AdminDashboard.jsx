@@ -1078,7 +1078,6 @@ export default function AdminDashboard() {
                           <Pie data={data?.scans?.detection_split || []} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                             <Cell fill={C.g600} />
                             <Cell fill={C.a700} />
-                            <Cell fill={C.r600} />
                           </Pie>
                           <Tooltip formatter={(v) => `${v}%`} contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
                           <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
@@ -1202,7 +1201,7 @@ export default function AdminDashboard() {
                         <Tooltip cursor={{fill: C.k50}} contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
                         <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
                         <Bar dataKey="Success" stackId="a" fill={C.g600} radius={[0, 0, 4, 4]} />
-                        <Bar dataKey="Failed/Low Conf" stackId="a" fill={C.r600} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Low Confidence" stackId="a" fill={C.r600} radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
