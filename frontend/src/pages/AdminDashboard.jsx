@@ -8,7 +8,8 @@ import {
   getStats, getScanLogs, getSyncLogs,
   getErrorLogs, getPriceRecords, triggerSync,
   getAnalyticsPrices, getAnalyticsScans, getAnalyticsEvaluations,
-  getViolations, createViolation, updateViolation, updateViolationStatus
+  getViolations, createViolation, updateViolation, updateViolationStatus,
+  getDailyVolume
 } from '../api/adminApi'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -614,6 +615,9 @@ export default function AdminDashboard() {
   const [showLogout, setShowLogout] = useState(false)
   const [editingViolation, setEditingViolation] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [volumeWeekOffset, setVolumeWeekOffset] = useState(0)
+  const [volumeData, setVolumeData] = useState(null)
+  const [volumeLoading, setVolumeLoading] = useState(false)
 
   if (!authed) return <Navigate to="/admin/login" replace />
 
@@ -1062,7 +1066,12 @@ export default function AdminDashboard() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 20 }}>
                   <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
-                    <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Detection Performance</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.k900 }}>Detection Performance</h3>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: C.k400, background: C.k100, padding: '4px 10px', borderRadius: 6 }}>
+                        Total: <span style={{ color: C.g700, fontWeight: 700 }}>{data?.scans?.total_scans?.toLocaleString() ?? 0}</span> scans
+                      </span>
+                    </div>
                     <div style={{ height: 250 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -1071,7 +1080,7 @@ export default function AdminDashboard() {
                             <Cell fill={C.a700} />
                             <Cell fill={C.r600} />
                           </Pie>
-                          <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
+                          <Tooltip formatter={(v) => `${v}%`} contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
                           <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
                         </PieChart>
                       </ResponsiveContainer>
@@ -1079,24 +1088,106 @@ export default function AdminDashboard() {
                   </div>
 
                   <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
-                    <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Daily Scan Volume</h3>
-                    <div style={{ height: 250 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={data?.scans?.daily_volume || []}>
-                          <defs>
-                            <linearGradient id="colorScans" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor={C.g600} stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor={C.g600} stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
-                          <XAxis dataKey="date" tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
-                          <YAxis tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
-                          <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
-                          <Area type="monotone" dataKey="scans" stroke={C.g600} fillOpacity={1} fill="url(#colorScans)" />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
+                    {(() => {
+                      const now = new Date();
+                      const weekEnd = new Date(now);
+                      weekEnd.setDate(weekEnd.getDate() - (volumeWeekOffset * 7));
+                      const weekStart = new Date(weekEnd);
+                      weekStart.setDate(weekStart.getDate() - 6);
+                      const fmtShort = (d) => d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+                      const fmtISO = (d) => d.toISOString().slice(0, 10);
+                      const isCurrentWeek = volumeWeekOffset === 0;
+
+                      const handleWeekChange = async (offset) => {
+                        setVolumeWeekOffset(offset);
+                        if (offset === 0) {
+                          setVolumeData(null);
+                          return;
+                        }
+                        setVolumeLoading(true);
+                        try {
+                          const end = new Date();
+                          end.setDate(end.getDate() - (offset * 7));
+                          const start = new Date(end);
+                          start.setDate(start.getDate() - 6);
+                          const result = await getDailyVolume(fmtISO(start), fmtISO(end));
+                          setVolumeData(result);
+                        } catch (e) {
+                          if (e.message === 'unauthorized') { logout(); navigate('/admin/login'); }
+                        } finally {
+                          setVolumeLoading(false);
+                        }
+                      };
+
+                      const chartData = isCurrentWeek ? (data?.scans?.daily_volume || []) : (volumeData || []);
+
+                      return (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.k900 }}>Daily Scan Volume</h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <button
+                                onClick={() => handleWeekChange(volumeWeekOffset + 1)}
+                                disabled={volumeLoading}
+                                style={{
+                                  width: 30, height: 30, borderRadius: 8,
+                                  border: `1px solid ${C.k200}`, background: C.white,
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  color: C.k500, cursor: 'pointer', fontSize: 14, fontWeight: 700,
+                                  transition: 'all .15s',
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = C.k50}
+                                onMouseLeave={e => e.currentTarget.style.background = C.white}
+                              >←</button>
+                              <span style={{
+                                fontSize: 12, fontWeight: 600, color: C.k500,
+                                background: C.k100, padding: '5px 12px', borderRadius: 6,
+                                minWidth: 150, textAlign: 'center', whiteSpace: 'nowrap',
+                              }}>
+                                {fmtShort(weekStart)} — {fmtShort(weekEnd)}
+                                {isCurrentWeek && <span style={{ color: C.g600, marginLeft: 4 }}>(Current)</span>}
+                              </span>
+                              <button
+                                onClick={() => handleWeekChange(volumeWeekOffset - 1)}
+                                disabled={isCurrentWeek || volumeLoading}
+                                style={{
+                                  width: 30, height: 30, borderRadius: 8,
+                                  border: `1px solid ${C.k200}`, background: C.white,
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  color: isCurrentWeek ? C.k200 : C.k500,
+                                  cursor: isCurrentWeek ? 'not-allowed' : 'pointer',
+                                  fontSize: 14, fontWeight: 700, transition: 'all .15s',
+                                }}
+                                onMouseEnter={e => !isCurrentWeek && (e.currentTarget.style.background = C.k50)}
+                                onMouseLeave={e => e.currentTarget.style.background = C.white}
+                              >→</button>
+                            </div>
+                          </div>
+                          <div style={{ height: 250, position: 'relative' }}>
+                            {volumeLoading && (
+                              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,.7)', zIndex: 5, borderRadius: 8 }}>
+                                <span style={{ fontSize: 13, color: C.k400 }}>Loading...</span>
+                              </div>
+                            )}
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={chartData}>
+                                <defs>
+                                  <linearGradient id="colorScans" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor={C.g600} stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor={C.g600} stopOpacity={0}/>
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
+                                <XAxis dataKey="date" tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} />
+                                <YAxis tick={{fontSize: 12, fill: C.k500}} axisLine={false} tickLine={false} allowDecimals={false} />
+                                <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
+                                <Area type="monotone" dataKey="scans" stroke={C.g600} fillOpacity={1} fill="url(#colorScans)" />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 

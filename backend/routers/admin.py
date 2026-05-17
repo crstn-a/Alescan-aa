@@ -326,7 +326,7 @@ def update_violation_status(violation_id: int, status: str = Form(...)):
         raise
 
 # ── ANALYTICS ENDPOINTS ────────────────────────────────────────────────
-from services.analytics import get_analytics_prices, get_analytics_scans, get_analytics_evaluations
+from services.analytics import get_analytics_prices, get_analytics_scans, get_analytics_evaluations, get_daily_volume
 
 @router.get("/analytics/prices")
 def analytics_prices():
@@ -339,3 +339,10 @@ def analytics_scans():
 @router.get("/analytics/evaluations")
 def analytics_evaluations():
     return get_analytics_evaluations()
+
+@router.get("/analytics/daily-volume")
+def analytics_daily_volume(
+    start_date: str = Query(..., description="Start date YYYY-MM-DD"),
+    end_date: str = Query(..., description="End date YYYY-MM-DD"),
+):
+    return get_daily_volume(start_date, end_date)

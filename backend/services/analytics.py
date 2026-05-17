@@ -50,22 +50,23 @@ def get_analytics_scans():
     try:
         sb = get_supabase()
         
-        # Fetch recent scan events
-        seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
-        scans = sb.table("scan_events").select("confidence, scanned_at, products(display_name)").gte("scanned_at", seven_days_ago).execute()
+        # Fetch ALL scan events for detection performance (overall totals)
+        all_scans = sb.table("scan_events").select("confidence, scanned_at, products(display_name)").execute()
         
-        # 1. Detection performance (pie chart)
+        # 1. Detection performance (pie chart) - overall totals
         success = 0
         low_conf = 0
         failed = 0
+        total = len(all_scans.data)
         
-        # 2. Daily volume
+        # 2. Daily volume (last 7 days only)
+        seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
         daily_volume = defaultdict(int)
         
         # 3. Commodity performance
         commodity_perf = defaultdict(lambda: {"total": 0, "failed": 0, "success": 0})
         
-        for row in scans.data:
+        for row in all_scans.data:
             conf = row["confidence"] or 0
             is_success = conf >= 0.75
             is_low_conf = 0.5 <= conf < 0.75
@@ -75,8 +76,11 @@ def get_analytics_scans():
             elif is_low_conf: low_conf += 1
             else: failed += 1
             
-            date_str = row["scanned_at"][:10] # YYYY-MM-DD
-            daily_volume[date_str] += 1
+            # Daily volume only for recent scans
+            scanned_at = row["scanned_at"]
+            if scanned_at >= seven_days_ago:
+                date_str = scanned_at[:10]  # YYYY-MM-DD
+                daily_volume[date_str] += 1
             
             prod_name = row.get("products", {}).get("display_name", "Unidentified") if row.get("products") else "Unidentified"
             commodity_perf[prod_name]["total"] += 1
@@ -88,18 +92,29 @@ def get_analytics_scans():
         volume_chart = [{"date": k, "scans": v} for k, v in sorted(daily_volume.items())]
         perf_chart = [{"name": k, "Success": v["success"], "Failed/Low Conf": v["failed"]} for k, v in commodity_perf.items()]
         
+        # Convert detection split to percentages
+        if total > 0:
+            detection_split = [
+                {"name": "High Confidence", "value": round((success / total) * 100, 1)},
+                {"name": "Low Confidence", "value": round((low_conf / total) * 100, 1)},
+                {"name": "Failed/Unidentified", "value": round((failed / total) * 100, 1)}
+            ]
+        else:
+            detection_split = [
+                {"name": "High Confidence", "value": 0},
+                {"name": "Low Confidence", "value": 0},
+                {"name": "Failed/Unidentified", "value": 0}
+            ]
+        
         return {
-            "detection_split": [
-                {"name": "High Confidence", "value": success},
-                {"name": "Low Confidence", "value": low_conf},
-                {"name": "Failed/Unidentified", "value": failed}
-            ],
+            "total_scans": total,
+            "detection_split": detection_split,
             "daily_volume": volume_chart,
             "commodity_performance": perf_chart
         }
     except Exception as e:
         logger.error(f"Error fetching scan analytics: {e}")
-        return {"detection_split": [], "daily_volume": [], "commodity_performance": []}
+        return {"total_scans": 0, "detection_split": [], "daily_volume": [], "commodity_performance": []}
 
 def get_analytics_evaluations():
     try:
@@ -114,3 +129,38 @@ def get_analytics_evaluations():
     except Exception as e:
         logger.error(f"Error fetching evaluations: {e}")
         return {"models": [], "extractors": []}
+
+def get_daily_volume(start_date: str, end_date: str):
+    """Fetch daily scan volume for a specific date range."""
+    try:
+        sb = get_supabase()
+        
+        # Query scans within the date range
+        scans = (
+            sb.table("scan_events")
+            .select("scanned_at")
+            .gte("scanned_at", f"{start_date}T00:00:00")
+            .lte("scanned_at", f"{end_date}T23:59:59")
+            .execute()
+        )
+        
+        daily_volume = defaultdict(int)
+        for row in scans.data:
+            date_str = row["scanned_at"][:10]  # YYYY-MM-DD
+            daily_volume[date_str] += 1
+        
+        # Fill in missing dates with 0
+        from datetime import date as date_type
+        start = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end = datetime.strptime(end_date, "%Y-%m-%d").date()
+        current = start
+        result = []
+        while current <= end:
+            d = current.isoformat()
+            result.append({"date": d, "scans": daily_volume.get(d, 0)})
+            current += timedelta(days=1)
+        
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching daily volume: {e}")
+        return []

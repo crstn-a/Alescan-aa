@@ -89,6 +89,7 @@ export const getPriceRecords = () => adminFetch('/prices');
 export const getAnalyticsPrices = () => adminFetch('/admin/api/analytics/prices');
 export const getAnalyticsScans = () => adminFetch('/admin/api/analytics/scans');
 export const getAnalyticsEvaluations = () => adminFetch('/admin/api/analytics/evaluations');
+export const getDailyVolume = (startDate, endDate) => adminFetch(`/admin/api/analytics/daily-volume?start_date=${startDate}&end_date=${endDate}`);
 
 // 🔹 Violations
 export const getViolations = (limit = 50) => adminFetch(`/admin/api/violations?limit=${limit}`);
