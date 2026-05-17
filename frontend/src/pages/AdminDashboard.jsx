@@ -711,10 +711,6 @@ export default function AdminDashboard() {
   const [filteredScanData, setFilteredScanData] = useState(null)
   const [filteredScanLoading, setFilteredScanLoading] = useState(false)
 
-  if (!authed) return <Navigate to="/admin/login" replace />
-
-  const SW = expanded ? SIDEBAR_FULL : SIDEBAR_MINI
-
   const loadStats = useCallback(async () => {
     setStatsLoading(true)
     try {
@@ -751,6 +747,26 @@ export default function AdminDashboard() {
   }, [logout, navigate])
 
   useEffect(() => { loadTab(active) }, [active, loadTab])
+
+  // Load filtered scan stats when filter mode or date changes
+  const loadFilteredScans = useCallback(async () => {
+    if (scanFilterMode === 'all') { setFilteredScanData(null); return }
+    setFilteredScanLoading(true)
+    try {
+      const res = await getFilteredScanStats(scanFilterMode, scanFilterDate)
+      setFilteredScanData(res)
+    } catch (e) {
+      if (e.message === 'unauthorized') { logout(); navigate('/admin/login') }
+    } finally {
+      setFilteredScanLoading(false)
+    }
+  }, [scanFilterMode, scanFilterDate, logout, navigate])
+
+  useEffect(() => { loadFilteredScans() }, [loadFilteredScans])
+
+  if (!authed) return <Navigate to="/admin/login" replace />
+
+  const SW = expanded ? SIDEBAR_FULL : SIDEBAR_MINI
 
   async function handleSync() {
     setSyncing(true); setToast(null)
@@ -1112,20 +1128,6 @@ export default function AdminDashboard() {
 
             const isToday = scanFilterDate === fmtISO(new Date())
 
-            // Trigger filtered data load
-            const loadFilteredScans = async () => {
-              if (scanFilterMode === 'all') { setFilteredScanData(null); return }
-              setFilteredScanLoading(true)
-              try {
-                const res = await getFilteredScanStats(scanFilterMode, scanFilterDate)
-                setFilteredScanData(res)
-              } catch (e) {
-                if (e.message === 'unauthorized') { logout(); navigate('/admin/login') }
-              } finally {
-                setFilteredScanLoading(false)
-              }
-            }
-
             // Determine displayed values
             const scanCount = scanFilterMode === 'all'
               ? (stats?.total_scans ?? '…')
@@ -1141,9 +1143,6 @@ export default function AdminDashboard() {
             const filteredRows = scanFilterMode === 'all'
               ? null
               : (filteredScanData?.scans || [])
-
-            // Effect: reload when filter changes
-            useEffect(() => { loadFilteredScans() }, [scanFilterMode, scanFilterDate])
 
             return (<>
               {/* Filter bar */}
