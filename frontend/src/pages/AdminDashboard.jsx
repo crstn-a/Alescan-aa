@@ -1290,7 +1290,8 @@ export default function AdminDashboard() {
                         <Tooltip cursor={{ fill: C.k50 }} contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
                         <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
                         <Bar dataKey="Success" stackId="a" fill={C.g600} radius={[0, 0, 4, 4]} />
-                        <Bar dataKey="Low Confidence" stackId="a" fill={C.r600} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Low Confidence" stackId="a" fill={C.a700} radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="Failed" stackId="a" fill={C.r600} radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>

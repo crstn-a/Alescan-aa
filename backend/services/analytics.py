@@ -64,7 +64,7 @@ def get_analytics_scans():
         daily_volume = defaultdict(int)
         
         # 3. Commodity performance
-        commodity_perf = defaultdict(lambda: {"total": 0, "failed": 0, "success": 0})
+        commodity_perf = defaultdict(lambda: {"total": 0, "failed": 0, "low_conf": 0, "success": 0})
         
         for row in all_scans.data:
             conf = row["confidence"] or 0
@@ -84,13 +84,15 @@ def get_analytics_scans():
             
             prod_name = row.get("products", {}).get("display_name", "Unidentified") if row.get("products") else "Unidentified"
             commodity_perf[prod_name]["total"] += 1
-            if is_failed or is_low_conf:
+            if is_failed:
                 commodity_perf[prod_name]["failed"] += 1
+            elif is_low_conf:
+                commodity_perf[prod_name]["low_conf"] += 1
             else:
                 commodity_perf[prod_name]["success"] += 1
 
         volume_chart = [{"date": k, "scans": v} for k, v in sorted(daily_volume.items())]
-        perf_chart = [{"name": k, "Success": v["success"], "Failed/Low Conf": v["failed"]} for k, v in commodity_perf.items()]
+        perf_chart = [{"name": k, "Success": v["success"], "Low Confidence": v["low_conf"], "Failed": v["failed"]} for k, v in commodity_perf.items()]
         
         # Convert detection split to percentages
         if total > 0:
