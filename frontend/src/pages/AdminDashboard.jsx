@@ -130,8 +130,39 @@ function StatCard({ label, value, sub, trend, icon, accent, loading }) {
 
 /* ── Data Table ─────────────────────────────────────────────────────── */
 function DataTable({ columns, rows, loading }) {
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(50)
+
   const TH = { padding: '10px 16px', fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: C.k400, textAlign: 'left', background: C.k50, borderBottom: `1px solid ${C.k100}`, whiteSpace: 'nowrap' }
   const TD = { padding: '12px 16px', fontSize: 13, color: C.k700, verticalAlign: 'middle' }
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / perPage))
+  const safePage = Math.min(page, totalPages)
+  const startIdx = (safePage - 1) * perPage
+  const pagedRows = rows.slice(startIdx, startIdx + perPage)
+  const showPagination = rows.length > 0
+
+  // Reset to page 1 when rows change substantially
+  useEffect(() => { setPage(1) }, [rows.length])
+
+  const PgBtn = ({ children, onClick, disabled, active }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        minWidth: 32, height: 32, padding: '0 8px', borderRadius: 8,
+        border: active ? `1.5px solid ${C.g500}` : `1px solid ${C.k200}`,
+        background: active ? C.g50 : disabled ? C.k50 : C.white,
+        color: active ? C.g700 : disabled ? C.k200 : C.k700,
+        fontSize: 13, fontWeight: active ? 700 : 500,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'all .15s', flexShrink: 0,
+      }}
+      onMouseEnter={e => { if (!disabled && !active) e.currentTarget.style.background = C.k100 }}
+      onMouseLeave={e => { if (!disabled && !active) e.currentTarget.style.background = C.white }}
+    >{children}</button>
+  )
 
   if (loading) return (
     <div style={{ padding: '44px', textAlign: 'center', color: C.k400, fontSize: 13 }}>
@@ -152,23 +183,76 @@ function DataTable({ columns, rows, loading }) {
   )
 
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
-        <thead><tr>{columns.map(c => <th key={c.key} style={TH}>{c.label}</th>)}</tr></thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={i}
-              onMouseEnter={e => e.currentTarget.style.background = C.k50}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-              {columns.map(c => (
-                <td key={c.key} style={{ ...TD, borderBottom: i < rows.length - 1 ? `1px solid ${C.k100}` : 'none' }}>
-                  {c.render ? c.render(row[c.key], row) : (row[c.key] ?? '—')}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
+          <thead><tr>{columns.map(c => <th key={c.key} style={TH}>{c.label}</th>)}</tr></thead>
+          <tbody>
+            {pagedRows.map((row, i) => (
+              <tr key={i}
+                onMouseEnter={e => e.currentTarget.style.background = C.k50}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                {columns.map(c => (
+                  <td key={c.key} style={{ ...TD, borderBottom: i < pagedRows.length - 1 ? `1px solid ${C.k100}` : 'none' }}>
+                    {c.render ? c.render(row[c.key], row) : (row[c.key] ?? '—')}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination Bar */}
+      {showPagination && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 12,
+          padding: '12px 16px', borderTop: `1px solid ${C.k100}`, background: C.k50,
+        }}>
+          {/* Left: per-page selector + record info */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 12, color: C.k500, fontWeight: 500 }}>Rows per page:</span>
+              <select
+                value={perPage}
+                onChange={e => { setPerPage(Number(e.target.value)); setPage(1) }}
+                style={{
+                  padding: '5px 8px', borderRadius: 6, border: `1px solid ${C.k200}`,
+                  fontSize: 13, fontWeight: 600, color: C.k700, background: C.white,
+                  cursor: 'pointer', outline: 'none',
+                }}
+              >
+                {[10, 25, 50, 100].map(n => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+            <span style={{ fontSize: 12, color: C.k400, fontWeight: 500 }}>
+              Showing {startIdx + 1}–{Math.min(startIdx + perPage, rows.length)} of {rows.length} records
+            </span>
+          </div>
+
+          {/* Right: page navigation */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <PgBtn onClick={() => setPage(1)} disabled={safePage <= 1}>«</PgBtn>
+            <PgBtn onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}>‹</PgBtn>
+            {/* Page number buttons (show up to 5) */}
+            {(() => {
+              const pages = []
+              let start = Math.max(1, safePage - 2)
+              let end = Math.min(totalPages, start + 4)
+              if (end - start < 4) start = Math.max(1, end - 4)
+              for (let i = start; i <= end; i++) pages.push(i)
+              return pages.map(p => (
+                <PgBtn key={p} onClick={() => setPage(p)} active={p === safePage}>{p}</PgBtn>
+              ))
+            })()}
+            <PgBtn onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}>›</PgBtn>
+            <PgBtn onClick={() => setPage(totalPages)} disabled={safePage >= totalPages}>»</PgBtn>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1206,7 +1290,7 @@ export default function AdminDashboard() {
                         <Tooltip cursor={{ fill: C.k50 }} contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
                         <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
                         <Bar dataKey="Success" stackId="a" fill={C.g600} radius={[0, 0, 4, 4]} />
-                        <Bar dataKey="Failed/Low Conf" stackId="a" fill={C.r600} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Low Confidence" stackId="a" fill={C.r600} radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
