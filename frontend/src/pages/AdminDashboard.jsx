@@ -9,7 +9,7 @@ import {
   getErrorLogs, getPriceRecords, triggerSync,
   getAnalyticsPrices, getAnalyticsScans, getAnalyticsEvaluations,
   getViolations, createViolation, updateViolation, updateViolationStatus,
-  getDailyVolume
+  getDailyVolume, getFilteredScanStats
 } from '../api/adminApi'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -703,6 +703,12 @@ export default function AdminDashboard() {
   const [volumeData, setVolumeData] = useState(null)
   const [volumeLoading, setVolumeLoading] = useState(false)
 
+  // Scan filter state for overview
+  const [scanFilterMode, setScanFilterMode] = useState('all')  // 'all' | 'daily' | 'weekly' | 'monthly'
+  const [scanFilterDate, setScanFilterDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [filteredScanData, setFilteredScanData] = useState(null)
+  const [filteredScanLoading, setFilteredScanLoading] = useState(false)
+
   if (!authed) return <Navigate to="/admin/login" replace />
 
   const SW = expanded ? SIDEBAR_FULL : SIDEBAR_MINI
@@ -1072,63 +1078,240 @@ export default function AdminDashboard() {
         <main style={{ flex: 1, padding: '22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* OVERVIEW */}
-          {active === 0 && (<>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(178px,1fr))', gap: 14 }}>
-              <StatCard label="Total Scans" icon="scan" accent
-                value={stats?.total_scans ?? '…'}
-                sub="All time consumer scans"
-                trend={stats?.total_scans != null ? `${stats.total_scans} Logged` : null}
-                loading={statsLoading} />
-              <StatCard label="Active Prices" icon="price"
-                value={stats?.active_prices ?? '…'}
-                sub={`of ${stats?.total_products ?? 3} commodities`}
-                loading={statsLoading} />
-              <StatCard label="Last Sync" icon="sync"
-                value={statsLoading ? '…' : lastSyncDate}
-                sub={stats?.last_sync?.extractor_used || 'Not yet synced'}
-                trend={
-                  stats?.last_sync?.status === 'success' ? '✓ Success' :
-                    stats?.last_sync?.status === 'failed' ? '✗ Failed' : null
-                }
-                loading={statsLoading} />
-              <StatCard label="Error Logs" icon="alert"
-                value={stats?.total_errors ?? '…'}
-                sub="Across all modules"
-                loading={statsLoading} />
-            </div>
+          {active === 0 && (() => {
+            const fmtISO = (d) => d.toISOString().slice(0, 10)
+            const refDate = new Date(scanFilterDate + 'T00:00:00')
 
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 700, color: C.k900, marginBottom: 12 }}>Quick Access</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(155px,1fr))', gap: 10 }}>
-                {NAV.slice(1).map(item => (
-                  <button key={item.id} className="qb" onClick={() => setActive(item.id)} style={{
-                    display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px',
-                    borderRadius: 12, border: `1px solid ${C.k100}`, background: C.white,
-                    textAlign: 'left', transition: 'all .15s', cursor: 'pointer',
-                    boxShadow: '0 1px 3px rgba(0,0,0,.05)',
-                  }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 9, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600, flexShrink: 0 }}>
-                      <Svg d={IC[item.icon]?.d} d2={IC[item.icon]?.d2} size={16} />
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: C.k900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</p>
-                      <p style={{ margin: 0, fontSize: 11, color: C.k400 }}>View →</p>
-                    </div>
+            const navigateDate = (dir) => {
+              const d = new Date(scanFilterDate + 'T00:00:00')
+              if (scanFilterMode === 'daily') d.setDate(d.getDate() + dir)
+              else if (scanFilterMode === 'weekly') d.setDate(d.getDate() + (dir * 7))
+              else if (scanFilterMode === 'monthly') d.setMonth(d.getMonth() + dir)
+              setScanFilterDate(fmtISO(d))
+            }
+
+            const getRangeLabel = () => {
+              const d = refDate
+              const opts = { month: 'short', day: 'numeric', year: 'numeric' }
+              if (scanFilterMode === 'daily') {
+                return d.toLocaleDateString('en-PH', opts)
+              } else if (scanFilterMode === 'weekly') {
+                const weekday = d.getDay() === 0 ? 6 : d.getDay() - 1
+                const start = new Date(d); start.setDate(start.getDate() - weekday)
+                const end = new Date(start); end.setDate(end.getDate() + 6)
+                const s = start.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
+                const e = end.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+                return `${s} — ${e}`
+              } else if (scanFilterMode === 'monthly') {
+                return d.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })
+              }
+              return 'All Time'
+            }
+
+            const isToday = scanFilterDate === fmtISO(new Date())
+
+            // Trigger filtered data load
+            const loadFilteredScans = async () => {
+              if (scanFilterMode === 'all') { setFilteredScanData(null); return }
+              setFilteredScanLoading(true)
+              try {
+                const res = await getFilteredScanStats(scanFilterMode, scanFilterDate)
+                setFilteredScanData(res)
+              } catch (e) {
+                if (e.message === 'unauthorized') { logout(); navigate('/admin/login') }
+              } finally {
+                setFilteredScanLoading(false)
+              }
+            }
+
+            // Determine displayed values
+            const scanCount = scanFilterMode === 'all'
+              ? (stats?.total_scans ?? '…')
+              : (filteredScanLoading ? '…' : (filteredScanData?.count ?? '…'))
+            const scanSub = scanFilterMode === 'all'
+              ? 'All time consumer scans'
+              : getRangeLabel()
+            const scanTrend = scanFilterMode === 'all'
+              ? (stats?.total_scans != null ? `${stats.total_scans} Logged` : null)
+              : (filteredScanData && !filteredScanLoading ? `${filteredScanData.count} Logged` : null)
+
+            // Filtered scans list
+            const filteredRows = scanFilterMode === 'all'
+              ? null
+              : (filteredScanData?.scans || [])
+
+            // Effect: reload when filter changes
+            useEffect(() => { loadFilteredScans() }, [scanFilterMode, scanFilterDate])
+
+            return (<>
+              {/* Filter bar */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                flexWrap: 'wrap', gap: 12,
+                background: C.white, borderRadius: 14, padding: '14px 18px',
+                border: `1px solid ${C.k100}`, boxShadow: '0 1px 4px rgba(0,0,0,.05)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: C.k700, marginRight: 4 }}>View:</span>
+                  {['all', 'daily', 'weekly', 'monthly'].map(m => (
+                    <button key={m}
+                      onClick={() => { setScanFilterMode(m); setScanFilterDate(fmtISO(new Date())) }}
+                      style={{
+                        padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                        border: scanFilterMode === m ? `1.5px solid ${C.g500}` : `1px solid ${C.k200}`,
+                        background: scanFilterMode === m ? C.g50 : C.white,
+                        color: scanFilterMode === m ? C.g700 : C.k500,
+                        cursor: 'pointer', transition: 'all .15s', textTransform: 'capitalize',
+                      }}
+                      onMouseEnter={e => { if (scanFilterMode !== m) e.currentTarget.style.background = C.k50 }}
+                      onMouseLeave={e => { if (scanFilterMode !== m) e.currentTarget.style.background = C.white }}
+                    >{m === 'all' ? 'All Time' : m}</button>
+                  ))}
+                </div>
+
+                {/* Date navigation (hidden when mode is 'all') */}
+                {scanFilterMode !== 'all' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button onClick={() => navigateDate(-1)}
+                      style={{
+                        width: 30, height: 30, borderRadius: 8,
+                        border: `1px solid ${C.k200}`, background: C.white,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: C.k500, cursor: 'pointer', fontSize: 14, fontWeight: 700,
+                        transition: 'all .15s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = C.k50}
+                      onMouseLeave={e => e.currentTarget.style.background = C.white}
+                    >←</button>
+                    <span style={{
+                      fontSize: 12, fontWeight: 600, color: C.k700,
+                      background: C.k100, padding: '5px 14px', borderRadius: 6,
+                      minWidth: 160, textAlign: 'center', whiteSpace: 'nowrap',
+                    }}>
+                      {getRangeLabel()}
+                      {isToday && scanFilterMode === 'daily' && <span style={{ color: C.g600, marginLeft: 4 }}>(Today)</span>}
+                    </span>
+                    <button onClick={() => navigateDate(1)}
+                      disabled={isToday}
+                      style={{
+                        width: 30, height: 30, borderRadius: 8,
+                        border: `1px solid ${C.k200}`, background: C.white,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: isToday ? C.k200 : C.k500,
+                        cursor: isToday ? 'not-allowed' : 'pointer',
+                        fontSize: 14, fontWeight: 700, transition: 'all .15s',
+                      }}
+                      onMouseEnter={e => !isToday && (e.currentTarget.style.background = C.k50)}
+                      onMouseLeave={e => e.currentTarget.style.background = C.white}
+                    >→</button>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(178px,1fr))', gap: 14 }}>
+                <StatCard label={scanFilterMode === 'all' ? 'Total Scans' : `${scanFilterMode.charAt(0).toUpperCase() + scanFilterMode.slice(1)} Scans`} icon="scan" accent
+                  value={scanCount}
+                  sub={scanSub}
+                  trend={scanTrend}
+                  loading={scanFilterMode === 'all' ? statsLoading : filteredScanLoading} />
+                <StatCard label="Active Prices" icon="price"
+                  value={stats?.active_prices ?? '…'}
+                  sub={`of ${stats?.total_products ?? 3} commodities`}
+                  loading={statsLoading} />
+                <StatCard label="Last Sync" icon="sync"
+                  value={statsLoading ? '…' : lastSyncDate}
+                  sub={stats?.last_sync?.extractor_used || 'Not yet synced'}
+                  trend={
+                    stats?.last_sync?.status === 'success' ? '✓ Success' :
+                      stats?.last_sync?.status === 'failed' ? '✗ Failed' : null
+                  }
+                  loading={statsLoading} />
+                <StatCard label="Error Logs" icon="alert"
+                  value={stats?.total_errors ?? '…'}
+                  sub="Across all modules"
+                  loading={statsLoading} />
+              </div>
+
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: C.k900, marginBottom: 12 }}>Quick Access</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(155px,1fr))', gap: 10 }}>
+                  {NAV.slice(1).map(item => (
+                    <button key={item.id} className="qb" onClick={() => setActive(item.id)} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px',
+                      borderRadius: 12, border: `1px solid ${C.k100}`, background: C.white,
+                      textAlign: 'left', transition: 'all .15s', cursor: 'pointer',
+                      boxShadow: '0 1px 3px rgba(0,0,0,.05)',
+                    }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 9, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600, flexShrink: 0 }}>
+                        <Svg d={IC[item.icon]?.d} d2={IC[item.icon]?.d2} size={16} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: C.k900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</p>
+                        <p style={{ margin: 0, fontSize: 11, color: C.k400 }}>View →</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: C.k900, margin: 0 }}>
+                    {scanFilterMode === 'all' ? 'Recent Scans' : `Scans — ${getRangeLabel()}`}
+                  </p>
+                  <button onClick={() => setActive(1)} style={{ fontSize: 12, color: C.g600, fontWeight: 600, border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                    View all <Svg d={IC.arrow.d} size={11} />
                   </button>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: C.k900, margin: 0 }}>Recent Scans</p>
-                <button onClick={() => setActive(1)} style={{ fontSize: 12, color: C.g600, fontWeight: 600, border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                  View all <Svg d={IC.arrow.d} size={11} />
-                </button>
+                {/* If 'all' mode, show the existing RecentScans component */}
+                {scanFilterMode === 'all' && (
+                  <RecentScans onUnauth={() => { logout(); navigate('/admin/login') }} />
+                )}
+
+                {/* If filtered, show the filtered results inline */}
+                {scanFilterMode !== 'all' && (() => {
+                  const wrap = { background: C.white, borderRadius: 14, border: `1px solid ${C.k100}`, boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden' }
+                  if (filteredScanLoading) return <div style={{ ...wrap, padding: '24px', textAlign: 'center', color: C.k400, fontSize: 13 }}>Loading...</div>
+                  if (!filteredRows || !filteredRows.length) return (
+                    <div style={{ ...wrap, padding: '32px', textAlign: 'center' }}>
+                      <div style={{ width: 46, height: 46, borderRadius: 12, background: C.g50, margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600 }}>
+                        <Svg d={IC.scan.d} size={20} />
+                      </div>
+                      <p style={{ fontSize: 14, color: C.k400, margin: 0 }}>No scans recorded for this period.</p>
+                    </div>
+                  )
+                  return (
+                    <div style={wrap}>
+                      {filteredRows.slice(0, 20).map((r, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px', borderBottom: i < Math.min(filteredRows.length, 20) - 1 ? `1px solid ${C.k50}` : 'none' }}>
+                          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: r.products ? C.g50 : C.r50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: r.products ? C.g600 : C.r600 }}>
+                            <Svg d={IC.scan.d} size={15} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: C.k900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {r.products?.display_name || <em style={{ color: C.k400, fontWeight: 400 }}>Unidentified</em>}
+                            </p>
+                            <p style={{ margin: 0, fontSize: 11, color: C.k400 }}>{fmtDt(r.scanned_at)}</p>
+                          </div>
+                          <ConfBadge v={r.confidence} />
+                          {r.price_shown && (
+                            <span style={{ fontSize: 13, fontWeight: 700, color: C.g700, flexShrink: 0 }}>₱{Number(r.price_shown).toFixed(2)}</span>
+                          )}
+                        </div>
+                      ))}
+                      {filteredRows.length > 20 && (
+                        <div style={{ padding: '10px 18px', textAlign: 'center', borderTop: `1px solid ${C.k100}` }}>
+                          <span style={{ fontSize: 12, color: C.k400 }}>Showing 20 of {filteredRows.length} scans. </span>
+                          <button onClick={() => setActive(1)} style={{ fontSize: 12, color: C.g600, fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer' }}>View all →</button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
-              <RecentScans onUnauth={() => { logout(); navigate('/admin/login') }} />
-            </div>
-          </>)}
+            </>)
+          })()}
 
           {/* OPERATIONAL ANALYTICS */}
           {active === 5 && (

@@ -93,6 +93,71 @@ def get_stats():
         raise
 
 
+# ── GET /admin/stats/scans ────────────────────────────────────────────
+# Filtered scan stats for the overview calendar filter.
+# mode: "all" | "daily" | "weekly" | "monthly"
+# date: reference date string YYYY-MM-DD (defaults to today)
+@router.get("/stats/scans")
+def get_filtered_scan_stats(
+    mode: str = Query("all"),
+    date: str = Query(None),
+):
+    from datetime import datetime, timedelta
+    try:
+        sb = get_supabase()
+
+        # Build date range based on mode
+        ref = datetime.strptime(date, "%Y-%m-%d") if date else datetime.now()
+        start_dt = None
+        end_dt = None
+
+        if mode == "daily":
+            start_dt = ref.replace(hour=0, minute=0, second=0)
+            end_dt = ref.replace(hour=23, minute=59, second=59)
+        elif mode == "weekly":
+            # Monday-based week
+            weekday = ref.weekday()
+            start_dt = (ref - timedelta(days=weekday)).replace(hour=0, minute=0, second=0)
+            end_dt = (start_dt + timedelta(days=6)).replace(hour=23, minute=59, second=59)
+        elif mode == "monthly":
+            start_dt = ref.replace(day=1, hour=0, minute=0, second=0)
+            # Last day of month
+            if ref.month == 12:
+                end_dt = ref.replace(year=ref.year + 1, month=1, day=1, hour=0, minute=0, second=0) - timedelta(seconds=1)
+            else:
+                end_dt = ref.replace(month=ref.month + 1, day=1, hour=0, minute=0, second=0) - timedelta(seconds=1)
+
+        # Query scan count
+        query = sb.table("scan_events").select("id", count="exact")
+        if start_dt and end_dt:
+            query = query.gte("scanned_at", start_dt.isoformat()).lte("scanned_at", end_dt.isoformat())
+        count_result = query.execute()
+
+        # Query recent scans for the list
+        list_query = (
+            sb.table("scan_events")
+            .select("id, confidence, price_shown, scanned_at, products(display_name, slug)")
+            .order("scanned_at", desc=True)
+        )
+        if start_dt and end_dt:
+            list_query = list_query.gte("scanned_at", start_dt.isoformat()).lte("scanned_at", end_dt.isoformat())
+        list_query = list_query.limit(50)
+        list_result = list_query.execute()
+
+        return {
+            "count": count_result.count or 0,
+            "scans": list_result.data or [],
+            "range": {
+                "start": start_dt.isoformat() if start_dt else None,
+                "end": end_dt.isoformat() if end_dt else None,
+            } if start_dt else None,
+            "mode": mode,
+        }
+    except Exception as e:
+        log_error("admin", f"get_filtered_scan_stats failed: {e}")
+        raise
+
+
 # ── POST /admin/sync ──────────────────────────────────────────────────
 @router.post("/sync")
 def manual_sync():

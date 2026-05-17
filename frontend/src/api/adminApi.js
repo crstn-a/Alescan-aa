@@ -77,6 +77,11 @@ export async function loginAdmin(username, password) {
 
 // 🔹 Admin endpoints
 export const getStats = () => adminFetch('/admin/api/stats');
+export const getFilteredScanStats = (mode = 'all', date = null) => {
+  const params = new URLSearchParams({ mode });
+  if (date) params.set('date', date);
+  return adminFetch(`/admin/api/stats/scans?${params.toString()}`);
+};
 export const triggerSync = () => adminFetch('/admin/api/sync', { method: 'POST' });
 export const getScanLogs = (limit = 50) => adminFetch(`/admin/api/logs/scan?limit=${limit}`);
 export const getSyncLogs = (limit = 20) => adminFetch(`/admin/api/logs/sync?limit=${limit}`);
