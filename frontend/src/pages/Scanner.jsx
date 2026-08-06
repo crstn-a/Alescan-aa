@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { scanImage } from '../api/scanApi'
 import { loadModel, detectActiveCommodity } from '../utils/yoloInference'
 import TermsModal from '../components/TermsModal'
+import TutorialModal from '../components/TutorialModal'
 
 // ── Colour Palette (White & Green) ────────────────────────────────────
 const C = {
@@ -44,6 +45,7 @@ export default function Scanner() {
   const [showExitConfirm, setShowExitConfirm] = useState(false)   // new state
   const [activeCommodity, setActiveCommodity] = useState(null)
   const [showUnrecognizedPopup, setShowUnrecognizedPopup] = useState(false)
+  const [showTutorialModal, setShowTutorialModal] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(() => {
     try {
       return localStorage.getItem('alescan_terms_accepted') !== 'true'
@@ -279,23 +281,47 @@ export default function Scanner() {
         borderBottom: `1px solid ${C.border}`,
         boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
       }}>
-        {/* Left: Red Exit button */}
-        <button
-          onClick={handleExitClick}
-          style={{
-            background: C.error,
-            border: 'none',
-            color: '#fff',
-            borderRadius: 10,
-            padding: '6px 12px',
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all .15s',
-          }}
-        >
-          Exit
-        </button>
+        {/* Left: Exit button & Guide button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={handleExitClick}
+            style={{
+              background: C.error,
+              border: 'none',
+              color: '#fff',
+              borderRadius: 10,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+          >
+            Exit
+          </button>
+
+          <button
+            onClick={() => setShowTutorialModal(true)}
+            style={{
+              background: C.primaryLight,
+              border: `1px solid ${C.border}`,
+              color: C.primaryDark,
+              borderRadius: 10,
+              padding: '6px 10px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              transition: 'all .15s',
+            }}
+            title="How to Use ALESCAN"
+          >
+            <Svg d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3 M12 17h.01" size={14} />
+            <span>Guide</span>
+          </button>
+        </div>
 
         {/* Center: Logo */}
         <div style={{
@@ -630,6 +656,12 @@ export default function Scanner() {
         isOpen={showTermsModal}
         onAgree={handleAgreeTerms}
         onCancel={handleCancelTerms}
+      />
+
+      {/* Tutorial / Walkthrough Modal */}
+      <TutorialModal
+        isOpen={showTutorialModal}
+        onClose={() => setShowTutorialModal(false)}
       />
     </div>
   )
