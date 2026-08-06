@@ -4,6 +4,7 @@ import { scanImage } from '../api/scanApi'
 import { loadModel, detectActiveCommodity } from '../utils/yoloInference'
 import TermsModal from '../components/TermsModal'
 import TutorialModal from '../components/TutorialModal'
+import GuidedTour from '../components/GuidedTour'
 
 // ── Colour Palette (White & Green) ────────────────────────────────────
 const C = {
@@ -46,6 +47,38 @@ export default function Scanner() {
   const [activeCommodity, setActiveCommodity] = useState(null)
   const [showUnrecognizedPopup, setShowUnrecognizedPopup] = useState(false)
   const [showTutorialModal, setShowTutorialModal] = useState(false)
+  const [runTour, setRunTour] = useState(false)
+
+  // Auto-trigger tour if first time after terms
+  useEffect(() => {
+    if (!showTermsModal) {
+      try {
+        if (localStorage.getItem('alescan_tour_completed') !== 'true') {
+          setRunTour(true)
+        }
+      } catch (err) {
+        console.warn(err)
+      }
+    }
+  }, [showTermsModal])
+
+  const handleTourComplete = () => {
+    try {
+      localStorage.setItem('alescan_tour_completed', 'true')
+    } catch (err) {
+      console.warn(err)
+    }
+    setRunTour(false)
+  }
+
+  const handleTourSkip = () => {
+    try {
+      localStorage.setItem('alescan_tour_completed', 'true')
+    } catch (err) {
+      console.warn(err)
+    }
+    setRunTour(false)
+  }
   const [showTermsModal, setShowTermsModal] = useState(() => {
     try {
       return localStorage.getItem('alescan_terms_accepted') !== 'true'
@@ -284,6 +317,7 @@ export default function Scanner() {
         {/* Left: Exit button & Guide button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
+            id="tour-exit-btn"
             onClick={handleExitClick}
             style={{
               background: C.error,
@@ -301,7 +335,8 @@ export default function Scanner() {
           </button>
 
           <button
-            onClick={() => setShowTutorialModal(true)}
+            id="tour-guide-btn"
+            onClick={() => setRunTour(true)}
             style={{
               background: C.primaryLight,
               border: `1px solid ${C.border}`,
@@ -324,14 +359,17 @@ export default function Scanner() {
         </div>
 
         {/* Center: Logo */}
-        <div style={{
-          position: 'absolute',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-        }}>
+        <div
+          id="tour-header-logo"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}
+        >
           <div style={{
             width: 32, height: 32, borderRadius: 9,
             background: `linear-gradient(135deg,${C.primaryDark},${C.primary})`,
@@ -347,13 +385,16 @@ export default function Scanner() {
         </div>
 
         {/* Right: Live status indicator */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: C.primaryLight,
-          borderRadius: 20,
-          padding: '5px 12px',
-          border: `1px solid rgba(34,197,94,.2)`,
-        }}>
+        <div
+          id="tour-status-indicator"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: C.primaryLight,
+            borderRadius: 20,
+            padding: '5px 12px',
+            border: `1px solid rgba(34,197,94,.2)`,
+          }}
+        >
           <div style={{
             width: 7, height: 7, borderRadius: '50%',
             background: isReady ? C.primary : C.textMuted,
@@ -386,7 +427,7 @@ export default function Scanner() {
 
         {isReady && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-            <div style={{ position: 'relative', width: 'min(75vw, 75vh, 280px)', aspectRatio: '1/1' }}>
+            <div id="tour-scan-frame" style={{ position: 'relative', width: 'min(75vw, 75vh, 280px)', aspectRatio: '1/1' }}>
               {[
                 { top: 0, left: 0, bt: 3, bl: 3, br: 0, bb: 0 },
                 { top: 0, right: 0, bt: 3, bl: 0, br: 3, bb: 0 },
@@ -414,7 +455,7 @@ export default function Scanner() {
         )}
 
         {isReady && !scanning && (
-          <div style={{ position: 'absolute', bottom: 'calc(50% - min(37.5vw, 37.5vh, 140px))', left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', transition: 'all 0.3s ease' }}>
+          <div id="tour-commodity-label" style={{ position: 'absolute', bottom: 'calc(50% - min(37.5vw, 37.5vh, 140px))', left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', transition: 'all 0.3s ease' }}>
             <div style={{
               background: activeCommodity ? C.primary : 'rgba(255,255,255,.85)',
               backdropFilter: 'blur(8px)',
@@ -468,7 +509,7 @@ export default function Scanner() {
           </div>
         )}
 
-        <div className="scan-btn-wrap" style={{ position: 'relative', cursor: isReady && !scanning ? 'pointer' : 'default' }} onClick={handleScan}>
+        <div id="tour-scan-btn" className="scan-btn-wrap" style={{ position: 'relative', cursor: isReady && !scanning ? 'pointer' : 'default' }} onClick={handleScan}>
           {isReady && !scanning && (
             <div style={{ position: 'absolute', inset: -10, borderRadius: '50%', border: `2px solid ${C.primary}`, animation: 'pulse-ring 2s ease-out infinite' }} />
           )}
@@ -662,6 +703,13 @@ export default function Scanner() {
       <TutorialModal
         isOpen={showTutorialModal}
         onClose={() => setShowTutorialModal(false)}
+      />
+
+      {/* Interactive Step-by-Step Guided Popover Tour */}
+      <GuidedTour
+        active={runTour}
+        onComplete={handleTourComplete}
+        onSkip={handleTourSkip}
       />
     </div>
   )
