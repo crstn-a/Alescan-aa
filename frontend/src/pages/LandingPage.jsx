@@ -1,6 +1,7 @@
 // frontend/src/pages/LandingPage.jsx
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import TermsModal from '../components/TermsModal'
 
 const C = {
   primary: '#22c55e',
@@ -37,6 +38,7 @@ export default function LandingPage() {
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
 
   // Detect screen size for responsive menu rendering
   useEffect(() => {
@@ -51,10 +53,29 @@ export default function LandingPage() {
   // Close mobile menu when clicking a link or resizing to desktop
   const closeMobileMenu = () => setMobileMenuOpen(false)
 
+  const handleStartScanning = () => {
+    setShowTermsModal(true)
+    closeMobileMenu()
+  }
+
+  const handleAgreeTerms = () => {
+    try {
+      localStorage.setItem('alescan_terms_accepted', 'true')
+    } catch (err) {
+      console.warn('localStorage error:', err)
+    }
+    setShowTermsModal(false)
+    navigate('/scanner')
+  }
+
+  const handleCancelTerms = () => {
+    setShowTermsModal(false)
+  }
+
   const handleNavClick = (e, targetId) => {
     e.preventDefault()
     if (targetId === 'scanner') {
-      navigate('/scanner')
+      handleStartScanning()
     } else {
       const element = document.getElementById(targetId)
       if (element) {
@@ -167,7 +188,7 @@ export default function LandingPage() {
               <a href="#about" className="nav-link" style={{ fontSize: 14, fontWeight: 500, color: C.textSecondary, textDecoration: 'none' }}>About</a>
               <button
                 className="use-scanner-btn"
-                onClick={() => navigate('/scanner')}
+                onClick={handleStartScanning}
                 style={{
                   background: C.primaryDark,
                   border: 'none',
@@ -244,10 +265,7 @@ export default function LandingPage() {
                   </a>
                   <button
                     className="use-scanner-btn"
-                    onClick={() => {
-                      navigate('/scanner')
-                      closeMobileMenu()
-                    }}
+                    onClick={handleStartScanning}
                     style={{
                       background: C.primaryDark,
                       border: 'none',
@@ -323,7 +341,7 @@ export default function LandingPage() {
                 <div className="cta-buttons" style={{ display: 'flex', gap: 14, marginTop: 20, flexWrap: 'wrap' }}>
                   <button
                     className="start-scanning-btn"
-                    onClick={() => navigate('/scanner')}
+                    onClick={handleStartScanning}
                     style={{
                       background: C.primaryDark,
                       border: 'none',
@@ -511,6 +529,13 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Terms & Conditions Modal */}
+      <TermsModal
+        isOpen={showTermsModal}
+        onAgree={handleAgreeTerms}
+        onCancel={handleCancelTerms}
+      />
     </div>
   )
 }

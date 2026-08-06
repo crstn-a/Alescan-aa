@@ -7,10 +7,11 @@ _client: Client = None
 def get_supabase() -> Client:
     global _client
     if _client is None:
-        _client = create_client(
-            os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_KEY")  # service_role key
-        )
+        url = os.getenv("SUPABASE_URL")
+        key = os.getenv("SUPABASE_KEY")
+        if not url or not key:
+            raise ValueError("SUPABASE_URL and SUPABASE_KEY must be configured in environment variables.")
+        _client = create_client(url, key)
     return _client
 
 def upsert_price_record(*args, **kwargs):
@@ -56,9 +57,16 @@ def log_scan_event(result: dict, price: dict | None):
     }).execute()
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def log_error(module: str, message: str):
     """Write to error_logs from any module."""
-    get_supabase().table("error_logs").insert({
-        "module": module,
-        "message": message
-    }).execute()
+    try:
+        get_supabase().table("error_logs").insert({
+            "module": module,
+            "message": message
+        }).execute()
+    except Exception as e:
+        logger.error(f"[{module}] Failed to record log to Supabase ({e}): {message}")

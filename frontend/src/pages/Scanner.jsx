@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { scanImage } from '../api/scanApi'
 import { loadModel, detectActiveCommodity } from '../utils/yoloInference'
+import TermsModal from '../components/TermsModal'
 
 // ── Colour Palette (White & Green) ────────────────────────────────────
 const C = {
@@ -43,6 +44,27 @@ export default function Scanner() {
   const [showExitConfirm, setShowExitConfirm] = useState(false)   // new state
   const [activeCommodity, setActiveCommodity] = useState(null)
   const [showUnrecognizedPopup, setShowUnrecognizedPopup] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(() => {
+    try {
+      return localStorage.getItem('alescan_terms_accepted') !== 'true'
+    } catch {
+      return true
+    }
+  })
+
+  const handleAgreeTerms = () => {
+    try {
+      localStorage.setItem('alescan_terms_accepted', 'true')
+    } catch (err) {
+      console.warn('localStorage error:', err)
+    }
+    setShowTermsModal(false)
+  }
+
+  const handleCancelTerms = () => {
+    setShowTermsModal(false)
+    navigate('/')
+  }
 
   const startCamera = useCallback(async () => {
     try {
@@ -122,9 +144,10 @@ export default function Scanner() {
   }
 
   useEffect(() => {
+    if (showTermsModal) return
     startCamera()
     return () => stopCamera()
-  }, [startCamera, stopCamera])
+  }, [showTermsModal, startCamera, stopCamera])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -601,6 +624,13 @@ export default function Scanner() {
           </div>
         </div>
       )}
+
+      {/* Terms & Conditions Modal */}
+      <TermsModal
+        isOpen={showTermsModal}
+        onAgree={handleAgreeTerms}
+        onCancel={handleCancelTerms}
+      />
     </div>
   )
 }

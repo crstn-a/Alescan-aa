@@ -240,3 +240,5 @@ dist/
 # Specific to project
 backend/.env
 frontend/.env"
+
+TermsAndConditions.md
