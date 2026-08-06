@@ -17,6 +17,8 @@ import {
   AreaChart, Area
 } from 'recharts'
 
+import AnalyticsReportModal from '../components/AnalyticsReportModal'
+
 /* ── Icons ──────────────────────────────────────────────────────────── */
 const Svg = ({ d, d2, d3, size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
@@ -37,7 +39,8 @@ const IC = {
   arrow: { d: "M5 12h14M12 5l7 7-7 7" },
   analytics: { d: "M3 3v18h18", d2: "M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" },
   eval: { d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" },
-  violation: { d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" }
+  violation: { d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" },
+  report: { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", d2: "M14 2v6h6", d3: "M16 13H8M16 17H8M10 9H8" },
 }
 
 /* ── Palette ────────────────────────────────────────────────────────── */
@@ -697,6 +700,7 @@ export default function AdminDashboard() {
   const [syncing, setSyncing] = useState(false)
   const [toast, setToast] = useState(null)
   const [showLogout, setShowLogout] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
   const [editingViolation, setEditingViolation] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [volumeWeekOffset, setVolumeWeekOffset] = useState(0)
@@ -729,8 +733,12 @@ export default function AdminDashboard() {
     setTabLoading(true); setData([])
     try {
       if (t === 5) {
-        const [prices, scans] = await Promise.all([getAnalyticsPrices(), getAnalyticsScans()]);
-        setData({ prices, scans });
+        const [prices, scans, models] = await Promise.all([
+          getAnalyticsPrices(),
+          getAnalyticsScans(),
+          getAnalyticsEvaluations()
+        ]);
+        setData({ prices, scans, models });
       } else if (t === 6) {
         setData(await getAnalyticsEvaluations());
       } else if (t === 7) {
@@ -1067,6 +1075,23 @@ export default function AdminDashboard() {
               </div>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {active === 5 && (
+                <button
+                  onClick={() => setShowReportModal(true)}
+                  disabled={tabLoading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
+                    borderRadius: 8, border: `1px solid ${C.g600}`, background: C.g50,
+                    color: C.g700, fontSize: 13, fontWeight: 600, transition: 'all .15s',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = C.g100}
+                  onMouseLeave={e => e.currentTarget.style.background = C.g50}
+                >
+                  <Svg d={IC.report.d} d2={IC.report.d2} d3={IC.report.d3} size={14} />
+                  Generate Report
+                </button>
+              )}
               {active !== 0 && (
                 <button className="rbtn" onClick={() => loadTab(active)} disabled={tabLoading} style={{
                   display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
@@ -1318,6 +1343,34 @@ export default function AdminDashboard() {
           {active === 5 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {tabLoading ? <div style={{ padding: 40, textAlign: 'center', color: C.k400 }}>Loading analytics...</div> : <>
+                <div style={{
+                  background: 'linear-gradient(135deg, #064e3b 0%, #047857 100%)',
+                  borderRadius: 16, padding: '20px 24px', color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  boxShadow: '0 4px 12px rgba(6, 78, 59, 0.15)'
+                }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Operational Analytics & Market Intelligence</h2>
+                    <p style={{ margin: '4px 0 0', fontSize: 13, color: '#d1fae5', opacity: 0.9 }}>
+                      Generate, analyze, and print comprehensive commodity telemetry and accuracy reports.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowReportModal(true)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
+                      borderRadius: 10, border: 'none', background: C.white, color: C.g900,
+                      fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                      transition: 'all .15s ease'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = C.g50}
+                    onMouseLeave={e => e.currentTarget.style.background = C.white}
+                  >
+                    <Svg d={IC.report.d} d2={IC.report.d2} d3={IC.report.d3} size={16} />
+                    Generate PDF Report
+                  </button>
+                </div>
+
                 <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
                   <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Commodity Price Trends</h3>
                   <div style={{ height: 300 }}>
@@ -1707,6 +1760,13 @@ export default function AdminDashboard() {
             setEditingViolation(null)
           }}
           onUnauth={() => { logout(); navigate('/admin/login') }}
+        />
+      )}
+      {showReportModal && (
+        <AnalyticsReportModal
+          data={data}
+          user={user}
+          onClose={() => setShowReportModal(false)}
         />
       )}
     </div>
