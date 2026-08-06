@@ -3,7 +3,7 @@
 **Palengke SRP Scanner**
 **Prototype Version 1.0 · May 2026**
 
-> ALESCAN is a free, web-based tool that helps market shoppers in Olongapo City check if the prices of basic goods (e.g.,pork, chicken, tilapia) are within the official government price limits. You simply point your phone camera at the product, and the app shows you the correct price.
+> ALESCAN is a free, web-based tool that helps market consumers in Olongapo City check if the prices of basic goods (e.g.,pork, chicken, tilapia) are within the official government price limits. You simply point your phone camera at the product, and the app shows you the correct price.
 
 ---
 
@@ -13,7 +13,7 @@
 2. [Who is This Manual For?](#2-who-is-this-manual-for)
 3. [What You Need](#3-what-you-need)
 4. [How to Open ALESCAN](#4-how-to-open-alescan)
-5. [For Shoppers — How to Use the Scanner](#5-for-shoppers--how-to-use-the-scanner)
+5. [For Consumers — How to Use the Scanner](#5-for-shoppers--how-to-use-the-scanner)
    - [Step 1: Open the Scanner](#step-1-open-the-scanner)
    - [Step 2: Point Your Camera](#step-2-point-your-camera)
    - [Step 3: Tap "Scan"](#step-3-tap-scan)
@@ -69,7 +69,7 @@ This manual is written for **two types of users**:
 
 | User Type | What They Do |
 |-----------|-------------|
-| **Shoppers (Consumers)** | Use their phone to scan products and check prices at the market. No account or login needed. |
+| **Consumers** | Use their phone to scan products and check prices at the market. No account or login needed. |
 | **Administrators** | Manage the system: update prices, review scan history, handle complaints, and monitor system health. Login required. |
 
 ---
@@ -215,7 +215,7 @@ Here is a breakdown of everything you see on the result screen:
 Shows the **name of the identified product** with an icon (🐔 for chicken, 🥩 for pork, 🐟 for tilapia).
 
 ### Official SRP Card
-Shows the **official government price** in large numbers. This is the maximum price per kilogram. For example, **₱220.00** means the product should not cost more than ₱220 per kilogram.
+Shows the **official government price** in large numbers. 
 
 ### Detection Confidence Bar
 Shows how confident the app is about its identification:
@@ -444,7 +444,7 @@ This can also be triggered manually by an administrator at any time from the das
 
 ### Security
 
-- **Shopper access** requires no login. The public scanner is open to everyone.
+- **Consumers access** requires no login. The public scanner is open to everyone.
 - **Admin access** is protected by a username and password.
 - Admin sessions last for **8 hours** before requiring re-authentication.
 - All admin actions are verified by the server on every request.
@@ -515,7 +515,7 @@ For questions, technical issues, or feedback about ALESCAN, contact:
 
 - **Project Team** — ALESCAN Development Team
 - **Local Authority** — Olongapo City Public Market
-- **Price Data Source** — Department of Agriculture, Bantay Presyo Program
+- **Price Data Source** — Department of Agriculture, Bantay Presyo Monitoring Program
 
 ---
 
