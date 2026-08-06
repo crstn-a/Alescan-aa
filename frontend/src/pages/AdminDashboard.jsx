@@ -710,7 +710,7 @@ export default function AdminDashboard() {
   // Scan filter state for overview
   const [scanFilterMode, setScanFilterMode] = useState('all')  // 'all' | 'daily' | 'weekly' | 'monthly'
   const [scanFilterDate, setScanFilterDate] = useState(() => {
-    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   })
   const [filteredScanData, setFilteredScanData] = useState(null)
   const [filteredScanLoading, setFilteredScanLoading] = useState(false)
@@ -1075,23 +1075,6 @@ export default function AdminDashboard() {
               </div>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {active === 5 && (
-                <button
-                  onClick={() => setShowReportModal(true)}
-                  disabled={tabLoading}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
-                    borderRadius: 8, border: `1px solid ${C.g600}`, background: C.g50,
-                    color: C.g700, fontSize: 13, fontWeight: 600, transition: 'all .15s',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = C.g100}
-                  onMouseLeave={e => e.currentTarget.style.background = C.g50}
-                >
-                  <Svg d={IC.report.d} d2={IC.report.d2} d3={IC.report.d3} size={14} />
-                  Generate Report
-                </button>
-              )}
               {active !== 0 && (
                 <button className="rbtn" onClick={() => loadTab(active)} disabled={tabLoading} style={{
                   display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
@@ -1122,7 +1105,7 @@ export default function AdminDashboard() {
 
           {/* OVERVIEW */}
           {active === 0 && (() => {
-            const fmtISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+            const fmtISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
             const refDate = new Date(scanFilterDate + 'T00:00:00')
 
             const navigateDate = (dir) => {
