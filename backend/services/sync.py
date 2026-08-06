@@ -69,7 +69,7 @@ def run_sync() -> dict:
     _upsert_prices(normalized)
 
     # ── Stage 5: Log success ─────────────────────────────
-    _write_sync_log(extractor, "success", f"Upserted {len(normalized)} prices")
+    _write_sync_log(extractor, "success", f"Inserted {len(normalized)} prices")
 
     logger.info(f"Sync complete — {len(normalized)} prices via {extractor}")
 

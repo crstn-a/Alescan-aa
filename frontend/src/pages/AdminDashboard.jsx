@@ -18,6 +18,7 @@ import {
 } from 'recharts'
 
 import AnalyticsReportModal from '../components/AnalyticsReportModal'
+import SyncDetailsModal from '../components/SyncDetailsModal'
 
 /* ── Icons ──────────────────────────────────────────────────────────── */
 const Svg = ({ d, d2, d3, size = 16 }) => (
@@ -728,6 +729,7 @@ export default function AdminDashboard() {
   const [toast, setToast] = useState(null)
   const [showLogout, setShowLogout] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
+  const [selectedSyncLog, setSelectedSyncLog] = useState(null)
   const [editingViolation, setEditingViolation] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [volumeWeekOffset, setVolumeWeekOffset] = useState(0)
@@ -862,6 +864,32 @@ export default function AdminDashboard() {
       { key: 'extractor_used', label: 'Extractor', render: v => <span style={{ fontFamily: 'monospace', fontSize: 12, background: C.k100, padding: '3px 8px', borderRadius: 6 }}>{v}</span> },
       { key: 'notes', label: 'Notes', render: v => <span style={{ color: C.k500, display: 'block', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis' }}>{v || '—'}</span> },
       { key: 'synced_at', label: 'Synced at', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
+      {
+        key: 'actions', label: 'Synchronization Details', render: (_, row) => (
+          <button
+            onClick={() => setSelectedSyncLog(row)}
+            style={{
+              padding: '5px 12px',
+              borderRadius: 8,
+              border: `1px solid ${C.g100}`,
+              background: C.g50,
+              color: C.g700,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              transition: 'all .15s'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = C.g600; e.currentTarget.style.color = '#fff' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = C.g50; e.currentTarget.style.color = C.g700 }}
+          >
+            <Svg d={IC.analytics.d} d2={IC.analytics.d2} size={13} />
+            View Details
+          </button>
+        )
+      }
     ],
     4: [
       {
@@ -1851,6 +1879,12 @@ export default function AdminDashboard() {
           data={data}
           user={user}
           onClose={() => setShowReportModal(false)}
+        />
+      )}
+      {selectedSyncLog && (
+        <SyncDetailsModal
+          syncLog={selectedSyncLog}
+          onClose={() => setSelectedSyncLog(null)}
         />
       )}
     </div>

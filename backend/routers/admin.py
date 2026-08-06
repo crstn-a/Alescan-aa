@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from services.db import get_supabase, log_error
 from services.sync import run_sync
 from services.auth import authenticate_admin, create_access_token
+from datetime import datetime, timedelta
 import logging
 from typing import Optional
 import uuid
@@ -188,19 +189,82 @@ def scan_logs(limit: int = Query(50, ge=1, le=200)):
         raise
 
 
+def _parse_iso(dt_str: str) -> datetime:
+    if not dt_str:
+        return datetime.now()
+    s = dt_str.replace("Z", "+00:00")
+    parts = s.split("+")
+    base = parts[0]
+    tz = parts[1] if len(parts) > 1 else ""
+    if "." in base:
+        dpart, frac = base.split(".", 1)
+        frac = (frac + "000000")[:6]
+        base = dpart + "." + frac
+    return datetime.fromisoformat(base + ("+" + tz if tz else ""))
+
+
 # ── GET /admin/logs/sync ──────────────────────────────────────────────
 @router.get("/logs/sync")
 def sync_logs(limit: int = Query(20, ge=1, le=100)):
     try:
-        data = (
-            get_supabase()
+        sb = get_supabase()
+        logs_res = (
+            sb
             .table("sync_logs")
             .select("id, extractor_used, status, pdf_url, synced_at, notes")
             .order("synced_at", desc=True)
             .limit(limit)
             .execute()
         )
-        return data.data
+        logs = logs_res.data or []
+
+        for log in logs:
+            if log.get("notes"):
+                log["notes"] = log["notes"].replace("Upserted", "Inserted").replace("upserted", "inserted")
+
+            if log.get("status") == "success" and log.get("synced_at"):
+                try:
+                    dt = _parse_iso(log["synced_at"])
+                    t_start = (dt - timedelta(minutes=2)).isoformat()
+                    t_end = (dt + timedelta(minutes=2)).isoformat()
+                    recs = (
+                        sb.table("price_records")
+                        .select("id, product_id, price_per_kg, created_at, products(display_name)")
+                        .gte("created_at", t_start)
+                        .lte("created_at", t_end)
+                        .order("created_at", desc=False)
+                        .execute()
+                    )
+                    details = []
+                    for r in (recs.data or []):
+                        prev = (
+                            sb.table("price_records")
+                            .select("price_per_kg")
+                            .eq("product_id", r["product_id"])
+                            .lt("created_at", r["created_at"])
+                            .order("created_at", desc=True)
+                            .limit(1)
+                            .execute()
+                        )
+                        price_from = prev.data[0]["price_per_kg"] if prev.data else None
+                        prod_name = (
+                            r.get("products", {}).get("display_name")
+                            if isinstance(r.get("products"), dict)
+                            else "Commodity"
+                        )
+                        details.append({
+                            "product": prod_name,
+                            "price_from": price_from,
+                            "price_to": r["price_per_kg"]
+                        })
+                    log["details"] = details
+                except Exception as ex:
+                    logger.warning(f"Could not compute sync details for log {log.get('id')}: {ex}")
+                    log["details"] = []
+            else:
+                log["details"] = []
+
+        return logs
     except Exception as e:
         log_error("admin", f"sync_logs query failed: {e}")
         raise
