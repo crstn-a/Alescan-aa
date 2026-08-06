@@ -49,7 +49,21 @@ const C = {
   g500: '#22c55e', g100: '#dcfce7', g50: '#f0fdf4',
   k900: '#111827', k700: '#374151', k500: '#6b7280', k400: '#9ca3af',
   k200: '#e5e7eb', k100: '#f3f4f6', k50: '#f9fafb', white: '#ffffff',
-  r600: '#dc2626', r700: '#b91c1c', r50: '#fef2f2', r100: '#fee2e2',
+  
+  // 🔴 Logout Red Palette (Rose / Crimson Coral - Action tone for Logout controls)
+  logoutRed: '#e11d48',
+  logoutRedHover: '#be123c',
+  logoutRedBg: '#fff1f2',
+  logoutRedBorder: '#fecdd3',
+
+  // ⚠️ Error Red Palette (Flame Crimson - Dedicated tone for Errors & Exception Logs)
+  errorRed: '#dc2626',
+  errorRedDark: '#991b1b',
+  errorRedBg: '#fef2f2',
+  errorRedBorder: '#fee2e2',
+
+  // Legacy fallback aliases
+  r600: '#dc2626', r700: '#991b1b', r50: '#fef2f2', r100: '#fee2e2',
   a700: '#b45309', a50: '#fffbeb', a100: '#fef3c7',
 }
 
@@ -71,7 +85,9 @@ const NAV = [
 function Badge({ label, v = 'green' }) {
   const s = {
     green: { bg: C.g50, color: C.g700, bd: C.g100 },
-    red: { bg: C.r50, color: C.r700, bd: C.r100 },
+    red: { bg: C.errorRedBg, color: C.errorRedDark, bd: C.errorRedBorder },
+    error: { bg: C.errorRedBg, color: C.errorRedDark, bd: C.errorRedBorder },
+    logout: { bg: C.logoutRedBg, color: C.logoutRedHover, bd: C.logoutRedBorder },
     amber: { bg: C.a50, color: C.a700, bd: C.a100 },
     gray: { bg: C.k100, color: C.k700, bd: C.k200 },
   }[v] || { bg: C.k100, color: C.k700, bd: C.k200 }
@@ -91,7 +107,7 @@ function ConfBadge({ v }) {
 }
 
 function StatusBadge({ val }) {
-  const m = { success: 'green', failed: 'red', partial: 'amber' }
+  const m = { success: 'green', failed: 'error', partial: 'amber' }
   return <Badge label={val || '—'} v={m[val] || 'gray'} />
 }
 
@@ -100,32 +116,39 @@ const fmtDt = (ts) => ts
   : '—'
 
 /* ── Stat Card ──────────────────────────────────────────────────────── */
-function StatCard({ label, value, sub, trend, icon, accent, loading }) {
+function StatCard({ label, value, sub, trend, icon, accent, isErrorCard, loading }) {
+  const isErr = isErrorCard || icon === 'alert'
   return (
     <div style={{
       background: accent ? `linear-gradient(135deg,${C.g900},${C.g800})` : C.white,
       borderRadius: 14, padding: '20px',
-      border: accent ? 'none' : `1px solid ${C.k100}`,
-      boxShadow: accent ? '0 8px 24px rgba(5,46,22,.3)' : '0 1px 4px rgba(0,0,0,.06)',
+      border: accent ? 'none' : isErr ? `1px solid ${C.errorRedBorder}` : `1px solid ${C.k100}`,
+      boxShadow: accent ? '0 8px 24px rgba(5,46,22,.3)' : isErr ? '0 4px 16px rgba(220,38,38,.08)' : '0 1px 4px rgba(0,0,0,.06)',
       display: 'flex', flexDirection: 'column', gap: 12,
       position: 'relative', overflow: 'hidden', minWidth: 0,
     }}>
       {accent && <div style={{ position: 'absolute', top: -28, right: -28, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,.05)' }} />}
+      {isErr && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: C.errorRed }} />}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', margin: 0, color: accent ? 'rgba(255,255,255,.55)' : C.k400 }}>{label}</p>
-        <div style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, background: accent ? 'rgba(255,255,255,.12)' : C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent ? 'rgba(255,255,255,.8)' : C.g600 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', margin: 0, color: accent ? 'rgba(255,255,255,.55)' : isErr ? C.errorRedDark : C.k400 }}>{label}</p>
+        <div style={{
+          width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+          background: accent ? 'rgba(255,255,255,.12)' : isErr ? C.errorRedBg : C.g50,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: accent ? 'rgba(255,255,255,.8)' : isErr ? C.errorRed : C.g600
+        }}>
           <Svg d={IC[icon]?.d} d2={IC[icon]?.d2} size={15} />
         </div>
       </div>
       {loading
         ? <div style={{ height: 38, width: 90, borderRadius: 8, background: accent ? 'rgba(255,255,255,.1)' : C.k100, animation: 'pulse 1.4s infinite' }} />
         : <div>
-          <p style={{ fontSize: 36, fontWeight: 800, margin: 0, lineHeight: 1, color: accent ? '#fff' : C.k900, fontVariantNumeric: 'tabular-nums' }}>{value ?? '—'}</p>
-          {sub && <p style={{ fontSize: 12, margin: '5px 0 0', color: accent ? 'rgba(255,255,255,.5)' : C.k400 }}>{sub}</p>}
+          <p style={{ fontSize: 36, fontWeight: 800, margin: 0, lineHeight: 1, color: accent ? '#fff' : isErr && value > 0 ? C.errorRedDark : C.k900, fontVariantNumeric: 'tabular-nums' }}>{value ?? '—'}</p>
+          {sub && <p style={{ fontSize: 12, margin: '5px 0 0', color: accent ? 'rgba(255,255,255,.5)' : isErr ? C.errorRedDark : C.k400 }}>{sub}</p>}
         </div>
       }
       {trend && !loading && (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, alignSelf: 'flex-start', background: accent ? 'rgba(255,255,255,.14)' : C.g50, color: accent ? 'rgba(255,255,255,.85)' : C.g700, padding: '3px 10px', borderRadius: 99 }}>{trend}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, alignSelf: 'flex-start', background: accent ? 'rgba(255,255,255,.14)' : isErr ? C.errorRedBg : C.g50, color: accent ? 'rgba(255,255,255,.85)' : isErr ? C.errorRedDark : C.g700, padding: '3px 10px', borderRadius: 99 }}>{trend}</span>
       )}
     </div>
   )
@@ -263,7 +286,11 @@ function DataTable({ columns, rows, loading }) {
 /* ── Toast ──────────────────────────────────────────────────────────── */
 function Toast({ toast }) {
   if (!toast) return null
-  const s = { ok: { bg: C.g50, bd: C.g100, c: C.g700 }, warn: { bg: C.a50, bd: C.a100, c: C.a700 }, err: { bg: C.r50, bd: C.r100, c: C.r600 } }[toast.type] || {}
+  const s = {
+    ok: { bg: C.g50, bd: C.g100, c: C.g700 },
+    warn: { bg: C.a50, bd: C.a100, c: C.a700 },
+    err: { bg: C.errorRedBg, bd: C.errorRedBorder, c: C.errorRedDark }
+  }[toast.type] || {}
   return (
     <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 998, display: 'flex', alignItems: 'center', gap: 10, background: s.bg, border: `1px solid ${s.bd}`, borderRadius: 12, padding: '13px 18px', boxShadow: '0 8px 24px rgba(0,0,0,.12)', animation: 'slideUp .22s ease', maxWidth: 380 }}>
       <p style={{ fontSize: 13, fontWeight: 500, color: s.c, margin: 0 }}>{toast.text}</p>
@@ -276,7 +303,7 @@ function LogoutModal({ onConfirm, onCancel }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,.45)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, animation: 'fadeIn .15s ease' }}>
       <div style={{ background: C.white, borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 360, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,.18)', animation: 'scaleIn .18s ease' }}>
-        <div style={{ width: 58, height: 58, borderRadius: '50%', background: C.r50, margin: '0 auto 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.r600 }}>
+        <div style={{ width: 58, height: 58, borderRadius: '50%', background: C.logoutRedBg, border: `1px solid ${C.logoutRedBorder}`, margin: '0 auto 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.logoutRed }}>
           <Svg d={IC.logout.d} size={26} />
         </div>
         <h2 style={{ fontSize: 19, fontWeight: 700, color: C.k900, margin: '0 0 8px' }}>Sign out?</h2>
@@ -289,9 +316,9 @@ function LogoutModal({ onConfirm, onCancel }) {
             onMouseLeave={e => e.currentTarget.style.background = C.white}>
             No, stay
           </button>
-          <button onClick={onConfirm} style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: C.r600, fontSize: 14, fontWeight: 600, color: '#fff', cursor: 'pointer' }}
-            onMouseEnter={e => e.currentTarget.style.background = C.r700}
-            onMouseLeave={e => e.currentTarget.style.background = C.r600}>
+          <button onClick={onConfirm} style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: C.logoutRed, fontSize: 14, fontWeight: 600, color: '#fff', cursor: 'pointer', boxShadow: '0 4px 14px rgba(225, 29, 72, 0.25)' }}
+            onMouseEnter={e => e.currentTarget.style.background = C.logoutRedHover}
+            onMouseLeave={e => e.currentTarget.style.background = C.logoutRed}>
             Yes, sign out
           </button>
         </div>
@@ -837,9 +864,36 @@ export default function AdminDashboard() {
       { key: 'synced_at', label: 'Synced at', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
     ],
     4: [
-      { key: 'module', label: 'Module', render: v => <span style={{ fontFamily: 'monospace', fontSize: 12, background: C.r50, color: C.r600, padding: '3px 8px', borderRadius: 6 }}>{v}</span> },
-      { key: 'message', label: 'Message', render: v => <span style={{ color: C.k700, display: 'block', maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis' }}>{v}</span> },
-      { key: 'occurred_at', label: 'Date', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
+      {
+        key: 'module', label: 'Module',
+        render: v => (
+          <span style={{
+            fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
+            background: C.errorRedBg, color: C.errorRedDark, border: `1px solid ${C.errorRedBorder}`,
+            padding: '4px 10px', borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 6
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.errorRed }} />
+            {v}
+          </span>
+        )
+      },
+      {
+        key: 'message', label: 'Error Trace / Message',
+        render: v => (
+          <span style={{
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+            fontSize: 12.5, color: C.k900, background: C.k50, borderLeft: `3px solid ${C.errorRed}`,
+            padding: '6px 12px', borderRadius: '0 8px 8px 0', display: 'block', maxWidth: 460,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+          }}>
+            {v}
+          </span>
+        )
+      },
+      {
+        key: 'occurred_at', label: 'Timestamp',
+        render: v => <span style={{ color: C.k500, fontSize: 12, fontWeight: 500 }}>{fmtDt(v)}</span>
+      },
     ],
     7: [
       { key: 'name', label: 'Consumer Name', render: v => <span style={{ fontWeight: 600, color: C.k900 }}>{v}</span> },
@@ -920,10 +974,13 @@ export default function AdminDashboard() {
         @keyframes scaleIn{from{opacity:0;transform:scale(.94)}}
         .nb:hover{background:${C.g50}!important;color:${C.g700}!important}
         .nb:hover .nic{background:${C.g100}!important;color:${C.g700}!important}
+        .nb-err:hover{background:${C.errorRedBg}!important;color:${C.errorRedDark}!important}
+        .nb-err:hover .nic{background:${C.errorRed}!important;color:#fff!important}
         .qb:hover{border-color:#86efac!important;box-shadow:0 4px 14px rgba(22,163,74,.12)!important}
         .rbtn:hover{background:${C.k100}!important}
         .sbtn:hover{opacity:.88}
-        .logout-nav:hover{background:${C.r50}!important}
+        .logout-nav:hover{background:${C.logoutRedBg}!important;color:${C.logoutRedHover}!important}
+        .logout-nav:hover div{background:${C.logoutRedBorder}!important;color:${C.logoutRedHover}!important}
       `}</style>
 
       {/* ── SIDEBAR ───────────────────────────────────────────────── */}
@@ -971,30 +1028,35 @@ export default function AdminDashboard() {
           )}
           {NAV.map(item => {
             const on = active === item.id
+            const isErrorNav = item.id === 4
+            const bgOn = isErrorNav ? C.errorRedBg : C.g50
+            const colorOn = isErrorNav ? C.errorRedDark : C.g700
+            const iconBgOn = isErrorNav ? C.errorRed : C.g600
+            const dotBgOn = isErrorNav ? C.errorRed : C.g500
             return (
-              <button key={item.id} className="nb" onClick={() => setActive(item.id)}
+              <button key={item.id} className={isErrorNav ? "nb nb-err" : "nb"} onClick={() => setActive(item.id)}
                 title={!expanded ? item.label : undefined}
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center',
                   gap: expanded ? 10 : 0, justifyContent: expanded ? 'flex-start' : 'center',
                   padding: expanded ? '9px 8px' : '9px', borderRadius: 10,
                   border: 'none', marginBottom: 2,
-                  background: on ? C.g50 : 'transparent',
-                  color: on ? C.g700 : C.k500,
+                  background: on ? bgOn : 'transparent',
+                  color: on ? colorOn : isErrorNav ? C.errorRedDark : C.k500,
                   fontWeight: on ? 600 : 400, fontSize: 13,
                   transition: 'all .15s', textAlign: 'left',
                   whiteSpace: 'nowrap', overflow: 'hidden',
                 }}>
                 <div className="nic" style={{
                   width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                  background: on ? C.g600 : 'transparent',
+                  background: on ? iconBgOn : isErrorNav ? C.errorRedBg : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: on ? '#fff' : C.k400, transition: 'all .15s',
+                  color: on ? '#fff' : isErrorNav ? C.errorRed : C.k400, transition: 'all .15s',
                 }}>
                   <Svg d={IC[item.icon]?.d} d2={IC[item.icon]?.d2} size={14} />
                 </div>
                 {expanded && item.label}
-                {expanded && on && <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: C.g500, flexShrink: 0 }} />}
+                {expanded && on && <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: dotBgOn, flexShrink: 0 }} />}
               </button>
             )
           })}
@@ -1011,10 +1073,10 @@ export default function AdminDashboard() {
                 gap: expanded ? 10 : 0, justifyContent: expanded ? 'flex-start' : 'center',
                 padding: expanded ? '9px 8px' : '9px', borderRadius: 10,
                 border: 'none', background: 'transparent',
-                color: '#ef4444', fontSize: 13, fontWeight: 500,
+                color: C.logoutRed, fontSize: 13, fontWeight: 600,
                 transition: 'all .15s',
               }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: C.r50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: C.logoutRedBg, border: `1px solid ${C.logoutRedBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.logoutRed, transition: 'all .15s' }}>
                 <Svg d={IC.logout.d} size={14} />
               </div>
               {expanded && 'Sign Out'}
@@ -1235,7 +1297,7 @@ export default function AdminDashboard() {
                       stats?.last_sync?.status === 'failed' ? '✗ Failed' : null
                   }
                   loading={statsLoading} />
-                <StatCard label="Error Logs" icon="alert"
+                <StatCard label="Error Logs" icon="alert" isErrorCard
                   value={stats?.total_errors ?? '…'}
                   sub="Across all modules"
                   loading={statsLoading} />
@@ -1244,22 +1306,31 @@ export default function AdminDashboard() {
               <div>
                 <p style={{ fontSize: 14, fontWeight: 700, color: C.k900, marginBottom: 12 }}>Quick Access</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(155px,1fr))', gap: 10 }}>
-                  {NAV.slice(1).map(item => (
-                    <button key={item.id} className="qb" onClick={() => setActive(item.id)} style={{
-                      display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px',
-                      borderRadius: 12, border: `1px solid ${C.k100}`, background: C.white,
-                      textAlign: 'left', transition: 'all .15s', cursor: 'pointer',
-                      boxShadow: '0 1px 3px rgba(0,0,0,.05)',
-                    }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 9, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600, flexShrink: 0 }}>
-                        <Svg d={IC[item.icon]?.d} d2={IC[item.icon]?.d2} size={16} />
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: C.k900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</p>
-                        <p style={{ margin: 0, fontSize: 11, color: C.k400 }}>View →</p>
-                      </div>
-                    </button>
-                  ))}
+                  {NAV.slice(1).map(item => {
+                    const isErrorItem = item.id === 4
+                    return (
+                      <button key={item.id} className="qb" onClick={() => setActive(item.id)} style={{
+                        display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px',
+                        borderRadius: 12, border: `1px solid ${isErrorItem ? C.errorRedBorder : C.k100}`,
+                        background: C.white,
+                        textAlign: 'left', transition: 'all .15s', cursor: 'pointer',
+                        boxShadow: isErrorItem ? '0 2px 8px rgba(220,38,38,.06)' : '0 1px 3px rgba(0,0,0,.05)',
+                      }}>
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 9,
+                          background: isErrorItem ? C.errorRedBg : C.g50,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: isErrorItem ? C.errorRed : C.g600, flexShrink: 0
+                        }}>
+                          <Svg d={IC[item.icon]?.d} d2={IC[item.icon]?.d2} size={16} />
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: isErrorItem ? C.errorRedDark : C.k900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</p>
+                          <p style={{ margin: 0, fontSize: 11, color: isErrorItem ? C.errorRed : C.k400 }}>View →</p>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -1335,7 +1406,7 @@ export default function AdminDashboard() {
                   <div>
                     <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Operational Analytics & Market Intelligence</h2>
                     <p style={{ margin: '4px 0 0', fontSize: 13, color: '#d1fae5', opacity: 0.9 }}>
-                      Generate, analyze, and print comprehensive commodity telemetry and accuracy reports.
+                      Generate, analyze, and print comprehensive commodity reports.
                     </p>
                   </div>
                   <button
@@ -1706,8 +1777,84 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* DATA TABS (Scan Logs, Price Records, etc.) */}
-          {active !== 0 && active !== 5 && active !== 6 && active !== 7 && (
+          {/* ERROR LOGS (active === 4) DEDICATED HIGHLIGHTED VIEW */}
+          {active === 4 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Error Hero Banner */}
+              <div style={{
+                background: 'linear-gradient(135deg, #7f1d1d 0%, #b91c1c 50%, #dc2626 100%)',
+                borderRadius: 16, padding: '22px 26px', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                boxShadow: '0 8px 24px rgba(220, 38, 38, 0.22)', position: 'relative', overflow: 'hidden'
+              }}>
+                <div style={{ position: 'absolute', right: -30, bottom: -30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, position: 'relative', zIndex: 2 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                    <Svg d={IC.alert.d} size={24} />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <h2 style={{ margin: 0, fontSize: 19, fontWeight: 800, letterSpacing: '-.01em' }}>System Error Logs & Diagnostics</h2>
+                      <span style={{
+                        background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
+                        padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, letterSpacing: '.04em'
+                      }}>
+                        LIVE MONITORING
+                      </span>
+                    </div>
+                    <p style={{ margin: '4px 0 0', fontSize: 13, color: '#fee2e2', opacity: 0.95 }}>
+                      Real-time tracking of backend API exceptions, extraction pipeline errors, and system failures.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => loadTab(4)}
+                  disabled={tabLoading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
+                    borderRadius: 10, border: 'none', background: C.white, color: C.errorRedDark,
+                    fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    transition: 'all .15s ease', position: 'relative', zIndex: 2
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = C.errorRedBg}
+                  onMouseLeave={e => e.currentTarget.style.background = C.white}
+                >
+                  <Svg d={IC.refresh.d} size={15} />
+                  Refresh Logs
+                </button>
+              </div>
+
+              {/* Error Log Table Container */}
+              <div style={{
+                background: C.white, borderRadius: 16, border: `1px solid ${C.errorRedBorder}`,
+                boxShadow: '0 4px 20px rgba(220, 38, 38, 0.06)', overflow: 'hidden'
+              }}>
+                <div style={{
+                  padding: '16px 22px', borderBottom: `1px solid ${C.errorRedBorder}`,
+                  background: C.errorRedBg, display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 9, background: C.white, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.errorRed, border: `1px solid ${C.errorRedBorder}` }}>
+                      <Svg d={IC.alert.d} size={16} />
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: C.errorRedDark }}>Recorded System Exceptions</p>
+                      <p style={{ margin: 0, fontSize: 12, color: C.k500 }}>
+                        {tabLoading ? 'Loading exception records...' : `${Array.isArray(data) ? data.length : 0} error event${Array.isArray(data) && data.length !== 1 ? 's' : ''} captured`}
+                      </p>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: C.errorRedDark, background: C.white, border: `1px solid ${C.errorRedBorder}`, padding: '4px 12px', borderRadius: 8 }}>
+                    Severity: High / Critical
+                  </span>
+                </div>
+                <DataTable columns={COLS[4] || []} rows={Array.isArray(data) ? data : []} loading={tabLoading} />
+              </div>
+            </div>
+          )}
+
+          {/* OTHER DATA TABS (Scan Logs, Price Records, Sync Logs) */}
+          {active !== 0 && active !== 4 && active !== 5 && active !== 6 && active !== 7 && (
             <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden' }}>
               <div style={{ padding: '15px 20px', borderBottom: `1px solid ${C.k100}`, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 34, height: 34, borderRadius: 9, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600 }}>

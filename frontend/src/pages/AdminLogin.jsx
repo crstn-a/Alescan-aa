@@ -250,12 +250,12 @@ export default function AdminLogin() {
             {/* Error message */}
             {error && (
               <div style={{ padding:'12px 16px', borderRadius:12, background:'#fef2f2', border:'1px solid #fee2e2', display:'flex', alignItems:'center', gap:10 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.error} strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/>
                   <line x1="12" y1="8" x2="12" y2="12"/>
                   <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <p style={{ fontSize:14, color:'#991b1b', margin:0 }}>{error}</p>
+                <p style={{ fontSize:14, color:'#991b1b', margin:0, fontWeight: 600 }}>{error}</p>
               </div>
             )}
 
