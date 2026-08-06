@@ -49,7 +49,7 @@ const C = {
   g500: '#22c55e', g100: '#dcfce7', g50: '#f0fdf4',
   k900: '#111827', k700: '#374151', k500: '#6b7280', k400: '#9ca3af',
   k200: '#e5e7eb', k100: '#f3f4f6', k50: '#f9fafb', white: '#ffffff',
-  
+
   // 🔴 Logout Red Palette (Rose / Crimson Coral - Action tone for Logout controls)
   logoutRed: '#e11d48',
   logoutRedHover: '#be123c',
@@ -1780,49 +1780,6 @@ export default function AdminDashboard() {
           {/* ERROR LOGS (active === 4) DEDICATED HIGHLIGHTED VIEW */}
           {active === 4 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* Error Hero Banner */}
-              <div style={{
-                background: 'linear-gradient(135deg, #7f1d1d 0%, #b91c1c 50%, #dc2626 100%)',
-                borderRadius: 16, padding: '22px 26px', color: '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                boxShadow: '0 8px 24px rgba(220, 38, 38, 0.22)', position: 'relative', overflow: 'hidden'
-              }}>
-                <div style={{ position: 'absolute', right: -30, bottom: -30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, position: 'relative', zIndex: 2 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                    <Svg d={IC.alert.d} size={24} />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <h2 style={{ margin: 0, fontSize: 19, fontWeight: 800, letterSpacing: '-.01em' }}>System Error Logs & Diagnostics</h2>
-                      <span style={{
-                        background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
-                        padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, letterSpacing: '.04em'
-                      }}>
-                        LIVE MONITORING
-                      </span>
-                    </div>
-                    <p style={{ margin: '4px 0 0', fontSize: 13, color: '#fee2e2', opacity: 0.95 }}>
-                      Real-time tracking of backend API exceptions, extraction pipeline errors, and system failures.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => loadTab(4)}
-                  disabled={tabLoading}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
-                    borderRadius: 10, border: 'none', background: C.white, color: C.errorRedDark,
-                    fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    transition: 'all .15s ease', position: 'relative', zIndex: 2
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = C.errorRedBg}
-                  onMouseLeave={e => e.currentTarget.style.background = C.white}
-                >
-                  <Svg d={IC.refresh.d} size={15} />
-                  Refresh Logs
-                </button>
-              </div>
 
               {/* Error Log Table Container */}
               <div style={{
@@ -1844,9 +1801,6 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: C.errorRedDark, background: C.white, border: `1px solid ${C.errorRedBorder}`, padding: '4px 12px', borderRadius: 8 }}>
-                    Severity: High / Critical
-                  </span>
                 </div>
                 <DataTable columns={COLS[4] || []} rows={Array.isArray(data) ? data : []} loading={tabLoading} />
               </div>
