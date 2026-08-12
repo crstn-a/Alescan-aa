@@ -854,18 +854,23 @@ export default function AdminDashboard() {
       { key: 'scanned_at', label: 'Scanned at', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
     ],
     2: [
-      { key: 'product', label: 'Commodity', render: v => <span style={{ fontWeight: 600, color: C.k900 }}>{v}</span> },
-      { key: 'official_srp', label: 'Official SRP', render: v => <span style={{ fontWeight: 800, color: C.g700, fontSize: 15 }}>₱{Number(v).toFixed(2)}</span> },
-      { key: 'week_of', label: 'Week of', render: v => <span style={{ color: C.k500 }}>{v}</span> },
-      { key: 'source', label: 'Source', render: v => <span style={{ fontSize: 12, color: C.k400 }}>{v}</span> },
+      { key: 'category', label: 'Category', render: (v, row) => <span style={{ fontSize: 12, fontWeight: 600, color: C.g700, background: C.g50, padding: '3px 8px', borderRadius: 6, border: `1px solid ${C.g100}` }}>{v || row.category || 'General'}</span> },
+      { key: 'commodity_name', label: 'Commodity', render: (v, row) => <span style={{ fontWeight: 700, color: C.k900 }}>{v || row.product || row.display_name}</span> },
+      { key: 'specification', label: 'Spec', render: v => v ? <span style={{ fontSize: 12, color: C.k700, background: C.k100, padding: '2px 7px', borderRadius: 4 }}>{v}</span> : <span style={{ color: C.k400 }}>—</span> },
+      { key: 'unit', label: 'Unit', render: v => <span style={{ fontSize: 12, color: C.k500 }}>per {v || 'kg'}</span> },
+      { key: 'price_low', label: 'Low', render: (v, row) => <span style={{ fontWeight: 600, color: C.k700 }}>₱{Number(v ?? row.price_prevailing ?? 0).toFixed(2)}</span> },
+      { key: 'price_high', label: 'High', render: (v, row) => <span style={{ fontWeight: 600, color: C.k700 }}>₱{Number(v ?? row.price_prevailing ?? 0).toFixed(2)}</span> },
+      { key: 'price_average', label: 'Average', render: (v, row) => <span style={{ fontWeight: 600, color: C.k500 }}>₱{Number(v ?? row.price_prevailing ?? 0).toFixed(2)}</span> },
+      { key: 'price_prevailing', label: 'Prevailing', render: (v, row) => <span style={{ fontWeight: 800, color: C.g700, fontSize: 15 }}>₱{Number(v ?? row.official_srp ?? 0).toFixed(2)}</span> },
+      { key: 'period_month', label: 'Month / Year', render: (v, row) => <span style={{ fontSize: 12, color: C.k400 }}>{v ? `${v} ${row.period_year || ''}` : (row.created_at ? fmtDt(row.created_at) : '—')}</span> },
     ],
     3: [
       { key: 'status', label: 'Status', render: v => <StatusBadge val={v} /> },
-      { key: 'extractor_used', label: 'Extractor', render: v => <span style={{ fontFamily: 'monospace', fontSize: 12, background: C.k100, padding: '3px 8px', borderRadius: 6 }}>{v}</span> },
-      { key: 'notes', label: 'Notes', render: v => <span style={{ color: C.k500, display: 'block', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis' }}>{v || '—'}</span> },
+      { key: 'extractor_used', label: 'Source Type', render: v => <span style={{ fontFamily: 'monospace', fontSize: 12, background: C.g50, color: C.g700, padding: '3px 8px', borderRadius: 6, border: `1px solid ${C.g100}` }}>{v === 'sheet' ? 'DA Sheet Sync' : (v || 'Sheet')}</span> },
+      { key: 'notes', label: 'Notes', render: v => <span style={{ color: C.k700, display: 'block', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis' }}>{v || 'Inserted prices from DA Google Sheet'}</span> },
       { key: 'synced_at', label: 'Synced at', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
       {
-        key: 'actions', label: 'Synchronization Details', render: (_, row) => (
+        key: 'actions', label: 'Sync Details', render: (_, row) => (
           <button
             onClick={() => setSelectedSyncLog(row)}
             style={{
@@ -891,6 +896,7 @@ export default function AdminDashboard() {
         )
       }
     ],
+
     4: [
       {
         key: 'module', label: 'Module',

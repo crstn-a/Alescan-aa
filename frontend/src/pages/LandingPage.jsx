@@ -321,7 +321,7 @@ export default function LandingPage() {
                   color: C.g900,
                   margin: '16px 0 0 0',
                 }}>
-                  Verify SRP Prices<br />
+                  Verify Market Prices<br />
                   <span style={{ color: C.primaryDark }}>Instantly with your Camera</span>
                 </h1>
 
@@ -332,9 +332,9 @@ export default function LandingPage() {
                   lineHeight: 1.65,
                   margin: '16px 0 4px',
                 }}>
-                  A Vision-Based Centralized SRP Verification Scanner for Public Markets
-                  Using Computer Vision and Automated Price Synchronization from the
-                  Department of Agriculture Bantay Presyo.
+                  A Vision-Based Centralized Price Verification Scanner for Public Markets
+                  Using Open-Vocabulary Computer Vision and Automated Price Synchronization from the
+                  Department of Agriculture Bantay Presyo Monthly Sheet.
                 </p>
 
                 {/* CTA Buttons */}
@@ -381,9 +381,9 @@ export default function LandingPage() {
                 {/* Stats row (responsive) */}
                 <div className="stats-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginTop: 48 }}>
                   {[
-                    { top: 'Updated Weekly', bot: 'DA Bantay Presyo' },
-                    { top: 'Powered by', bot: 'YOLOv11 Vision AI' },
-                    { top: 'No Installation', bot: 'Works with Browser' },
+                    { top: 'Updated Monthly', bot: 'DA Bantay Presyo' },
+                    { top: 'Powered by', bot: 'YOLO-World AI' },
+                    { top: 'No Installation', bot: 'Works in Browser' },
                   ].map((s, i) => (
                     <div key={i}>
                       <p style={{ fontSize: 13, color: C.textMuted, marginBottom: 4 }}>{s.top}</p>
@@ -403,7 +403,7 @@ export default function LandingPage() {
             }}>
               <img
                 src="/OlongapoCityPublicMarket.jpg"
-                alt="Olongapo Public Market - SRP reference and price verification example"
+                alt="Olongapo Public Market - Monitored market price reference and verification example"
                 style={{
                   width: '100%',
                   maxWidth: '90%',
@@ -433,9 +433,9 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(230px,1fr))', gap: 24 }}>
             {[
               { icon: Icons.camera, title: '1. Open Scanner', desc: 'Access the scanner directly from your phone or tablet browser. No app installation required.' },
-              { icon: Icons.shield, title: '2. Point Camera', desc: 'Hold your camera over the commodity. Our AI identifies the item in real-time.' },
-              { icon: Icons.checkCircle, title: '3. Verify Price', desc: 'Instantly see the official SRP from the latest DA Bantay Presyo data.' },
-              { icon: Icons.database, title: '4. Stay Informed', desc: 'All scans are logged to help track market price compliance.' },
+              { icon: Icons.shield, title: '2. Tap to Scan', desc: 'Frame your commodity and tap scan. Server-side AI identifies the item.' },
+              { icon: Icons.checkCircle, title: '3. Verify Price', desc: 'Instantly see the prevailing price and monitored range from DA Bantay Presyo.' },
+              { icon: Icons.database, title: '4. Stay Informed', desc: 'All scans are logged to help monitor retail market price transparency.' },
             ].map((step, i) => (
               <div key={i} className="step-card" style={{
                 background: C.bg,
@@ -470,18 +470,18 @@ export default function LandingPage() {
             <div style={{ flex: '1 1 360px', background: C.surface, borderRadius: 20, padding: '32px 28px', border: `1px solid ${C.border}` }}>
               <h3 style={{ fontSize: 22, fontWeight: 800, color: C.g900, marginBottom: 16 }}>The Challenge</h3>
               <p style={{ fontSize: 15, color: C.textSecondary, lineHeight: 1.7, marginBottom: 16 }}>
-                Currently, the Department of Agriculture Bantay Presyo publishes price data as scanned images converted into PDF documents containing long lists of commodities and their weekly prices.
+                The Department of Agriculture Bantay Presyo publishes monthly price monitoring sheets across ~85 agricultural commodities and categories.
               </p>
               <p style={{ fontSize: 15, color: C.textSecondary, lineHeight: 1.7, marginBottom: 16 }}>
-                Many consumers cannot easily read or navigate these documents because:
+                Many consumers cannot easily navigate large market tables because:
               </p>
               <div style={{ background: '#fef2f2', borderRadius: 12, padding: '16px 20px', border: '1px solid #fee2e2' }}>
                 <ul style={{ paddingLeft: 18, margin: 0 }}>
                   {[
-                    'The text is small and difficult to read.',
-                    'The document is lengthy and hard to search.',
-                    'Many consumers / vendors are not digitally familiar.',
-                    'Some consumers / vendors are elderly or visually impaired.',
+                    'The tables contain hundreds of rows and sub-columns.',
+                    'Manual price searching in public markets is time-consuming.',
+                    'Consumers are unaware of prevailing retail price ranges.',
+                    'Senior citizens and shoppers need instant visual assistance.',
                   ].map((item, i) => (
                     <li key={i} style={{ fontSize: 14, color: C.text, lineHeight: 1.7, marginBottom: i < 3 ? 4 : 0 }}>{item}</li>
                   ))}
@@ -498,17 +498,17 @@ export default function LandingPage() {
                 <h3 style={{ fontSize: 22, fontWeight: 800, color: C.g900 }}>Our Solution</h3>
               </div>
               <p style={{ fontSize: 15, color: C.textSecondary, lineHeight: 1.7, marginBottom: 20 }}>
-                The proposed system converts these static PDF price reports into an interactive, mobile-friendly verification system accessible from any smartphone or tablet browser — <strong>no installation required</strong>.
+                Alescan converts static price sheets into an automated, AI-driven verification system accessible from any smartphone browser — <strong>no installation required</strong>.
               </p>
               <div style={{ background: C.primaryLight, borderRadius: 14, padding: '18px 20px' }}>
                 <p style={{ fontSize: 13, fontWeight: 700, color: C.g800, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.05em' }}>Core System Flow</p>
                 <ol style={{ paddingLeft: 18, margin: 0 }}>
                   {[
-                    'Open the Website on any browser-enabled device.',
-                    'Camera captures image of the commodity.',
-                    'Computer Vision (YOLOv11) identifies the item.',
-                    'Latest official price retrieved from database.',
-                    'Price displayed clearly on screen.',
+                    'Open the Website on any mobile or desktop browser.',
+                    'Camera captures photo of the commodity on tap.',
+                    'Open-vocabulary YOLO-World identifies the item.',
+                    'Latest monitored market price (Prevailing & Low-High) retrieved.',
+                    'Monitored price displayed clearly on screen.',
                     'Scan event logged for analytics.',
                   ].map((step, i) => (
                     <li key={i} style={{ fontSize: 14, color: C.g800, lineHeight: 1.7, marginBottom: i < 5 ? 4 : 0 }}>{step}</li>
@@ -519,6 +519,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
 
       {/* ── Footer ────────────────────────────────────────────────── */}
       <footer style={{ borderTop: `1px solid ${C.border}`, padding: '28px 24px', background: C.surface }}>

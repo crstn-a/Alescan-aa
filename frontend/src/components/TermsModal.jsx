@@ -216,7 +216,7 @@ export default function TermsModal({ isOpen, onAgree, onCancel }) {
                 2. Description of Service
               </h3>
               <p style={{ margin: 0, color: C.textSecondary }}>
-                Alescan provides a vision-based scanner for public market consumers and market authorities in Olongapo City. It enables live camera-based commodity price scanning and automatic verification against official Department of Agriculture (DA) Bantay Presyo Suggested Retail Price (SRP) benchmarks.
+                Alescan provides a vision-based scanner for public market consumers and market authorities in Olongapo City. It enables photo-based commodity scanning and automatic verification against official Department of Agriculture (DA) Bantay Presyo monitored market price benchmarks.
               </p>
             </section>
 
@@ -225,7 +225,7 @@ export default function TermsModal({ isOpen, onAgree, onCancel }) {
                 3. Camera & Device Permissions
               </h3>
               <p style={{ margin: 0, color: C.textSecondary }}>
-                Alescan requires camera permissions strictly to perform real-time optical character recognition (OCR) and object recognition on price tags. Alescan does not capture, store, or transmit personal photos or video recordings of users.
+                Alescan requires camera permissions strictly to perform image capture and object recognition on commodities. Alescan does not capture, store, or transmit personal photos or video recordings of users.
               </p>
             </section>
 
@@ -240,12 +240,13 @@ export default function TermsModal({ isOpen, onAgree, onCancel }) {
 
             <section>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: C.g900, margin: '0 0 6px 0' }}>
-                5. Price Accuracy & SRP Disclaimer
+                5. Price Accuracy & Market Price Disclaimer
               </h3>
               <p style={{ margin: 0, color: C.textSecondary }}>
-                SRP references are synchronized from official Department of Agriculture updates. The scan results serve as an informational verification guide. Formal regulatory price enforcement remains under authorized government agencies.
+                Price benchmarks are synchronized monthly from official Department of Agriculture Bantay Presyo sheets. The scan results display prevailing retail market rates and observed low–high ranges. Prices represent monitored market rates, not a legally enforced price ceiling.
               </p>
             </section>
+
 
             <section>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: C.g900, margin: '0 0 6px 0' }}>

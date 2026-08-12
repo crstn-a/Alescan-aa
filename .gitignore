@@ -242,3 +242,9 @@ backend/.env
 frontend/.env"
 
 TermsAndConditions.md
+
+backend/migrations/migration_sheet_prices.sql
+backend/test_sheet_prices.py
+backend/test_yolo_world.py
+backend/vc_redist.x64.exe
+backend/test_sheet_sync.py

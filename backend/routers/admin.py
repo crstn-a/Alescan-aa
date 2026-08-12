@@ -203,6 +203,25 @@ def _parse_iso(dt_str: str) -> datetime:
     return datetime.fromisoformat(base + ("+" + tz if tz else ""))
 
 
+# ── GET /admin/prices ───────────────────────────────────────────────
+@router.get("/prices")
+def get_admin_prices(limit: int = Query(100, ge=1, le=500)):
+    """Fetch price records for Admin dashboard with category, low, high, average, prevailing."""
+    try:
+        sb = get_supabase()
+        res = (
+            sb.table("price_records")
+            .select("id, category, commodity_name, specification, unit, price_low, price_high, price_average, price_prevailing, period_month, period_year, source, created_at")
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return res.data or []
+    except Exception as e:
+        log_error("admin", f"get_admin_prices failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ── GET /admin/logs/sync ──────────────────────────────────────────────
 @router.get("/logs/sync")
 def sync_logs(limit: int = Query(20, ge=1, le=100)):
@@ -229,7 +248,7 @@ def sync_logs(limit: int = Query(20, ge=1, le=100)):
                     t_end = (dt + timedelta(minutes=2)).isoformat()
                     recs = (
                         sb.table("price_records")
-                        .select("id, product_id, price_per_kg, created_at, products(display_name)")
+                        .select("id, commodity_name, category, price_prevailing, price_low, price_high, created_at")
                         .gte("created_at", t_start)
                         .lte("created_at", t_end)
                         .order("created_at", desc=False)
@@ -237,25 +256,14 @@ def sync_logs(limit: int = Query(20, ge=1, le=100)):
                     )
                     details = []
                     for r in (recs.data or []):
-                        prev = (
-                            sb.table("price_records")
-                            .select("price_per_kg")
-                            .eq("product_id", r["product_id"])
-                            .lt("created_at", r["created_at"])
-                            .order("created_at", desc=True)
-                            .limit(1)
-                            .execute()
-                        )
-                        price_from = prev.data[0]["price_per_kg"] if prev.data else None
-                        prod_name = (
-                            r.get("products", {}).get("display_name")
-                            if isinstance(r.get("products"), dict)
-                            else "Commodity"
-                        )
+                        prod_name = r.get("commodity_name", "Commodity")
+                        prev_val = r.get("price_prevailing")
                         details.append({
                             "product": prod_name,
-                            "price_from": price_from,
-                            "price_to": r["price_per_kg"]
+                            "category": r.get("category"),
+                            "price_to": prev_val,
+                            "price_low": r.get("price_low"),
+                            "price_high": r.get("price_high"),
                         })
                     log["details"] = details
                 except Exception as ex:
@@ -268,6 +276,7 @@ def sync_logs(limit: int = Query(20, ge=1, le=100)):
     except Exception as e:
         log_error("admin", f"sync_logs query failed: {e}")
         raise
+
 
 
 # ── GET /admin/logs/errors ────────────────────────────────────────────

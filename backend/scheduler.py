@@ -13,17 +13,17 @@ def start_scheduler():
     _scheduler.add_job(
         run_sync,
         trigger=CronTrigger(
-            day_of_week="mon",
+            day=1,
             hour=8,
             minute=0
         ),
-        id="weekly_price_sync",
+        id="monthly_price_sync",
         replace_existing=True
     )
     _scheduler.start()
-    logger.info("Scheduler started — sync runs every Monday 08:00 PHT")
+    logger.info("Scheduler started — sync runs monthly on the 1st day at 08:00 PHT")
 
 
 def stop_scheduler():
     if _scheduler and _scheduler.running:
-        _scheduler.shutdown()
+        _scheduler.shutdown()

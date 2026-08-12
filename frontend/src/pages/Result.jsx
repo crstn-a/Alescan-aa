@@ -9,10 +9,10 @@ const C = {
 }
 
 // ── Confidence bar ─────────────────────────────────────────────────────
-function ConfBar({ pct }) {
-  const color = pct >= 75 ? C.g500 : pct >= 60 ? '#fbbf24' : '#f87171'
-  const bg    = pct >= 75 ? C.g100 : pct >= 60 ? '#fef3c7' : '#fee2e2'
-  const label = pct >= 75 ? 'High' : pct >= 60 ? 'Medium' : 'Low'
+function ConfBar({ pct, level }) {
+  const color = pct >= 70 || level === 'High' ? C.g500 : pct >= 50 || level === 'Medium' ? '#fbbf24' : '#f87171'
+  const bg    = pct >= 70 || level === 'High' ? C.g100 : pct >= 50 || level === 'Medium' ? '#fef3c7' : '#fee2e2'
+  const tag   = level || (pct >= 70 ? 'High' : pct >= 50 ? 'Medium' : 'Low')
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -22,22 +22,29 @@ function ConfBar({ pct }) {
             {pct.toFixed(1)}%
           </span>
           <span style={{ fontSize:11, fontWeight:600, padding:'2px 8px', borderRadius:20, background:bg, color }}>
-            {label}
+            {tag}
           </span>
         </div>
       </div>
       <div style={{ height:6, borderRadius:99, background:C.k100, overflow:'hidden' }}>
-        <div style={{ height:'100%', width:`${pct}%`, background:color, borderRadius:99, transition:'width .6s ease' }} />
+        <div style={{ height:'100%', width:`${Math.min(pct, 100)}%`, background:color, borderRadius:99, transition:'width .6s ease' }} />
       </div>
     </div>
   )
 }
 
-// ── Commodity icon map ─────────────────────────────────────────────────
-const EMOJIS = {
-  whole_chicken: '🐔',
-  tilapia_local: '🐟',
-  pork_liempo:   '🥩',
+// ── Commodity icon helper ──────────────────────────────────────────────
+function getEmoji(name = '', category = '') {
+  const text = (name + ' ' + category).toLowerCase()
+  if (text.includes('pork') || text.includes('liempo')) return '🥩'
+  if (text.includes('chicken') || text.includes('poultry') || text.includes('egg')) return '🐔'
+  if (text.includes('fish') || text.includes('tilapia') || text.includes('bangus')) return '🐟'
+  if (text.includes('rice')) return '🌾'
+  if (text.includes('onion') || text.includes('garlic') || text.includes('spice')) return '🧄'
+  if (text.includes('vegetable') || text.includes('tomato') || text.includes('cabbage')) return '🥬'
+  if (text.includes('fruit')) return '🍎'
+  if (text.includes('beef')) return '🥩'
+  return '🛒'
 }
 
 export default function Result() {
@@ -46,13 +53,20 @@ export default function Result() {
 
   if (!state) return <Navigate to="/" replace />
 
-  const { product, slug, confidence, official_srp, week_of, source } = state
+  const {
+    product, commodity_name, category, specification, unit = 'kg',
+    confidence, confidence_level,
+    price_prevailing, price_low, price_high, price_average,
+    period_month, period_year, source
+  } = state
 
-  const weekLabel = week_of
-    ? new Date(week_of).toLocaleDateString('en-PH', { month:'long', day:'numeric', year:'numeric' })
-    : ''
+  const commTitle = commodity_name || product || 'Commodity'
+  const prevailingPrice = price_prevailing ?? price_average ?? price_low ?? 0
+  const emoji = getEmoji(commTitle, category)
 
-  const emoji = EMOJIS[slug] || '📦'
+  const monthLabel = period_month
+    ? `${period_month} ${period_year || ''}`.trim()
+    : 'Latest Monthly Sync'
 
   return (
     <div style={{
@@ -91,11 +105,11 @@ export default function Result() {
         </button>
         <div style={{ flex:1 }}>
           <p style={{ fontSize:15, fontWeight:700, color:C.k900, margin:0 }}>Scan result</p>
-          <p style={{ fontSize:11, color:C.k400, margin:0 }}>Official SRP verification</p>
+          <p style={{ fontSize:11, color:C.k400, margin:0 }}>Monitored Market Price</p>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:6, background:C.g50, borderRadius:20, padding:'5px 12px', border:`1px solid ${C.g100}` }}>
           <div style={{ width:7, height:7, borderRadius:'50%', background:C.g500 }} />
-          <span style={{ fontSize:11, color:C.g700, fontWeight:600 }}>Verified</span>
+          <span style={{ fontSize:11, color:C.g700, fontWeight:600 }}>DA Synced</span>
         </div>
       </header>
 
@@ -110,7 +124,6 @@ export default function Result() {
           animation:'scaleIn .3s ease',
           position:'relative', overflow:'hidden',
         }}>
-          {/* BG circle */}
           <div style={{ position:'absolute', top:-40, right:-40, width:140, height:140, borderRadius:'50%', background:'rgba(255,255,255,.07)' }} />
           <div style={{ position:'absolute', bottom:-30, left:-30, width:100, height:100, borderRadius:'50%', background:'rgba(255,255,255,.04)' }} />
 
@@ -119,15 +132,15 @@ export default function Result() {
               {emoji}
             </div>
             <div>
-              <p style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,.55)', margin:'0 0 4px', letterSpacing:'.05em', textTransform:'uppercase' }}>
-                Commodity identified
+              <p style={{ fontSize:11, fontWeight:600, color:'rgba(255,255,255,.7)', margin:'0 0 4px', letterSpacing:'.05em', textTransform:'uppercase' }}>
+                {category || 'Agricultural Commodity'} {specification ? `• ${specification}` : ''}
               </p>
-              <h2 style={{ fontSize:21, fontWeight:800, color:'#fff', margin:0, lineHeight:1.2 }}>{product}</h2>
+              <h2 style={{ fontSize:21, fontWeight:800, color:'#fff', margin:0, lineHeight:1.2 }}>{commTitle}</h2>
             </div>
           </div>
         </div>
 
-        {/* SRP price card */}
+        {/* Prevailing price card */}
         <div style={{
           background:C.white, borderRadius:18,
           border:`1px solid ${C.k100}`,
@@ -135,20 +148,39 @@ export default function Result() {
           padding:'22px 20px',
           animation:'fadeUp .35s .08s ease both',
         }}>
-          <p style={{ fontSize:11, fontWeight:700, color:C.k400, letterSpacing:'.07em', textTransform:'uppercase', margin:'0 0 8px' }}>
-            Official SRP — DA Bantay Presyo
-          </p>
-          <div style={{ display:'flex', alignItems:'baseline', gap:4, marginBottom:4 }}>
-            <span style={{ fontSize:20, fontWeight:700, color:C.g700 }}>₱</span>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+            <p style={{ fontSize:11, fontWeight:700, color:C.g700, letterSpacing:'.07em', textTransform:'uppercase', margin:0 }}>
+              Prevailing Market Price
+            </p>
+            <span style={{ fontSize:11, fontWeight:600, color:C.k500, background:C.k50, padding:'3px 10px', borderRadius:12, border:`1px solid ${C.k100}` }}>
+              DA Bantay Presyo
+            </span>
+          </div>
+
+          <div style={{ display:'flex', alignItems:'baseline', gap:4, marginBottom:8 }}>
+            <span style={{ fontSize:22, fontWeight:700, color:C.g700 }}>₱</span>
             <span style={{
-              fontSize:52, fontWeight:800, color:C.g700, lineHeight:1,
+              fontSize:50, fontWeight:800, color:C.g700, lineHeight:1,
               fontVariantNumeric:'tabular-nums',
               animation:'countUp .4s .15s ease both',
             }}>
-              {Number(official_srp).toFixed(2)}
+              {Number(prevailingPrice).toFixed(2)}
             </span>
+            <span style={{ fontSize:14, color:C.k400, marginLeft:4 }}>/ {unit}</span>
           </div>
-          <p style={{ fontSize:13, color:C.k400, margin:'6px 0 0' }}>per kilogram</p>
+
+          {/* Secondary Low-High Range */}
+          {(price_low !== null || price_high !== null) && (
+            <div style={{
+              marginTop:12, paddingTop:12, borderTop:`1px solid ${C.k100}`,
+              display:'flex', justifyContent:'space-between', alignItems:'center'
+            }}>
+              <span style={{ fontSize:12, color:C.k500, fontWeight:500 }}>Monitored Market Range</span>
+              <span style={{ fontSize:13, fontWeight:700, color:C.k900 }}>
+                ₱{Number(price_low ?? prevailingPrice).toFixed(2)} – ₱{Number(price_high ?? prevailingPrice).toFixed(2)} / {unit}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Confidence */}
@@ -158,7 +190,7 @@ export default function Result() {
           padding:'18px 20px',
           animation:'fadeUp .35s .14s ease both',
         }}>
-          <ConfBar pct={confidence} />
+          <ConfBar pct={confidence || 85} level={confidence_level} />
         </div>
 
         {/* Source info */}
@@ -175,22 +207,21 @@ export default function Result() {
               <polyline points="14 2 14 8 20 8"/>
               <line x1="16" y1="13" x2="8" y2="13"/>
               <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
             </svg>
           </div>
           <div style={{ flex:1, minWidth:0 }}>
-            <p style={{ fontSize:13, fontWeight:600, color:C.k900, margin:0 }}>{source}</p>
-            <p style={{ fontSize:12, color:C.k400, margin:'2px 0 0' }}>Week of {weekLabel}</p>
+            <p style={{ fontSize:13, fontWeight:600, color:C.k900, margin:0 }}>{source || 'DA Bantay Presyo (Sheet Sync)'}</p>
+            <p style={{ fontSize:12, color:C.k400, margin:'2px 0 0' }}>Period: {monthLabel}</p>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:5, background:C.g50, borderRadius:20, padding:'4px 10px', flexShrink:0 }}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={C.g600} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
-            <span style={{ fontSize:11, fontWeight:700, color:C.g700 }}>Official</span>
+            <span style={{ fontSize:11, fontWeight:700, color:C.g700 }}>Monitored</span>
           </div>
         </div>
 
-        {/* Disclaimer */}
+        {/* Updated Disclaimer */}
         <div style={{
           display:'flex', gap:10, padding:'12px 16px',
           background:C.k50, borderRadius:12,
@@ -203,7 +234,7 @@ export default function Result() {
             <line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           <p style={{ fontSize:12, color:C.k500, margin:0, lineHeight:1.6 }}>
-            This price is a government reference only. Actual market prices may vary. Report discrepancies to your local DA office.
+            Monitored retail market price from DA Bantay Presyo sheet sync. Prices represent observed prevailing rates across public markets, not a legally enforced price ceiling.
           </p>
         </div>
 
@@ -232,4 +263,4 @@ export default function Result() {
       </div>
     </div>
   )
-}
+}

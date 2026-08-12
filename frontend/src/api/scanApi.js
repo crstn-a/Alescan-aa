@@ -4,8 +4,8 @@ const API = import.meta.env.VITE_API_URL
  * Send a captured image blob to POST /scan.
  *
  * Returns one of:
- *   { ok: true,  data: { product, slug, confidence, official_srp, week_of, source } }
- *   { ok: false, type: 'low_confidence', confidence, message }
+ *   { ok: true,  data: { product, commodity_name, category, specification, unit, confidence, confidence_level, price_prevailing, price_low, price_high, price_average, period_month, period_year, source } }
+ *   { ok: false, type: 'low_confidence', confidence, confidence_level, message }
  *   { ok: false, type: 'no_price',       message }
  *   { ok: false, type: 'network',        message }
  */
@@ -31,20 +31,21 @@ export async function scanImage(blob) {
       ok: false,
       type: 'low_confidence',
       confidence: detail.confidence,
+      confidence_level: detail.confidence_level || 'Low',
       message: detail.message,
     }
   }
 
   if (resp.status === 404) {
-    return { ok: false, type: 'no_price', message: 'Price data not synced yet' }
+    return { ok: false, type: 'no_price', message: 'Price data not synced yet from DA Google Sheet' }
   }
 
   return { ok: false, type: 'network', message: `Server error ${resp.status}` }
 }
 
-/** Fetch current SRP for all 3 commodities (used by admin dashboard) */
+/** Fetch current monitored prices for all commodities (used by admin dashboard) */
 export async function getAllPrices() {
   const resp = await fetch(`${API}/prices`)
   if (!resp.ok) throw new Error('Failed to load prices')
   return resp.json()
-}
+}

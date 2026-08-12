@@ -158,43 +158,6 @@ export default function Scanner() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [startCamera, stopCamera])
 
-  useEffect(() => {
-    loadModel()
-  }, [])
-
-  useEffect(() => {
-    if (cameraState !== 'ready' || scanning) {
-      setActiveCommodity(null)
-      return
-    }
-
-    let isDetecting = false
-    const interval = setInterval(async () => {
-      if (isDetecting) return
-      isDetecting = true
-      try {
-        // Yield thread for ms before heavy computation to process UI clicks (Scan / Exit)
-        await new Promise(r => setTimeout(r, 100))
-
-        const result = await detectActiveCommodity(videoRef.current)
-        if (result) {
-          setActiveCommodity(result.className)
-        } else {
-          setActiveCommodity(null)
-        }
-      } catch (err) {
-        console.error(err)
-      } finally {
-        isDetecting = false
-      }
-    }, 800) // Lower frequency + UI yielding makes the app responsive
-
-    return () => {
-      clearInterval(interval)
-      setActiveCommodity(null)
-    }
-  }, [cameraState, scanning])
-
   const captureFrame = useCallback(() => {
     if (!videoRef.current || cameraState !== 'ready') return null
     const video = videoRef.current
@@ -218,7 +181,7 @@ export default function Scanner() {
 
     const blob = await captureFrame()
     if (!blob) {
-      setFeedback({ type: 'error', text: 'Could not capture image.' })
+      setFeedback({ type: 'error', text: 'Could not capture image. Retake photo.' })
       setScanning(false)
       return
     }
@@ -244,6 +207,7 @@ export default function Scanner() {
   }
 
   const isReady = cameraState === 'ready'
+
 
   return (
     <div style={{
@@ -390,30 +354,24 @@ export default function Scanner() {
         {isReady && !scanning && (
           <div style={{ position: 'absolute', bottom: 'calc(50% - min(37.5vw, 37.5vh, 140px))', left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', transition: 'all 0.3s ease' }}>
             <div style={{
-              background: activeCommodity ? C.primary : 'rgba(255,255,255,.85)',
+              background: 'rgba(255,255,255,.9)',
               backdropFilter: 'blur(8px)',
               borderRadius: 20,
               padding: '6px 16px',
-              border: `1px solid ${activeCommodity ? C.primaryDark : C.border}`,
-              boxShadow: activeCommodity ? '0 4px 12px rgba(34,197,94,0.3)' : 'none',
-              transform: activeCommodity ? 'scale(1.05)' : 'scale(1)',
-              transition: 'all 0.3s ease'
+              border: `1px solid ${C.border}`,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
             }}>
               <p style={{
                 fontSize: 13,
-                color: activeCommodity ? '#fff' : C.textSecondary,
+                color: C.textSecondary,
                 margin: 0,
-                fontWeight: activeCommodity ? 700 : 500,
+                fontWeight: 500,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px'
               }}>
-                {activeCommodity ? (
-                  <>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    {activeCommodity} Detected
-                  </>
-                ) : 'Point at the commodity and tap Scan'}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>
+                Position commodity in frame & tap scan
               </p>
             </div>
           </div>
@@ -464,10 +422,11 @@ export default function Scanner() {
           </div>
         </div>
 
-        <p style={{ fontSize: 12, color: activeCommodity && !scanning ? C.primaryDark : C.textMuted, margin: 0, fontWeight: activeCommodity && !scanning ? 700 : 500, transition: 'color 0.3s' }}>
-          {scanning ? 'Identifying commodity...' : isReady ? (activeCommodity ? 'Tap to scan' : 'Looking for commodity...') : 'Starting camera...'}
+        <p style={{ fontSize: 12, color: isReady && !scanning ? C.primaryDark : C.textMuted, margin: 0, fontWeight: isReady && !scanning ? 700 : 500, transition: 'color 0.3s' }}>
+          {scanning ? 'Identifying commodity...' : isReady ? 'Tap to scan photo' : 'Starting camera...'}
         </p>
       </div>
+
 
       {/* ── Exit confirmation pop-up ── */}
       {showExitConfirm && (

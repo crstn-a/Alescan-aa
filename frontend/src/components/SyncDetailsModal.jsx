@@ -80,7 +80,7 @@ export default function SyncDetailsModal({ syncLog, onClose }) {
               padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700,
               letterSpacing: '0.5px', textTransform: 'uppercase'
             }}>
-              Sync Details
+              Sheet Sync Details
             </span>
             <span style={{ fontSize: 12, color: '#bbf7d0', opacity: 0.9 }}>
               Log #{syncLog.id}
@@ -88,10 +88,10 @@ export default function SyncDetailsModal({ syncLog, onClose }) {
           </div>
 
           <h2 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 700, letterSpacing: '-0.3px' }}>
-            Synchronization Price Details
+            Monitored Market Price Sync Summary
           </h2>
           <p style={{ margin: 0, fontSize: 13, color: '#dcfce7', opacity: 0.9 }}>
-            Executed on {fmtDt(syncLog.synced_at)} via <strong style={{ color: '#fff' }}>{syncLog.extractor_used || 'llamaparse'}</strong>
+            Executed on {fmtDt(syncLog.synced_at)} via <strong style={{ color: '#fff' }}>{syncLog.extractor_used === 'sheet' ? 'DA Google Sheet Sync' : (syncLog.extractor_used || 'DA Sheet')}</strong>
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export default function SyncDetailsModal({ syncLog, onClose }) {
           <div>
             <span style={{ color: C.k500, fontSize: 12, display: 'block' }}>Notes</span>
             <span style={{ fontWeight: 600, color: C.k900 }}>
-              {syncLog.notes || '—'}
+              {syncLog.notes || 'Inserted prices from DA Google Sheet'}
             </span>
           </div>
 
@@ -131,7 +131,7 @@ export default function SyncDetailsModal({ syncLog, onClose }) {
                   fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4
                 }}
               >
-                📄 View Source PDF ↗
+                📊 View Source Sheet ↗
               </a>
             </div>
           )}
@@ -140,8 +140,8 @@ export default function SyncDetailsModal({ syncLog, onClose }) {
         {/* Body Content */}
         <div style={{ padding: '24px 28px', maxHeight: '55vh', overflowY: 'auto' }}>
           <h4 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700, color: C.k900, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>Price Changes Breakdown</span>
-            <span style={{ fontSize: 12, fontWeight: 500, color: C.k500 }}>(Price from → to latest price)</span>
+            <span>Synced Commodity Breakdown</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: C.k500 }}>(Prevailing price & monitored market range)</span>
           </h4>
 
           {details.length === 0 ? (
@@ -154,33 +154,9 @@ export default function SyncDetailsModal({ syncLog, onClose }) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {details.map((item, idx) => {
-                const pFrom = item.price_from != null ? Number(item.price_from) : null
                 const pTo = item.price_to != null ? Number(item.price_to) : null
-                
-                let diffText = ''
-                let diffBg = C.k100
-                let diffColor = C.k700
-
-                if (pFrom != null && pTo != null) {
-                  const diff = pTo - pFrom
-                  if (diff > 0) {
-                    diffText = `+₱${diff.toFixed(2)}`
-                    diffBg = '#fef2f2'
-                    diffColor = C.red700
-                  } else if (diff < 0) {
-                    diffText = `-₱${Math.abs(diff).toFixed(2)}`
-                    diffBg = C.g100
-                    diffColor = C.g700
-                  } else {
-                    diffText = 'No Change'
-                    diffBg = C.k100
-                    diffColor = C.k500
-                  }
-                } else if (pFrom == null && pTo != null) {
-                  diffText = 'New'
-                  diffBg = C.g100
-                  diffColor = C.g700
-                }
+                const pLow = item.price_low != null ? Number(item.price_low) : null
+                const pHigh = item.price_high != null ? Number(item.price_high) : null
 
                 return (
                   <div
@@ -199,40 +175,18 @@ export default function SyncDetailsModal({ syncLog, onClose }) {
                         {item.product}
                       </div>
                       <div style={{ fontSize: 12, color: C.k500, marginTop: 2 }}>
-                        Official SRP Update
+                        Category: {item.category || 'General'}
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      {/* Price Transition */}
-                      <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ textAlign: 'right' }}>
-                          <span style={{ fontSize: 11, color: C.k400, display: 'block' }}>From</span>
-                          <span style={{ fontSize: 13.5, color: C.k500, fontWeight: 500 }}>
-                            {pFrom != null ? `₱${pFrom.toFixed(2)}` : 'N/A'}
-                          </span>
-                        </div>
-
-                        <span style={{ color: C.g600, fontSize: 16, fontWeight: 700 }}>→</span>
-
-                        <div style={{ textAlign: 'left' }}>
-                          <span style={{ fontSize: 11, color: C.g700, fontWeight: 600, display: 'block' }}>Latest Price</span>
-                          <span style={{ fontSize: 15, color: C.g700, fontWeight: 800 }}>
-                            {pTo != null ? `₱${pTo.toFixed(2)}` : 'N/A'}
-                          </span>
-                        </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 15, color: C.g700, fontWeight: 800 }}>
+                        {pTo != null ? `₱${pTo.toFixed(2)}` : 'N/A'} <span style={{ fontSize: 11, fontWeight: 500, color: C.k400 }}>Prevailing</span>
                       </div>
-
-                      {/* Diff pill */}
-                      {diffText && (
-                        <span style={{
-                          background: diffBg, color: diffColor,
-                          padding: '4px 10px', borderRadius: 20,
-                          fontSize: 12, fontWeight: 700,
-                          minWidth: 70, textAlign: 'center'
-                        }}>
-                          {diffText}
-                        </span>
+                      {(pLow !== null || pHigh !== null) && (
+                        <div style={{ fontSize: 11, color: C.k500, marginTop: 2 }}>
+                          Range: ₱{(pLow ?? pTo).toFixed(2)} – ₱{(pHigh ?? pTo).toFixed(2)}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -269,3 +223,4 @@ export default function SyncDetailsModal({ syncLog, onClose }) {
     </div>
   )
 }
+
