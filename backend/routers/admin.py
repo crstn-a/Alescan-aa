@@ -137,7 +137,7 @@ def get_filtered_scan_stats(
         # Query recent scans for the list
         list_query = (
             sb.table("scan_events")
-            .select("id, confidence, price_shown, scanned_at, products(display_name, slug)")
+            .select("id, confidence, price_shown, scanned_at, latitude, longitude, location_name, products(display_name, slug)")
             .order("scanned_at", desc=True)
         )
         if start_dt and end_dt:
@@ -175,18 +175,54 @@ def manual_sync():
 @router.get("/logs/scan")
 def scan_logs(limit: int = Query(50, ge=1, le=200)):
     try:
-        data = (
-            get_supabase()
-            .table("scan_events")
-            .select("id, confidence, price_shown, scanned_at, session_id, products(display_name, slug)")
-            .order("scanned_at", desc=True)
-            .limit(limit)
-            .execute()
-        )
-        return data.data
+        try:
+            data = (
+                get_supabase()
+                .table("scan_events")
+                .select("id, confidence, price_shown, scanned_at, session_id, latitude, longitude, location_name, products(display_name, slug)")
+                .order("scanned_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
+            return data.data
+        except Exception:
+            data = (
+                get_supabase()
+                .table("scan_events")
+                .select("id, confidence, price_shown, scanned_at, session_id, products(display_name, slug)")
+                .order("scanned_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
+            return data.data
     except Exception as e:
         log_error("admin", f"scan_logs query failed: {e}")
         raise
+
+
+# ── GET /admin/logs/locations ─────────────────────────────────────────
+@router.get("/logs/locations")
+def location_logs(limit: int = Query(200, ge=1, le=500)):
+    """Fetch geotagged scan events for real-time map visualization."""
+    try:
+        try:
+            data = (
+                get_supabase()
+                .table("scan_events")
+                .select("id, confidence, price_shown, scanned_at, latitude, longitude, location_name, products(display_name, slug)")
+                .not_.is_("latitude", "null")
+                .not_.is_("longitude", "null")
+                .order("scanned_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
+            return data.data or []
+        except Exception as e:
+            logger.warning(f"location_logs query fallback due to schema: {e}")
+            return []
+    except Exception as e:
+        log_error("admin", f"location_logs query failed: {e}")
+        return []
 
 
 def _parse_iso(dt_str: str) -> datetime:
