@@ -28,48 +28,136 @@ KNOWN_CATEGORIES = [
 ]
 
 
+def _load_service_account_info() -> dict | None:
+    """Load service account info from file or environment variable."""
+    import json
+    sa_file = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", os.path.join(os.path.dirname(__file__), "..", "service_account.json"))
+    if os.path.exists(sa_file):
+        try:
+            with open(sa_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.warning(f"Could not load service account JSON file {sa_file}: {e}")
+
+    sa_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+    if sa_json:
+        try:
+            return json.loads(sa_json)
+        except Exception as e:
+            logger.warning(f"Could not parse GOOGLE_SERVICE_ACCOUNT_JSON env var: {e}")
+
+    return None
+
+
+def _get_service_account_token(info: dict) -> str:
+    """Generate Google OAuth2 Bearer Access Token using Service Account RSA key."""
+    import time
+    import jwt
+    now = int(time.time())
+    payload = {
+        "iss": info["client_email"],
+        "scope": "https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/drive.readonly",
+        "aud": info.get("token_uri", "https://oauth2.googleapis.com/token"),
+        "exp": now + 3600,
+        "iat": now
+    }
+    encoded = jwt.encode(payload, info["private_key"], algorithm="RS256")
+    resp = requests.post(
+        info.get("token_uri", "https://oauth2.googleapis.com/token"),
+        data={
+            "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            "assertion": encoded
+        },
+        timeout=15
+    )
+    resp.raise_for_status()
+    return resp.json()["access_token"]
+
+
+def extract_spreadsheet_id(url_or_id: str) -> str:
+    """Extract 44-char Google Spreadsheet ID from URL or return raw ID."""
+    match = re.search(r"/d/([a-zA-Z0-9-_]+)", url_or_id)
+    if match:
+        return match.group(1)
+    return url_or_id.strip()
+
+
 def fetch_sheet_csv() -> str:
     """
     Fetch CSV data from Google Sheet.
-    Tries direct CSV export URL first. If HTTP 401/403 or error occurs,
-    attempts Google Sheets API v4 fallback if API key / Service Account is configured.
+    Attempts:
+    1. Direct CSV export URL request.
+    2. Google Sheets API v4 using Service Account OAuth2 token.
+    3. Google Sheets API v4 using GOOGLE_SHEETS_API_KEY.
     """
     csv_url = os.getenv("GOOGLE_SHEETS_CSV_URL", DEFAULT_SHEET_URL)
-    logger.info(f"Fetching Google Sheet CSV from: {csv_url}")
+    sheet_id = extract_spreadsheet_id(os.getenv("GOOGLE_SHEET_ID", csv_url)) or SPREADSHEET_ID
+    logger.info(f"Fetching Google Sheet data for Spreadsheet ID: {sheet_id}")
 
+    # Strategy 1: Direct CSV export URL
     try:
         resp = requests.get(csv_url, timeout=15)
-        if resp.status_code == 200 and "text/csv" in resp.headers.get("Content-Type", "").lower() or resp.text.strip().startswith(("COMMODITY", "Category", "DAILY", "MONTHLY", "Department", "Region", "Republic")):
+        if resp.status_code == 200 and ("text/csv" in resp.headers.get("Content-Type", "").lower() or resp.text.strip().startswith(("COMMODITY", "Category", "DAILY", "MONTHLY", "Department", "Region", "Republic"))):
             logger.info("Successfully fetched direct CSV stream from Google Sheet")
             return resp.text
         else:
-            logger.warning(f"Direct CSV fetch returned status={resp.status_code}, content-type={resp.headers.get('Content-Type')}")
+            logger.warning(f"Direct CSV fetch returned status={resp.status_code}")
     except Exception as e:
-        logger.warning(f"Direct CSV fetch failed ({e}). Trying Sheets API v4 fallback...")
+        logger.warning(f"Direct CSV fetch failed ({e}). Attempting Service Account / API key fallback...")
 
-    # Fallback: Google Sheets API v4 using API key or Service Account
+    # Strategy 2: Service Account OAuth2 Authentication
+    sa_info = _load_service_account_info()
+    if sa_info:
+        try:
+            logger.info(f"Attempting Google Sheets API v4 using Service Account ({sa_info.get('client_email')})...")
+            token = _get_service_account_token(sa_info)
+            
+            # Try Sheets API v4 with Bearer token
+            api_url = f"https://sheets.googleapis.com/v4/spreadsheets/{sheet_id}/values/A1:Z300"
+            resp = requests.get(api_url, headers={"Authorization": f"Bearer {token}"}, timeout=15)
+            
+            if resp.status_code == 200:
+                rows = resp.json().get("values", [])
+                logger.info(f"Successfully retrieved {len(rows)} rows via Sheets API v4 with Service Account")
+                output = io.StringIO()
+                writer = csv.writer(output)
+                writer.writerows(rows)
+                return output.getvalue()
+            else:
+                logger.warning(f"Sheets API v4 with Service Account returned status {resp.status_code}: {resp.text}")
+
+            # Try direct export URL with Bearer token header
+            export_resp = requests.get(f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0", headers={"Authorization": f"Bearer {token}"}, timeout=15)
+            if export_resp.status_code == 200:
+                logger.info("Successfully retrieved CSV export with Service Account Bearer token")
+                return export_resp.text
+
+        except Exception as e:
+            logger.error(f"Service account authentication or sheet fetch failed: {e}")
+
+    # Strategy 3: Google Sheets API v4 with API Key
     api_key = os.getenv("GOOGLE_SHEETS_API_KEY")
     if api_key:
-        logger.info("Attempting Google Sheets API v4 with API Key fallback...")
-        api_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET_ID}/values/A1:Z200?key={api_key}"
+        logger.info("Attempting Google Sheets API v4 with API Key...")
+        api_url = f"https://sheets.googleapis.com/v4/spreadsheets/{sheet_id}/values/A1:Z300?key={api_key}"
         resp = requests.get(api_url, timeout=15)
         if resp.status_code == 200:
-            data = resp.json()
-            rows = data.get("values", [])
+            rows = resp.json().get("values", [])
             output = io.StringIO()
             writer = csv.writer(output)
             writer.writerows(rows)
             return output.getvalue()
         else:
-            logger.error(f"Sheets API v4 returned status {resp.status_code}: {resp.text}")
+            logger.error(f"Sheets API v4 with API key returned status {resp.status_code}: {resp.text}")
 
-    # If direct fetch returned raw text (even if headers differed), return it for parsing attempt
-    if 'resp' in locals() and resp and resp.text:
+    # Last resort fallback if response was received
+    if 'resp' in locals() and resp and resp.text and len(resp.text) > 50 and "COMMODITY" in resp.text:
         return resp.text
 
     raise RuntimeError(
-        "Could not fetch Google Sheet. Please set the sheet sharing to 'Anyone with the link - Viewer' "
-        "or configure GOOGLE_SHEETS_API_KEY in backend/.env"
+        f"Could not fetch Google Sheet (Spreadsheet ID: {sheet_id}). Please ensure the sheet is shared with service account "
+        f"'{sa_info.get('client_email') if sa_info else 'alescan-sheet-reader-282@boxwood-weaver-505314-c4.iam.gserviceaccount.com'}' as Viewer, "
+        "or set sheet sharing to 'Anyone with the link - Viewer'."
     )
 
 

@@ -69,42 +69,68 @@ def run_sync() -> dict:
 
 
 def _upsert_sheet_prices(records: list[dict]):
-    """Insert or update products and price_records in Supabase."""
+    """Insert or update products and price_records in Supabase safely."""
     sb = get_supabase()
+    today_iso = datetime.now().strftime("%Y-%m-%d")
 
     for rec in records:
         comm_name = rec["commodity_name"]
         category = rec["category"]
         slug = re.sub(r"[^a-z0-9]+", "_", comm_name.lower()).strip("_")
+        price_val = rec.get("price_prevailing") or rec.get("price_average") or rec.get("price_low") or 0.0
 
-        # 1. Upsert product entry
-        prod_res = (
-            sb.table("products")
-            .select("id")
-            .eq("commodity_name", comm_name)
-            .execute()
-        )
+        # 1. Select existing product by slug or name
+        prod_id = None
+        try:
+            res_slug = sb.table("products").select("id").eq("slug", slug).execute()
+            if res_slug.data:
+                prod_id = res_slug.data[0]["id"]
+        except Exception:
+            pass
 
-        product_id = None
-        if prod_res.data:
-            product_id = prod_res.data[0]["id"]
-            sb.table("products").update({
-                "slug": slug,
-                "category": category,
-            }).eq("id", product_id).execute()
-        else:
-            new_prod = sb.table("products").insert({
-                "commodity_name": comm_name,
+        if not prod_id:
+            try:
+                res_name = sb.table("products").select("id").eq("name", comm_name).execute()
+                if res_name.data:
+                    prod_id = res_name.data[0]["id"]
+            except Exception:
+                pass
+
+        if not prod_id:
+            # Insert product with standard fields
+            prod_payload = {
+                "name": comm_name,
                 "display_name": comm_name,
                 "slug": slug,
-                "category": category,
-            }).execute()
-            if new_prod.data:
-                product_id = new_prod.data[0]["id"]
+            }
+            # Attempt to add category / commodity_name if columns exist
+            try:
+                prod_payload["category"] = category
+                prod_payload["commodity_name"] = comm_name
+                new_prod = sb.table("products").insert(prod_payload).execute()
+            except Exception:
+                # Fallback to core fields
+                prod_payload.pop("category", None)
+                prod_payload.pop("commodity_name", None)
+                new_prod = sb.table("products").insert(prod_payload).execute()
 
-        # 2. Insert price record
-        sb.table("price_records").insert({
-            "product_id": product_id,
+            if new_prod.data:
+                prod_id = new_prod.data[0]["id"]
+
+        if not prod_id:
+            logger.warning(f"Could not resolve or create product_id for {comm_name}")
+            continue
+
+        # 2. Insert price record with core fields and optional extended fields
+        price_payload = {
+            "product_id": prod_id,
+            "price_per_kg": float(price_val),
+            "source": rec.get("source", "DA Bantay Presyo (Sheet Sync)"),
+            "week_of": today_iso,
+        }
+
+        # Try inserting with extended schema fields first, fallback to core fields if schema not migrated
+        extended_fields = {
             "category": category,
             "commodity_name": comm_name,
             "specification": rec.get("specification"),
@@ -115,8 +141,14 @@ def _upsert_sheet_prices(records: list[dict]):
             "price_prevailing": rec.get("price_prevailing"),
             "period_month": rec.get("period_month"),
             "period_year": rec.get("period_year"),
-            "source": rec.get("source", "DA Bantay Presyo (Sheet Sync)"),
-        }).execute()
+        }
+
+        try:
+            full_payload = {**price_payload, **extended_fields}
+            sb.table("price_records").insert(full_payload).execute()
+        except Exception:
+            # Fallback to core price_records schema
+            sb.table("price_records").insert(price_payload).execute()
 
 
 def _write_sync_log(extractor: str, status: str, notes: str = None):
