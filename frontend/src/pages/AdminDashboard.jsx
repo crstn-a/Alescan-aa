@@ -1428,7 +1428,7 @@ export default function AdminDashboard() {
                   )
                 })()}
               </div>
-            </>)
+            </>)})()}
           {/* REAL-TIME LOCATION MAP (active === 8) */}
           {active === 8 && (
             <ScanLocationMap />

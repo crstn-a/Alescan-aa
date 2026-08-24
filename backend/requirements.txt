@@ -66,6 +66,7 @@ networkx==3.4.2
 nltk==3.9.4
 numpy==2.2.6
 opencv-python==4.13.0.92
+opencv-python-headless==4.9.0.80
 packaging==26.2
 pandas==2.3.3
 pillow==12.2.0
