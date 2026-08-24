@@ -247,12 +247,34 @@ def get_admin_prices(limit: int = Query(100, ge=1, le=500)):
         sb = get_supabase()
         res = (
             sb.table("price_records")
-            .select("id, category, commodity_name, specification, unit, price_low, price_high, price_average, price_prevailing, period_month, period_year, source, created_at")
+            .select("id, price_per_kg, source, week_of, created_at, products(id, name, display_name, slug)")
             .order("created_at", desc=True)
             .limit(limit)
             .execute()
         )
-        return res.data or []
+        formatted = []
+        for r in (res.data or []):
+            prod = r.get("products") or {}
+            comm_name = prod.get("display_name") or prod.get("name") or "Commodity"
+            price_val = float(r.get("price_prevailing") or r.get("price_per_kg") or 0.0)
+            formatted.append({
+                "id": r.get("id"),
+                "commodity_name": r.get("commodity_name") or comm_name,
+                "product": comm_name,
+                "category": r.get("category", "General"),
+                "specification": r.get("specification"),
+                "unit": r.get("unit", "kg"),
+                "price_prevailing": price_val,
+                "price_low": float(r.get("price_low") if r.get("price_low") is not None else price_val),
+                "price_high": float(r.get("price_high") if r.get("price_high") is not None else price_val),
+                "price_average": float(r.get("price_average") if r.get("price_average") is not None else price_val),
+                "price_per_kg": price_val,
+                "source": r.get("source", "DA Bantay Presyo (Sheet Sync)"),
+                "period_month": r.get("period_month"),
+                "period_year": r.get("period_year"),
+                "created_at": r.get("created_at"),
+            })
+        return formatted
     except Exception as e:
         log_error("admin", f"get_admin_prices failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -284,7 +306,7 @@ def sync_logs(limit: int = Query(20, ge=1, le=100)):
                     t_end = (dt + timedelta(minutes=2)).isoformat()
                     recs = (
                         sb.table("price_records")
-                        .select("id, commodity_name, category, price_prevailing, price_low, price_high, created_at")
+                        .select("id, price_per_kg, created_at, products(display_name, name)")
                         .gte("created_at", t_start)
                         .lte("created_at", t_end)
                         .order("created_at", desc=False)
@@ -292,13 +314,13 @@ def sync_logs(limit: int = Query(20, ge=1, le=100)):
                     )
                     details = []
                     for r in (recs.data or []):
-                        prod_name = r.get("commodity_name", "Commodity")
-                        prev_val = r.get("price_prevailing")
+                        prod = r.get("products") or {}
+                        prod_name = prod.get("display_name") or prod.get("name") or "Commodity"
+                        prev_val = float(r.get("price_prevailing") or r.get("price_per_kg") or 0.0)
                         details.append({
                             "product": prod_name,
-                            "category": r.get("category"),
+                            "category": r.get("category", "General"),
                             "price_to": prev_val,
-                            "price_low": r.get("price_low"),
                             "price_high": r.get("price_high"),
                         })
                     log["details"] = details

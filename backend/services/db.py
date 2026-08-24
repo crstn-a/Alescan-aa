@@ -21,21 +21,23 @@ def get_all_active_commodities() -> list[str]:
     """Return distinct list of commodity names currently present in price_records/products."""
     try:
         sb = get_supabase()
-        res = sb.table("products").select("commodity_name").execute()
         names = []
+        res = sb.table("products").select("name, display_name").execute()
         if res.data:
             for row in res.data:
-                c_name = row.get("commodity_name")
+                c_name = row.get("display_name") or row.get("name")
                 if c_name and c_name not in names:
                     names.append(c_name)
         if not names:
-            # Fallback query from price_records
-            p_res = sb.table("price_records").select("commodity_name").execute()
-            if p_res.data:
-                for row in p_res.data:
-                    c_name = row.get("commodity_name")
-                    if c_name and c_name not in names:
-                        names.append(c_name)
+            try:
+                p_res = sb.table("price_records").select("commodity_name").execute()
+                if p_res.data:
+                    for row in p_res.data:
+                        c_name = row.get("commodity_name")
+                        if c_name and c_name not in names:
+                            names.append(c_name)
+            except Exception:
+                pass
         return names
     except Exception as e:
         logger.error(f"Failed to fetch active commodities: {e}")
@@ -45,46 +47,106 @@ def get_all_active_commodities() -> list[str]:
 def get_latest_price(commodity_name: str) -> dict | None:
     """
     Fetch the most recent monitored price for a commodity name.
-    If multiple specification rows exist for one commodity name (e.g. Bangus Local vs Imported),
-    prefers "Local" over "Imported", else returns the first matching row.
     """
+    if not commodity_name:
+        return None
     sb = get_supabase()
     try:
-        # Query latest records for this commodity_name
-        res = (
-            sb.table("price_records")
-            .select("id, category, commodity_name, specification, unit, price_low, price_high, price_average, price_prevailing, period_month, period_year, source, created_at")
-            .ilike("commodity_name", commodity_name)
-            .order("created_at", desc=True)
-            .limit(10)
+        # Step 1: Query products table by name, display_name, or slug
+        import re
+        slug = re.sub(r"[^a-z0-9]+", "_", commodity_name.lower()).strip("_")
+        
+        prod_res = (
+            sb.table("products")
+            .select("id, name, display_name, slug")
+            .or_(f"name.ilike.{commodity_name},display_name.ilike.{commodity_name},slug.eq.{slug}")
             .execute()
         )
-        if not res.data:
-            # Try fuzzy or slug match if exact commodity_name query returned 0
-            res = (
+        
+        prod_id = None
+        matched_name = commodity_name
+        if prod_res.data:
+            prod_id = prod_res.data[0]["id"]
+            matched_name = prod_res.data[0].get("display_name") or prod_res.data[0].get("name") or commodity_name
+
+        # If not found by exact/or, try fuzzy matching against all products
+        if not prod_id:
+            all_prods = sb.table("products").select("id, name, display_name, slug").execute()
+            c_low = commodity_name.lower()
+            for p in (all_prods.data or []):
+                p_name = (p.get("display_name") or p.get("name") or "").lower()
+                if c_low in p_name or p_name in c_low:
+                    prod_id = p["id"]
+                    matched_name = p.get("display_name") or p.get("name")
+                    break
+
+        if prod_id:
+            price_res = (
                 sb.table("price_records")
-                .select("id, category, commodity_name, specification, unit, price_low, price_high, price_average, price_prevailing, period_month, period_year, source, created_at")
+                .select("*")
+                .eq("product_id", prod_id)
                 .order("created_at", desc=True)
-                .limit(50)
+                .limit(10)
                 .execute()
             )
-            matched = [r for r in (res.data or []) if r.get("commodity_name", "").lower() == commodity_name.lower()]
-            if not matched:
-                return None
-            records = matched
-        else:
-            records = res.data
+            if price_res.data:
+                records = price_res.data
+                local_recs = [r for r in records if r.get("specification") and "local" in str(r.get("specification")).lower()]
+                rec = local_recs[0] if local_recs else records[0]
+                
+                price_val = float(rec.get("price_prevailing") or rec.get("price_per_kg") or 0.0)
+                return {
+                    "id": rec.get("id"),
+                    "product_id": prod_id,
+                    "commodity_name": rec.get("commodity_name") or matched_name,
+                    "category": rec.get("category", "General"),
+                    "specification": rec.get("specification"),
+                    "unit": rec.get("unit", "kg"),
+                    "price_prevailing": price_val,
+                    "price_low": float(rec.get("price_low") if rec.get("price_low") is not None else price_val),
+                    "price_high": float(rec.get("price_high") if rec.get("price_high") is not None else price_val),
+                    "price_average": float(rec.get("price_average") if rec.get("price_average") is not None else price_val),
+                    "price_per_kg": float(rec.get("price_per_kg") or price_val),
+                    "source": rec.get("source", "DA Bantay Presyo (Sheet Sync)"),
+                    "period_month": rec.get("period_month"),
+                    "period_year": rec.get("period_year"),
+                    "created_at": rec.get("created_at"),
+                }
 
-        # Spec auto-resolution logic: prefer "Local" over "Imported" when both exist, else first
-        local_recs = [r for r in records if r.get("specification") and "local" in r.get("specification", "").lower()]
-        if local_recs:
-            return local_recs[0]
-        
-        non_imported = [r for r in records if not (r.get("specification") and "imported" in r.get("specification", "").lower())]
-        if non_imported:
-            return non_imported[0]
-        
-        return records[0]
+        # Fallback: direct query if price_records has commodity_name column
+        try:
+            p_direct = (
+                sb.table("price_records")
+                .select("*")
+                .ilike("commodity_name", commodity_name)
+                .order("created_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            if p_direct.data:
+                rec = p_direct.data[0]
+                price_val = float(rec.get("price_prevailing") or rec.get("price_per_kg") or 0.0)
+                return {
+                    "id": rec.get("id"),
+                    "product_id": rec.get("product_id"),
+                    "commodity_name": rec.get("commodity_name") or commodity_name,
+                    "category": rec.get("category", "General"),
+                    "specification": rec.get("specification"),
+                    "unit": rec.get("unit", "kg"),
+                    "price_prevailing": price_val,
+                    "price_low": float(rec.get("price_low") if rec.get("price_low") is not None else price_val),
+                    "price_high": float(rec.get("price_high") if rec.get("price_high") is not None else price_val),
+                    "price_average": float(rec.get("price_average") if rec.get("price_average") is not None else price_val),
+                    "price_per_kg": float(rec.get("price_per_kg") or price_val),
+                    "source": rec.get("source", "DA Bantay Presyo (Sheet Sync)"),
+                    "period_month": rec.get("period_month"),
+                    "period_year": rec.get("period_year"),
+                    "created_at": rec.get("created_at"),
+                }
+        except Exception:
+            pass
+
+        return None
     except Exception as e:
         logger.error(f"get_latest_price failed for {commodity_name}: {e}")
         return None

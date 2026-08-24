@@ -37,9 +37,9 @@ def get_all_prices():
         commodities = get_all_active_commodities()
         if not commodities:
             sb = get_supabase()
-            res = sb.table("price_records").select("commodity_name").order("created_at", desc=True).limit(50).execute()
+            res = sb.table("products").select("name, display_name").execute()
             if res.data:
-                commodities = list(dict.fromkeys([r["commodity_name"] for r in res.data if r.get("commodity_name")]))
+                commodities = list(dict.fromkeys([r.get("display_name") or r.get("name") for r in res.data if (r.get("display_name") or r.get("name"))]))
         
         results = []
         for comm in commodities:
