@@ -248,3 +248,7 @@ backend/test_sheet_prices.py
 backend/test_yolo_world.py
 backend/vc_redist.x64.exe
 backend/test_sheet_sync.py
+service_account*.json
+backend/service_account*.json
+backend/migrations/*.sql
+test_location_scan.py

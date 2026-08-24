@@ -51,6 +51,31 @@ export default function Scanner() {
       return true
     }
   })
+  const [locationCoords, setLocationCoords] = useState(null)
+  const [locationStatus, setLocationStatus] = useState('idle') // idle | acquiring | ready | denied
+
+  const requestLocation = useCallback(() => {
+    if (!('geolocation' in navigator)) {
+      setLocationStatus('denied')
+      return
+    }
+    setLocationStatus('acquiring')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocationCoords({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        })
+        setLocationStatus('ready')
+      },
+      (err) => {
+        console.warn('Geolocation error:', err.message)
+        setLocationStatus('denied')
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
+    )
+  }, [])
 
   const handleAgreeTerms = () => {
     try {
@@ -146,17 +171,21 @@ export default function Scanner() {
   useEffect(() => {
     if (showTermsModal) return
     startCamera()
+    requestLocation()
     return () => stopCamera()
-  }, [showTermsModal, startCamera, stopCamera])
+  }, [showTermsModal, startCamera, stopCamera, requestLocation])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) stopCamera()
-      else startCamera()
+      else {
+        startCamera()
+        requestLocation()
+      }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [startCamera, stopCamera])
+  }, [startCamera, stopCamera, requestLocation])
 
   const captureFrame = useCallback(() => {
     if (!videoRef.current || cameraState !== 'ready') return null
@@ -186,7 +215,22 @@ export default function Scanner() {
       return
     }
 
-    const result = await scanImage(blob)
+    let currentCoords = locationCoords
+    if (!currentCoords && 'geolocation' in navigator) {
+      try {
+        currentCoords = await new Promise((res) => {
+          navigator.geolocation.getCurrentPosition(
+            (p) => res({ latitude: p.coords.latitude, longitude: p.coords.longitude }),
+            () => res(null),
+            { timeout: 3000, enableHighAccuracy: true }
+          )
+        })
+      } catch {
+        currentCoords = null
+      }
+    }
+
+    const result = await scanImage(blob, currentCoords)
 
     if (result.ok) {
       stopCamera()
@@ -284,22 +328,39 @@ export default function Scanner() {
           </div>
         </div>
 
-        {/* Right: Live status indicator */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: C.primaryLight,
-          borderRadius: 20,
-          padding: '5px 12px',
-          border: `1px solid rgba(34,197,94,.2)`,
-        }}>
+        {/* Right: Live status & Location indicators */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{
-            width: 7, height: 7, borderRadius: '50%',
-            background: isReady ? C.primary : C.textMuted,
-            animation: isReady ? 'pulse-ring 1.8s ease infinite' : 'none',
-          }} />
-          <span style={{ fontSize: 12, color: isReady ? C.primaryDark : C.textSecondary, fontWeight: 500 }}>
-            {cameraState === 'loading' ? 'Starting...' : isReady ? 'Camera live' : 'Camera off'}
-          </span>
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: locationStatus === 'ready' ? C.primaryLight : '#f3f4f6',
+            borderRadius: 20,
+            padding: '5px 10px',
+            border: `1px solid ${locationStatus === 'ready' ? 'rgba(34,197,94,.3)' : '#e5e7eb'}`,
+          }} title={locationStatus === 'ready' ? 'GPS location acquired' : 'GPS acquiring/unavailable'}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={locationStatus === 'ready' ? C.primaryDark : C.textMuted} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span style={{ fontSize: 11, color: locationStatus === 'ready' ? C.primaryDark : C.textSecondary, fontWeight: 600 }}>
+              {locationStatus === 'ready' ? 'GPS Active' : locationStatus === 'acquiring' ? 'GPS...' : 'GPS Off'}
+            </span>
+          </div>
+
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: C.primaryLight,
+            borderRadius: 20,
+            padding: '5px 12px',
+            border: `1px solid rgba(34,197,94,.2)`,
+          }}>
+            <div style={{
+              width: 7, height: 7, borderRadius: '50%',
+              background: isReady ? C.primary : C.textMuted,
+              animation: isReady ? 'pulse-ring 1.8s ease infinite' : 'none',
+            }} />
+            <span style={{ fontSize: 12, color: isReady ? C.primaryDark : C.textSecondary, fontWeight: 500 }}>
+              {cameraState === 'loading' ? 'Starting...' : isReady ? 'Camera live' : 'Camera off'}
+            </span>
+          </div>
         </div>
       </header>
 

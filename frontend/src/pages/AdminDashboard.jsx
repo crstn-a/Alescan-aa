@@ -19,6 +19,7 @@ import {
 
 import AnalyticsReportModal from '../components/AnalyticsReportModal'
 import SyncDetailsModal from '../components/SyncDetailsModal'
+import ScanLocationMap from '../components/ScanLocationMap'
 
 /* ── Icons ──────────────────────────────────────────────────────────── */
 const Svg = ({ d, d2, d3, size = 16 }) => (
@@ -30,6 +31,7 @@ const Svg = ({ d, d2, d3, size = 16 }) => (
 )
 const IC = {
   home: { d: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", d2: "M9 22V12h6v10" },
+  map: { d: "M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z", d2: "M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" },
   scan: { d: "M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M8 12h8M12 8v8" },
   price: { d: "M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
   sync: { d: "M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" },
@@ -73,6 +75,7 @@ const SIDEBAR_MINI = 68
 
 const NAV = [
   { id: 0, label: 'Overview', icon: 'home' },
+  { id: 8, label: 'Live Map', icon: 'map' },
   { id: 5, label: 'Analytics', icon: 'analytics' },
   { id: 6, label: 'AI Evaluation', icon: 'eval' },
   { id: 7, label: 'Violations', icon: 'violation' },
@@ -851,6 +854,7 @@ export default function AdminDashboard() {
       { key: 'products', label: 'Commodity', render: v => <span style={{ fontWeight: 600, color: C.k900 }}>{v?.display_name || <em style={{ color: C.k400, fontWeight: 400 }}>Unidentified</em>}</span> },
       { key: 'confidence', label: 'Confidence', render: v => <ConfBadge v={v} /> },
       { key: 'price_shown', label: 'Price shown', render: v => v ? <span style={{ fontWeight: 700, color: C.g700 }}>₱{Number(v).toFixed(2)}</span> : <span style={{ color: C.k200 }}>—</span> },
+      { key: 'latitude', label: 'Location', render: (v, r) => r.latitude && r.longitude ? <span style={{ fontSize: 11, fontWeight: 600, color: C.g700, background: C.g50, padding: '2px 7px', borderRadius: 6, border: `1px solid ${C.g100}` }}>📍 {Number(r.latitude).toFixed(3)}, {Number(r.longitude).toFixed(3)}</span> : <span style={{ color: C.k400, fontSize: 11 }}>No GPS</span> },
       { key: 'scanned_at', label: 'Scanned at', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
     ],
     2: [
@@ -1425,7 +1429,10 @@ export default function AdminDashboard() {
                 })()}
               </div>
             </>)
-          })()}
+          {/* REAL-TIME LOCATION MAP (active === 8) */}
+          {active === 8 && (
+            <ScanLocationMap />
+          )}
 
           {/* OPERATIONAL ANALYTICS */}
           {active === 5 && (
