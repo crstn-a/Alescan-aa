@@ -79,11 +79,20 @@ def get_analytics_scans():
         seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
         daily_volume = defaultdict(int)
         
-        # 3. Commodity performance
+        # 3. Commodity performance — initialize for ALL active products so every commodity is tracked
         commodity_perf = defaultdict(lambda: {"total": 0, "failed": 0, "low_conf": 0, "success": 0})
         
-        for row in all_scans.data:
-            conf = row["confidence"] or 0
+        try:
+            db_prods = sb.table("products").select("display_name, name").execute()
+            for p in (db_prods.data or []):
+                pname = p.get("display_name") or p.get("name")
+                if pname:
+                    _ = commodity_perf[pname]
+        except Exception as e:
+            logger.warning(f"Could not pre-populate active products: {e}")
+
+        for row in (all_scans.data or []):
+            conf = row.get("confidence") or 0
             is_success = conf >= 0.75
             is_low_conf = 0.5 <= conf < 0.75
             is_failed = conf < 0.5 or not row.get("products")
@@ -93,12 +102,13 @@ def get_analytics_scans():
             else: failed += 1
             
             # Daily volume only for recent scans
-            scanned_at = row["scanned_at"]
-            if scanned_at >= seven_days_ago:
+            scanned_at = row.get("scanned_at")
+            if scanned_at and scanned_at >= seven_days_ago:
                 date_str = scanned_at[:10]  # YYYY-MM-DD
                 daily_volume[date_str] += 1
             
-            prod_name = row.get("products", {}).get("display_name", "Unidentified") if row.get("products") else "Unidentified"
+            prod = row.get("products") or {}
+            prod_name = prod.get("display_name") or prod.get("name") or "Unidentified"
             commodity_perf[prod_name]["total"] += 1
             if is_failed:
                 commodity_perf[prod_name]["failed"] += 1
@@ -108,7 +118,10 @@ def get_analytics_scans():
                 commodity_perf[prod_name]["success"] += 1
 
         volume_chart = [{"date": k, "scans": v} for k, v in sorted(daily_volume.items())]
-        perf_chart = [{"name": k, "Success": v["success"], "Low Confidence": v["low_conf"], "Failed": v["failed"]} for k, v in commodity_perf.items()]
+        perf_chart = [
+            {"name": k, "total": v["total"], "Success": v["success"], "Low Confidence": v["low_conf"], "Failed": v["failed"]}
+            for k, v in sorted(commodity_perf.items(), key=lambda item: (-item[1]["total"], item[0]))
+        ]
         
         # Convert detection split to percentages
         if total > 0:

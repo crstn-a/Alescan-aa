@@ -747,6 +747,11 @@ export default function AdminDashboard() {
   const [filteredScanData, setFilteredScanData] = useState(null)
   const [filteredScanLoading, setFilteredScanLoading] = useState(false)
 
+  // Analytics trend & detection tracker states
+  const [trendFilter, setTrendFilter] = useState('benchmark')
+  const [detSearch, setDetSearch] = useState('')
+  const [detTab, setDetTab] = useState('all')
+
   const loadStats = useCallback(async () => {
     setStatsLoading(true)
     try {
@@ -1466,16 +1471,54 @@ export default function AdminDashboard() {
                   </button>
                 </div>
 
+                {/* COMMODITY PRICE TRENDS */}
                 <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
-                  <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Commodity Price Trends</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.k900 }}>Commodity Price Trends</h3>
+                      <p style={{ margin: '2px 0 0', fontSize: 12, color: C.k400 }}>Select a category or specific commodity to view price trends clearly without clutter</p>
+                    </div>
+                    {/* Trend Filter Selector */}
+                    {(() => {
+                      const priceRows = data?.prices || []
+                      const allKeys = Array.from(new Set(
+                        priceRows.flatMap(row => Object.keys(row).filter(k => k !== 'date'))
+                      )).sort()
+
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: C.k500 }}>Filter Trend:</span>
+                          <select
+                            value={trendFilter}
+                            onChange={(e) => setTrendFilter(e.target.value)}
+                            style={{
+                              padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+                              fontSize: 13, fontWeight: 600, color: C.k700, background: C.white,
+                              cursor: 'pointer', outline: 'none'
+                            }}
+                          >
+                            <optgroup label="Preset Category Views">
+                              <option value="benchmark">🌟 Benchmark Core SRP Items</option>
+                              <option value="meat">🥩 Meat (Pork & Beef)</option>
+                              <option value="poultry">🍗 Poultry & Eggs</option>
+                              <option value="fish">🐟 Fish Products</option>
+                              <option value="veg">🥬 Vegetables & Spices</option>
+                              <option value="rice">🌾 Rice Products</option>
+                            </optgroup>
+                            <optgroup label="Single Commodity Lookup">
+                              {allKeys.map(k => (
+                                <option key={k} value={k}>{k}</option>
+                              ))}
+                            </optgroup>
+                          </select>
+                        </div>
+                      )
+                    })()}
+                  </div>
+
                   <div style={{ height: 300 }}>
                     {(() => {
                       const priceRows = data?.prices || []
-                      const commKeys = Array.from(new Set(
-                        priceRows.flatMap(row => Object.keys(row).filter(k => k !== 'date'))
-                      ))
-                      const palette = [C.g600, C.a700, C.r600, '#0891b2', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#14b8a6']
-
                       if (!priceRows.length) {
                         return (
                           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: C.k400 }}>
@@ -1485,6 +1528,33 @@ export default function AdminDashboard() {
                         )
                       }
 
+                      const allKeys = Array.from(new Set(
+                        priceRows.flatMap(row => Object.keys(row).filter(k => k !== 'date'))
+                      ))
+
+                      let selectedKeys = []
+                      if (trendFilter === 'benchmark') {
+                        const benchmarks = ['Whole Chicken', 'Tilapia (Local)', 'Tilapia', 'Pork Belly Liempo', 'Pork Liempo', 'Special Rice', 'Bangus']
+                        selectedKeys = allKeys.filter(k => benchmarks.some(b => k.toLowerCase().includes(b.toLowerCase()))).slice(0, 4)
+                        if (!selectedKeys.length) selectedKeys = allKeys.slice(0, 4)
+                      } else if (trendFilter === 'meat') {
+                        selectedKeys = allKeys.filter(k => /pork|beef|liempo|kasim|rump|brisket/i.test(k)).slice(0, 5)
+                      } else if (trendFilter === 'poultry') {
+                        selectedKeys = allKeys.filter(k => /chicken|egg/i.test(k)).slice(0, 5)
+                      } else if (trendFilter === 'fish') {
+                        selectedKeys = allKeys.filter(k => /fish|tilapia|bangus|galunggong|squid|tuna|sardines|alumahan/i.test(k)).slice(0, 5)
+                      } else if (trendFilter === 'veg') {
+                        selectedKeys = allKeys.filter(k => /onion|garlic|tomato|cabbage|carrot|eggplant|chilli|ginger|potato|chayote|pechay|squash|ampalaya/i.test(k)).slice(0, 5)
+                      } else if (trendFilter === 'rice') {
+                        selectedKeys = allKeys.filter(k => /rice/i.test(k)).slice(0, 5)
+                      } else {
+                        selectedKeys = [trendFilter]
+                      }
+
+                      if (!selectedKeys.length) selectedKeys = allKeys.slice(0, 4)
+
+                      const palette = [C.g600, C.a700, C.r600, '#0891b2', '#8b5cf6', '#ec4899', '#10b981']
+
                       return (
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={priceRows}>
@@ -1493,7 +1563,7 @@ export default function AdminDashboard() {
                             <YAxis tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} tickFormatter={v => `₱${v}`} />
                             <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}`, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }} />
                             <Legend iconType="circle" wrapperStyle={{ fontSize: 13, paddingTop: 10 }} />
-                            {commKeys.map((k, idx) => (
+                            {selectedKeys.map((k, idx) => (
                               <Line key={k} type="monotone" dataKey={k} stroke={palette[idx % palette.length]} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                             ))}
                           </LineChart>
@@ -1630,22 +1700,125 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* PER-COMMODITY DETECTIONS TRACKER (TRACKING ALL MONITORED COMMODITIES) */}
                 <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
-                  <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Per-Commodity Detections</h3>
-                  <div style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={data?.scans?.commodity_performance || []}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
-                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} />
-                        <Tooltip cursor={{ fill: C.k50 }} contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
-                        <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
-                        <Bar dataKey="Success" stackId="a" fill={C.g600} radius={[0, 0, 4, 4]} />
-                        <Bar dataKey="Low Confidence" stackId="a" fill={C.a700} radius={[0, 0, 0, 0]} />
-                        <Bar dataKey="Failed" stackId="a" fill={C.r600} radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.k900 }}>Per-Commodity Detection Tracker</h3>
+                      <p style={{ margin: '2px 0 0', fontSize: 12, color: C.k400 }}>
+                        Tracking all {data?.scans?.commodity_performance?.length || 0} monitored commodities from DA Google Sheet
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      <input
+                        type="text"
+                        placeholder="Search commodity..."
+                        value={detSearch}
+                        onChange={(e) => setDetSearch(e.target.value)}
+                        style={{
+                          padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+                          fontSize: 13, color: C.k900, outline: 'none', width: 180
+                        }}
+                      />
+                      <div style={{ display: 'flex', gap: 4, background: C.k100, padding: 3, borderRadius: 8 }}>
+                        {['all', 'scanned', 'zero'].map(t => (
+                          <button
+                            key={t}
+                            onClick={() => setDetTab(t)}
+                            style={{
+                              padding: '4px 10px', borderRadius: 6, border: 'none',
+                              background: detTab === t ? C.white : 'transparent',
+                              color: detTab === t ? C.g700 : C.k500,
+                              fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                              textTransform: 'capitalize', transition: 'all .15s',
+                              boxShadow: detTab === t ? '0 1px 3px rgba(0,0,0,.08)' : 'none'
+                            }}
+                          >
+                            {t === 'all' ? 'All Items' : t === 'scanned' ? 'Scanned' : 'No Scans'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
+
+                  {(!detSearch && detTab !== 'zero') && (
+                    <div style={{ marginBottom: 20 }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: C.k500, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                        Top Scanned Items Overview
+                      </p>
+                      <div style={{ height: 220 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={(data?.scans?.commodity_performance || []).filter(c => c.total > 0).slice(0, 8)}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
+                            <XAxis dataKey="name" tick={{ fontSize: 11, fill: C.k500 }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 11, fill: C.k500 }} axisLine={false} tickLine={false} />
+                            <Tooltip cursor={{ fill: C.k50 }} contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}` }} />
+                            <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                            <Bar dataKey="Success" stackId="a" fill={C.g600} radius={[0, 0, 4, 4]} />
+                            <Bar dataKey="Low Confidence" stackId="a" fill={C.a700} radius={[0, 0, 0, 0]} />
+                            <Bar dataKey="Failed" stackId="a" fill={C.r600} radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+
+                  {(() => {
+                    let list = data?.scans?.commodity_performance || []
+                    if (detSearch) {
+                      list = list.filter(item => item.name.toLowerCase().includes(detSearch.toLowerCase()))
+                    }
+                    if (detTab === 'scanned') {
+                      list = list.filter(item => item.total > 0)
+                    } else if (detTab === 'zero') {
+                      list = list.filter(item => item.total === 0)
+                    }
+
+                    if (!list.length) {
+                      return (
+                        <div style={{ padding: '30px', textAlign: 'center', color: C.k400, fontSize: 13 }}>
+                          No tracked commodities match your filter criteria.
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <div style={{ maxHeight: 320, overflowY: 'auto', border: `1px solid ${C.k100}`, borderRadius: 12 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                          <thead>
+                            <tr style={{ background: C.k50, borderBottom: `1px solid ${C.k100}`, position: 'sticky', top: 0, zIndex: 5 }}>
+                              <th style={{ textAlign: 'left', padding: '10px 14px', color: C.k500, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>Commodity Name</th>
+                              <th style={{ textAlign: 'center', padding: '10px 14px', color: C.k500, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>Total Scans</th>
+                              <th style={{ textAlign: 'center', padding: '10px 14px', color: C.g700, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>High Conf</th>
+                              <th style={{ textAlign: 'center', padding: '10px 14px', color: C.a700, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>Low Conf</th>
+                              <th style={{ textAlign: 'center', padding: '10px 14px', color: C.r600, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>Failed</th>
+                              <th style={{ textAlign: 'right', padding: '10px 14px', color: C.k500, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>Accuracy</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {list.map((row, idx) => {
+                              const rate = row.total > 0 ? ((row.Success / row.total) * 100).toFixed(0) : null
+                              return (
+                                <tr key={idx} style={{ borderBottom: idx < list.length - 1 ? `1px solid ${C.k100}` : 'none' }}>
+                                  <td style={{ padding: '10px 14px', fontWeight: 600, color: C.k900 }}>{row.name}</td>
+                                  <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: row.total > 0 ? C.k900 : C.k400 }}>
+                                    {row.total > 0 ? row.total : <span style={{ fontSize: 11, color: C.k400, background: C.k100, padding: '2px 6px', borderRadius: 4 }}>Zero scans</span>}
+                                  </td>
+                                  <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: C.g700 }}>{row.Success || 0}</td>
+                                  <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: C.a700 }}>{row['Low Confidence'] || 0}</td>
+                                  <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: C.r600 }}>{row.Failed || 0}</td>
+                                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: rate !== null ? (rate >= 75 ? C.g700 : C.a700) : C.k400 }}>
+                                    {rate !== null ? `${rate}%` : '—'}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )
+                  })()}
                 </div>
               </>}
             </div>
