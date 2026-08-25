@@ -152,8 +152,8 @@ def get_latest_price(commodity_name: str) -> dict | None:
         return None
 
 
-def log_scan_event(result: dict, price: dict | None, latitude: float | None = None, longitude: float | None = None, location_name: str | None = None):
-    """Write a scan event row regardless of confidence outcome, including geolocation parameters if provided."""
+def log_scan_event(result: dict, price: dict | None):
+    """Write a scan event row regardless of confidence outcome."""
     try:
         sb = get_supabase()
         price_shown = price.get("price_prevailing") if price else None
@@ -162,26 +162,7 @@ def log_scan_event(result: dict, price: dict | None, latitude: float | None = No
             "confidence": result.get("confidence"),
             "price_shown": price_shown,
         }
-        if latitude is not None:
-            payload["latitude"] = float(latitude)
-        if longitude is not None:
-            payload["longitude"] = float(longitude)
-        if location_name:
-            payload["location_name"] = location_name
-
-        try:
-            sb.table("scan_events").insert(payload).execute()
-        except Exception as insert_err:
-            # Fallback to basic payload if latitude/longitude columns are not yet migrated in Supabase
-            if "latitude" in str(insert_err) or "column" in str(insert_err):
-                logger.warning(f"Geolocation columns missing in Supabase scan_events, falling back: {insert_err}")
-                sb.table("scan_events").insert({
-                    "product_id": result.get("product_id"),
-                    "confidence": result.get("confidence"),
-                    "price_shown": price_shown,
-                }).execute()
-            else:
-                raise insert_err
+        sb.table("scan_events").insert(payload).execute()
     except Exception as e:
         logger.error(f"Failed to log scan event: {e}")
 

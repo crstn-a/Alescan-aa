@@ -9,15 +9,12 @@ router = APIRouter()
 @router.post("/scan")
 async def scan_commodity(
     image: UploadFile = File(...),
-    latitude: Optional[float] = Form(None),
-    longitude: Optional[float] = Form(None),
-    location_name: Optional[str] = Form(None),
 ):
     """
-    Accepts a photo upload from the camera alongside optional GPS coordinates.
+    Accepts a photo upload from the camera.
     Runs server-side YOLO-World open-vocabulary detection,
     fetches latest monitored market prices (Prevailing, Low, High),
-    logs the scan event with geolocation data, and returns detection results to client.
+    logs the scan event, and returns detection results to client.
     """
     # ── Step 1: Decode image ──────────────────────────────────────
     try:
@@ -38,7 +35,7 @@ async def scan_commodity(
 
     # ── Step 3: Confidence gate ───────────────────────────────────
     if not result["commodity_name"] or result["confidence"] < CONFIDENCE_THRESHOLD:
-        log_scan_event(result, None, latitude=latitude, longitude=longitude, location_name=location_name)
+        log_scan_event(result, None)
         raise HTTPException(
             status_code=422,
             detail={
@@ -64,7 +61,7 @@ async def scan_commodity(
         result["specification"] = price_db.get("specification")
 
     # ── Step 5: Log scan event ────────────────────────────────────
-    log_scan_event(result, result, latitude=latitude, longitude=longitude, location_name=location_name)
+    log_scan_event(result, result)
 
     # ── Step 6: Return result payload ─────────────────────────────
     return {

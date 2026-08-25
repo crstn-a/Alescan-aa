@@ -19,7 +19,7 @@ import {
 
 import AnalyticsReportModal from '../components/AnalyticsReportModal'
 import SyncDetailsModal from '../components/SyncDetailsModal'
-import ScanLocationMap from '../components/ScanLocationMap'
+
 
 /* ── Icons ──────────────────────────────────────────────────────────── */
 const Svg = ({ d, d2, d3, size = 16 }) => (
@@ -75,7 +75,7 @@ const SIDEBAR_MINI = 68
 
 const NAV = [
   { id: 0, label: 'Overview', icon: 'home' },
-  { id: 8, label: 'Live Map', icon: 'map' },
+
   { id: 5, label: 'Analytics', icon: 'analytics' },
   { id: 7, label: 'Violations', icon: 'violation' },
   { id: 1, label: 'Scan Logs', icon: 'scan' },
@@ -855,7 +855,7 @@ export default function AdminDashboard() {
       { key: 'products', label: 'Commodity', render: v => <span style={{ fontWeight: 600, color: C.k900 }}>{v?.display_name || <em style={{ color: C.k400, fontWeight: 400 }}>Unidentified</em>}</span> },
       { key: 'confidence', label: 'Confidence', render: v => <ConfBadge v={v} /> },
       { key: 'price_shown', label: 'Price shown', render: v => v ? <span style={{ fontWeight: 700, color: C.g700 }}>₱{Number(v).toFixed(2)}</span> : <span style={{ color: C.k200 }}>—</span> },
-      { key: 'latitude', label: 'Location', render: (v, r) => r.latitude && r.longitude ? <span style={{ fontSize: 11, fontWeight: 600, color: C.g700, background: C.g50, padding: '2px 7px', borderRadius: 6, border: `1px solid ${C.g100}` }}>📍 {Number(r.latitude).toFixed(3)}, {Number(r.longitude).toFixed(3)}</span> : <span style={{ color: C.k400, fontSize: 11 }}>No GPS</span> },
+
       { key: 'scanned_at', label: 'Scanned at', render: v => <span style={{ color: C.k400, fontSize: 12 }}>{fmtDt(v)}</span> },
     ],
     2: [
@@ -1431,10 +1431,7 @@ export default function AdminDashboard() {
               </div>
             </>)
           })()}
-          {/* REAL-TIME LOCATION MAP (active === 8) */}
-          {active === 8 && (
-            <ScanLocationMap />
-          )}
+
 
           {/* OPERATIONAL ANALYTICS */}
           {active === 5 && (
