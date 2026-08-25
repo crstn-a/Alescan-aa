@@ -252,3 +252,5 @@ service_account*.json
 backend/service_account*.json
 backend/migrations/*.sql
 test_location_scan.py
+
+backend/yolov8s-worldv2.pt

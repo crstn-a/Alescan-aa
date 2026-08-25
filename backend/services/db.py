@@ -47,53 +47,90 @@ def get_all_active_commodities() -> list[str]:
 def get_latest_price(commodity_name: str) -> dict | None:
     """
     Fetch the most recent monitored price for a commodity name.
+    Tries exact match by product name/slug first, then a conservative
+    fuzzy match (requires full root word match, not just substring).
     """
     if not commodity_name:
         return None
     sb = get_supabase()
     try:
-        # Step 1: Query products table by name, display_name, or slug
         import re
         slug = re.sub(r"[^a-z0-9]+", "_", commodity_name.lower()).strip("_")
-        
-        prod_res = (
+
+        # Step 1: Try exact slug match first (safest, never has parse issues)
+        prod_res_by_slug = (
             sb.table("products")
             .select("id, name, display_name, slug")
-            .or_(f"name.ilike.{commodity_name},display_name.ilike.{commodity_name},slug.eq.{slug}")
+            .eq("slug", slug)
             .execute()
         )
-        
+
         prod_id = None
         matched_name = commodity_name
-        if prod_res.data:
-            prod_id = prod_res.data[0]["id"]
-            matched_name = prod_res.data[0].get("display_name") or prod_res.data[0].get("name") or commodity_name
+        if prod_res_by_slug.data:
+            prod_id = prod_res_by_slug.data[0]["id"]
+            matched_name = prod_res_by_slug.data[0].get("display_name") or prod_res_by_slug.data[0].get("name") or commodity_name
 
-        # If not found by exact/or, try fuzzy matching against all products
+        # Try exact name match if slug didn't work
+        if not prod_id:
+            try:
+                prod_res_by_name = (
+                    sb.table("products")
+                    .select("id, name, display_name, slug")
+                    .eq("name", commodity_name)
+                    .execute()
+                )
+                if prod_res_by_name.data:
+                    prod_id = prod_res_by_name.data[0]["id"]
+                    matched_name = prod_res_by_name.data[0].get("display_name") or prod_res_by_name.data[0].get("name") or commodity_name
+            except Exception:
+                pass
+
+        # Step 2: Conservative word-level fuzzy match (avoids false positives)
+        # Only match if the root words of commodity_name are ALL present in the product name
         if not prod_id:
             all_prods = sb.table("products").select("id, name, display_name, slug").execute()
             c_low = commodity_name.lower()
+            # Extract root words (filter out short/common words)
+            c_words = set(w for w in re.split(r"\W+", c_low) if len(w) > 2)
+            best_prod_id = None
+            best_prod_name = None
+            best_score = 0
+
             for p in (all_prods.data or []):
                 p_name = (p.get("display_name") or p.get("name") or "").lower()
-                if c_low in p_name or p_name in c_low:
-                    prod_id = p["id"]
-                    matched_name = p.get("display_name") or p.get("name")
-                    break
+                p_words = set(w for w in re.split(r"\W+", p_name) if len(w) > 2)
+
+                # Require that ALL root words of the query appear in the product name,
+                # or ALL words of the product name appear in the query.
+                # This prevents "Tilapia" from matching "Tilapia (Local)" AND "Well Milled Rice".
+                if c_words and p_words:
+                    overlap = len(c_words & p_words)
+                    union = len(c_words | p_words)
+                    jaccard = overlap / union if union > 0 else 0
+
+                    # Strict: require majority overlap (>=0.5 Jaccard) AND at least 1 common word
+                    if overlap > 0 and jaccard >= 0.5:
+                        if jaccard > best_score:
+                            best_score = jaccard
+                            best_prod_id = p["id"]
+                            best_prod_name = p.get("display_name") or p.get("name")
+
+            if best_prod_id:
+                prod_id = best_prod_id
+                matched_name = best_prod_name
 
         if prod_id:
             price_res = (
                 sb.table("price_records")
                 .select("*")
                 .eq("product_id", prod_id)
-                .order("created_at", desc=True)
-                .limit(10)
+                .order("week_of", desc=True)   # Use week_of: most recent DA price data window
+                .limit(1)
                 .execute()
             )
             if price_res.data:
-                records = price_res.data
-                local_recs = [r for r in records if r.get("specification") and "local" in str(r.get("specification")).lower()]
-                rec = local_recs[0] if local_recs else records[0]
-                
+                rec = price_res.data[0]
                 price_val = float(rec.get("price_prevailing") or rec.get("price_per_kg") or 0.0)
                 return {
                     "id": rec.get("id"),
@@ -113,39 +150,7 @@ def get_latest_price(commodity_name: str) -> dict | None:
                     "created_at": rec.get("created_at"),
                 }
 
-        # Fallback: direct query if price_records has commodity_name column
-        try:
-            p_direct = (
-                sb.table("price_records")
-                .select("*")
-                .ilike("commodity_name", commodity_name)
-                .order("created_at", desc=True)
-                .limit(1)
-                .execute()
-            )
-            if p_direct.data:
-                rec = p_direct.data[0]
-                price_val = float(rec.get("price_prevailing") or rec.get("price_per_kg") or 0.0)
-                return {
-                    "id": rec.get("id"),
-                    "product_id": rec.get("product_id"),
-                    "commodity_name": rec.get("commodity_name") or commodity_name,
-                    "category": rec.get("category", "General"),
-                    "specification": rec.get("specification"),
-                    "unit": rec.get("unit", "kg"),
-                    "price_prevailing": price_val,
-                    "price_low": float(rec.get("price_low") if rec.get("price_low") is not None else price_val),
-                    "price_high": float(rec.get("price_high") if rec.get("price_high") is not None else price_val),
-                    "price_average": float(rec.get("price_average") if rec.get("price_average") is not None else price_val),
-                    "price_per_kg": float(rec.get("price_per_kg") or price_val),
-                    "source": rec.get("source", "DA Bantay Presyo (Sheet Sync)"),
-                    "period_month": rec.get("period_month"),
-                    "period_year": rec.get("period_year"),
-                    "created_at": rec.get("created_at"),
-                }
-        except Exception:
-            pass
-
+        logger.warning(f"No price record found for commodity: {commodity_name}")
         return None
     except Exception as e:
         logger.error(f"get_latest_price failed for {commodity_name}: {e}")

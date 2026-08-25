@@ -53,9 +53,84 @@ def get_model() -> YOLO:
     return _model
 
 
+def _deduplicate_prompts(commodities: list[str]) -> list[str]:
+    """
+    Deduplicate near-identical commodity names before passing to YOLO-World.
+    YOLO-World treats every prompt as a separate class. Having 'Bangus', 'Bangus, Large',
+    'Bangus, Medium' as three separate classes splits the model confidence across all three,
+    causing the wrong class to win. This function consolidates near-duplicates into one
+    canonical prompt per visual category.
+    Rules:
+      - Keep only the most generic / shortest canonical name per root commodity.
+      - Remove non-visual database fragments (e.g. 'Premium', 'Well Milled').
+      - Prefer names with good visual distinctiveness.
+    """
+    import re
+
+    # Canonical names we always include if present in the DB (most scannable items)
+    CANONICAL = [
+        "Whole Chicken", "Pork Belly Liempo", "Pork Kasim",
+        "Beef Brisket", "Beef Rump",
+        "Tilapia", "Bangus", "Galunggong", "Alumahan", "Sardines",
+        "Squid", "Tambakol", "Bonito",
+        "Egg",
+        "Ampalaya", "Eggplant", "Tomato", "Cabbage", "Carrots", "Carrot",
+        "Squash", "Chayote", "Pechay",
+        "Bell Pepper", "Broccoli", "Cauliflower", "Lettuce",
+        "Pole Sitao", "White Potato",
+        "Garlic", "Red Onion", "White Onion", "Ginger", "Chilli",
+        "Avocado", "Banana", "Mango", "Watermelon", "Melon",
+        "Papaya", "Pomelo", "Calamansi",
+        "Mungbean", "Corn",
+        "Sugar", "Cooking Oil",
+        "Special Rice", "Well Milled Rice", "Premium Rice", "Regular Milled Rice",
+    ]
+
+    # Non-visual DB fragments to always exclude
+    EXCLUDE_FRAGMENTS = {
+        "premium", "well milled", "regular milled", "other special rice",
+        "corn cracked", "corn grits",
+    }
+
+    # Build a deduplicated set using canonical matching
+    seen_roots = set()
+    result = []
+
+    def get_root(name: str) -> str:
+        """Get the visual root keyword of a commodity name."""
+        # Remove suffixes like ', Local', ', Imported', ', Large', ', Medium', etc.
+        cleaned = re.sub(r",\s*(local|imported|large|medium|small|extra large|pewee|feed grade|yellow|white|green|red|bisaya)\s*$", "", name.strip(), flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s*\(.*\)", "", cleaned)  # remove parenthetical specs
+        return cleaned.strip().lower()
+
+    # First pass: add canonical/priority items
+    for c in commodities:
+        root = get_root(c)
+        if root in EXCLUDE_FRAGMENTS:
+            continue
+        for canon in CANONICAL:
+            canon_root = get_root(canon)
+            if canon_root == root and root not in seen_roots:
+                seen_roots.add(root)
+                result.append(c)
+                break
+
+    # Second pass: add remaining items not already covered, excluding fragments
+    for c in commodities:
+        root = get_root(c)
+        if root in EXCLUDE_FRAGMENTS:
+            continue
+        if root not in seen_roots:
+            seen_roots.add(root)
+            result.append(c)
+
+    return result
+
+
 def refresh_yolo_world_prompts():
     """
-    Query database for all current commodity names and set custom text prompts in YOLO-World.
+    Query database for all current commodity names, deduplicate near-identical
+    visual prompts, and set custom text prompts in YOLO-World.
     Called automatically on startup and after every sheet sync.
     """
     global _model, _active_prompts
@@ -64,12 +139,12 @@ def refresh_yolo_world_prompts():
     if not commodities:
         prompts = DEFAULT_COMMODITY_PROMPTS
     else:
-        prompts = commodities
+        prompts = _deduplicate_prompts(commodities)
 
     _active_prompts = prompts
     if _model is not None:
         try:
-            logger.info(f"Updating YOLO-World text classes ({len(prompts)} commodities): {prompts[:5]}...")
+            logger.info(f"Updating YOLO-World text classes ({len(prompts)} deduplicated commodities, down from {len(commodities)}): {prompts[:5]}...")
             _model.set_classes(prompts)
         except Exception as e:
             logger.error(f"Failed to set YOLO-World classes: {e}")
