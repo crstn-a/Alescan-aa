@@ -470,9 +470,6 @@ export default function LandingPage() {
               padding: '4px 14px', width: 'fit-content',
               border: `1px solid ${C.border}`, marginBottom: 12
             }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: C.g800 }}>
-                About ALESCAN
-              </span>
             </div>
             <h2 style={{ fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 800, color: C.g900, marginBottom: 12 }}>
               Smart Market Price Verification
