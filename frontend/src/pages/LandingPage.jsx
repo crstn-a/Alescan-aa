@@ -461,8 +461,9 @@ export default function LandingPage() {
 
       {/* ── About ─────────────────────────────────────────────────── */}
       <section id="about" style={{ padding: '60px 24px' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          {/* Header & Subtitle */}
+          <div style={{ textAlign: 'center', marginBottom: 36 }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               background: C.primaryLight, borderRadius: 40,
@@ -481,140 +482,88 @@ export default function LandingPage() {
             </p>
           </div>
 
+          {/* Centered Video Player */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-            gap: 36,
-            alignItems: 'center',
+            maxWidth: 840,
+            margin: '0 auto 48px auto',
+            borderRadius: 20,
+            overflow: 'hidden',
+            boxShadow: '0 16px 40px -12px rgba(0,0,0,0.15)',
+            border: `1px solid ${C.border}`,
+            background: '#000',
+            lineHeight: 0
           }}>
-            {/* Video Column */}
-            <div style={{
-              background: C.surface,
-              borderRadius: 24,
-              padding: '16px',
-              border: `1px solid ${C.border}`,
-              boxShadow: '0 12px 32px -8px rgba(0,0,0,0.08)',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                position: 'relative',
-                borderRadius: 16,
-                overflow: 'hidden',
-                background: '#000',
-                lineHeight: 0
-              }}>
-                <video
-                  controls
-                  playsInline
-                  preload="metadata"
-                  style={{
-                    width: '100%',
-                    height: 'auto',
-                    maxHeight: '480px',
-                    borderRadius: 16,
-                    objectFit: 'contain',
-                    display: 'block'
-                  }}
-                >
-                  <source src="/About_Video.mp4" type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-              <div style={{
-                padding: '16px 8px 4px 8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: 8
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: C.primary
-                  }} />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: C.g900 }}>
-                    App Video Walkthrough & Demo
-                  </span>
-                </div>
-                <span style={{ fontSize: 12, color: C.textMuted, fontWeight: 500 }}>
-                  ALESCAN Public Market System
-                </span>
-              </div>
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              style={{
+                width: '100%',
+                height: 'auto',
+                maxHeight: '520px',
+                objectFit: 'contain',
+                display: 'block'
+              }}
+            >
+              <source src="/About_Video.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+
+          {/* Simplified App Information - Boxless presentation */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 840, margin: '0 auto' }}>
+            {/* What is ALESCAN? */}
+            <div style={{ textAlign: 'center', padding: '0 12px' }}>
+              <h3 style={{ fontSize: 22, fontWeight: 800, color: C.g900, marginBottom: 8 }}>
+                What is ALESCAN?
+              </h3>
+              <p style={{ fontSize: 15, color: C.textSecondary, lineHeight: 1.7, maxWidth: 720, margin: '0 auto' }}>
+                ALESCAN is a mobile-first, vision-based price verification tool designed for shoppers, market inspectors, and senior citizens at the Olongapo City Public Market.
+              </p>
             </div>
 
-            {/* Simplified Info Column */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* App Overview Card */}
-              <div style={{
-                background: C.surface,
-                borderRadius: 20,
-                padding: '24px 28px',
-                border: `1px solid ${C.border}`,
-                boxShadow: '0 4px 16px -4px rgba(0,0,0,0.04)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            {/* Highlights - Clean grid with icons */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: 28,
+              marginTop: 8
+            }}>
+              {[
+                {
+                  icon: Icons.camera,
+                  title: 'Zero Installation',
+                  desc: 'Runs instantly in any mobile browser without downloading an app.'
+                },
+                {
+                  icon: Icons.shield,
+                  title: 'YOLO-World AI',
+                  desc: 'Real-time open-vocabulary vision detection identifies fresh produce & meat.'
+                },
+                {
+                  icon: Icons.database,
+                  title: 'DA Bantay Presyo',
+                  desc: 'Directly synchronized with official monthly price reference tables.'
+                },
+                {
+                  icon: Icons.checkCircle,
+                  title: 'Consumer Protection',
+                  desc: 'Helps buyers quickly verify fair retail prices before purchasing.'
+                }
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
                   <div style={{
-                    width: 40, height: 40, borderRadius: 10,
+                    width: 36, height: 36, borderRadius: 9,
                     background: C.primaryLight,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: C.primaryDark
                   }}>
-                    <Icon d={Icons.zap} size={20} />
+                    <Icon d={item.icon} size={18} />
                   </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, color: C.g900 }}>What is ALESCAN?</h3>
+                  <h4 style={{ fontSize: 16, fontWeight: 700, color: C.g900 }}>{item.title}</h4>
+                  <p style={{ fontSize: 14, color: C.textSecondary, lineHeight: 1.5 }}>{item.desc}</p>
                 </div>
-                <p style={{ fontSize: 14, color: C.textSecondary, lineHeight: 1.65 }}>
-                  ALESCAN is a mobile-first, vision-based price verification tool designed for shoppers, market inspectors, and senior citizens at the Olongapo City Public Market.
-                </p>
-              </div>
-
-              {/* Highlights Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-                {[
-                  {
-                    icon: Icons.camera,
-                    title: 'Zero Installation',
-                    desc: 'Runs instantly in any mobile browser without downloading an app.'
-                  },
-                  {
-                    icon: Icons.shield,
-                    title: 'YOLO-World AI',
-                    desc: 'Real-time open-vocabulary vision detection identifies fresh produce & meat.'
-                  },
-                  {
-                    icon: Icons.database,
-                    title: 'DA Bantay Presyo',
-                    desc: 'Directly synchronized with official monthly price reference tables.'
-                  },
-                  {
-                    icon: Icons.checkCircle,
-                    title: 'Consumer Protection',
-                    desc: 'Helps buyers quickly verify fair retail prices before purchasing.'
-                  }
-                ].map((item, i) => (
-                  <div key={i} style={{
-                    background: C.surface,
-                    borderRadius: 16,
-                    padding: '18px 20px',
-                    border: `1px solid ${C.border}`,
-                    transition: 'all 0.15s'
-                  }} className="hover-lift">
-                    <div style={{
-                      width: 36, height: 36, borderRadius: 9,
-                      background: C.primaryLight,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: C.primaryDark, marginBottom: 10
-                    }}>
-                      <Icon d={item.icon} size={18} />
-                    </div>
-                    <h4 style={{ fontSize: 15, fontWeight: 700, color: C.g900, marginBottom: 4 }}>{item.title}</h4>
-                    <p style={{ fontSize: 13, color: C.textSecondary, lineHeight: 1.5 }}>{item.desc}</p>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
         </div>
