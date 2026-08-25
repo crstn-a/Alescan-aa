@@ -52,13 +52,12 @@ Alescan-aa/
 ├── backend/
 │   ├── main.py                  # FastAPI app entry point & startup warmup
 │   ├── middleware.py            # Admin JWT auth middleware
-│   ├── scheduler.py             # Monthly DA Google Sheet sync scheduler
+│   ├── scheduler.py             # Daily DA Google Sheet sync scheduler (08:00 AM PHT)
 │   ├── requirements.txt         # Python dependencies
 │   ├── Dockerfile               # Production Docker container definition
 │   ├── service_account.json     # Optional Google Service Account credentials
 │   ├── test_sheet_sync.py       # Sanity check for Google Sheet CSV parsing
 │   ├── test_yolo_world.py       # Sanity check for YOLO-World prompt mapping
-│   ├── test_location_scan.py    # Sanity check for location & scanning logic
 │   ├── routers/
 │   │   ├── scan.py              # POST /scan — YOLO-World commodity inference
 │   │   ├── prices.py            # GET /prices — SRP lookup & active commodity lists
