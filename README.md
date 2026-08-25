@@ -1,6 +1,6 @@
 # ALESCAN: Palengke SRP Scanner
 
-> A Progressive Web App (PWA) for real-time SRP (Suggested Retail Price) verification of basic commodities in Olongapo City Public Market, powered by YOLOv11 computer vision and sourced from the Department of Agriculture's Bantay Presyo price monitoring data.
+> A Progressive Web App (PWA) for real-time SRP (Suggested Retail Price) verification of basic commodities in Olongapo City Public Market, powered by **YOLO-World** open-vocabulary computer vision and sourced directly from the Department of Agriculture (DA) official price monitoring Google Sheet.
 
 ---
 
@@ -24,22 +24,24 @@
 
 ## Project Overview
 
-ALESCAN is a city-level public service tool designed to help ordinary consumers to verify whether market prices for basic commodities (i.e.,pork, chicken, tilapia) are within the official government-set SRP. Users point their phone camera at a commodity, and the system instantly identifies the item and displays its official price ceiling.
+ALESCAN is a city-level public service tool designed to help ordinary consumers verify whether market prices for basic commodities (such as pork, chicken, fish, vegetables, rice, and spices) adhere to official government-set SRP standards. 
+
+Users point their smartphone camera at a commodity, and the system instantly identifies the item using zero-shot **YOLO-World** open-vocabulary detection. The app resolves commodity specifications and displays the latest prevailing market prices synced directly from the Department of Agriculture's official price monitoring spreadsheet.
 
 ---
 
 ## Tech Stack
 
-| Layer     | Technology                                         |
-| --------- | -------------------------------------------------- |
-| Frontend  | React 19, Vite, Vanilla CSS, PWA (vite-plugin-pwa) |
-| Backend   | Python 3.11, FastAPI, Uvicorn                      |
-| AI/Vision | YOLOv11 (Ultralytics), ONNX Runtime Web            |
-| Database  | Supabase (PostgreSQL)                              |
-| Auth      | JWT (python-jose), bcrypt                          |
-| Scheduler | APScheduler (CronTrigger)                          |
-| PDF Parse | LlamaParse (LlamaIndex Cloud)                      |
-| Deploy    | Vercel (Frontend) · Railway (Backend via Docker)   |
+| Layer          | Technology                                                     |
+| -------------- | -------------------------------------------------------------- |
+| **Frontend**   | React 19, Vite, Vanilla CSS, PWA (`vite-plugin-pwa`)           |
+| **Backend**    | Python 3.11, FastAPI, Uvicorn                                  |
+| **AI / Vision**| **YOLO-World** (Ultralytics Open-Vocabulary Object Detection)   |
+| **Data Source**| **DA Google Sheet** (Service Account OAuth2 / CSV Stream API) |
+| **Database**   | Supabase (PostgreSQL)                                          |
+| **Auth**       | JWT (`python-jose`), `bcrypt`                                  |
+| **Scheduler**  | APScheduler (`CronTrigger`)                                    |
+| **Deploy**     | Vercel (Frontend) · Railway (Backend via Docker)               |
 
 ---
 
@@ -48,43 +50,44 @@ ALESCAN is a city-level public service tool designed to help ordinary consumers 
 ```
 Alescan-aa/
 ├── backend/
-│   ├── main.py                  # FastAPI app entry point
+│   ├── main.py                  # FastAPI app entry point & startup warmup
 │   ├── middleware.py            # Admin JWT auth middleware
-│   ├── scheduler.py             # Weekly price sync scheduler
+│   ├── scheduler.py             # Monthly DA Google Sheet sync scheduler
 │   ├── requirements.txt         # Python dependencies
-│   ├── Dockerfile               # Docker container definition
+│   ├── Dockerfile               # Production Docker container definition
+│   ├── service_account.json     # Optional Google Service Account credentials
+│   ├── test_sheet_sync.py       # Sanity check for Google Sheet CSV parsing
+│   ├── test_yolo_world.py       # Sanity check for YOLO-World prompt mapping
+│   ├── test_location_scan.py    # Sanity check for location & scanning logic
 │   ├── routers/
-│   │   ├── scan.py              # POST /scan — commodity inference
-│   │   ├── prices.py            # GET /prices — SRP lookup
-│   │   └── admin.py             # Admin API (stats, logs, sync, analytics)
-│   ├── services/
-│   │   ├── vision.py            # YOLOv11 inference engine
-│   │   ├── sync.py              # PDF fetch → extract → normalize → upsert
-│   │   ├── extractor_llamaparse.py  # LlamaParse PDF extraction
-│   │   ├── normalizer.py        # Row normalization & slug mapping
-│   │   ├── pdf_fetcher.py       # DA Bantay Presyo PDF downloader
-│   │   ├── analytics.py         # Analytics data aggregation
-│   │   ├── auth.py              # Password hashing & JWT management
-│   │   └── db.py                # Supabase client & DB helpers
-│   └── weights/
-│       └── best.pt              # Trained YOLOv11 model weights
+│   │   ├── scan.py              # POST /scan — YOLO-World commodity inference
+│   │   ├── prices.py            # GET /prices — SRP lookup & active commodity lists
+│   │   └── admin.py             # Admin API (stats, logs, manual sync, analytics)
+│   └── services/
+│       ├── vision.py            # YOLO-World model loader & dynamic text prompt manager
+│       ├── sync.py              # Google Sheet fetch → parse → database upsert pipeline
+│       ├── sheet_fetcher.py     # DA Google Sheet client (Direct CSV, OAuth2, API key)
+│       ├── normalizer.py        # Commodity title normalization & slug mapping
+│       ├── analytics.py         # Analytics data aggregation
+│       ├── auth.py              # Password hashing & JWT token management
+│       └── db.py                # Supabase client & database helpers
 └── frontend/
     ├── index.html
     ├── manifest.json            # PWA manifest
     ├── vite.config.js           # Vite + PWA configuration
     ├── package.json
     └── src/
-        ├── App.jsx              # Root router
+        ├── App.jsx              # Root application router
         ├── pages/
         │   ├── LandingPage.jsx  # Public home page
-        │   ├── Scanner.jsx      # Camera + YOLO inference UI
-        │   ├── Result.jsx       # Scan result display
-        │   ├── AdminLogin.jsx   # Admin login page
+        │   ├── Scanner.jsx      # Camera view & live scanner interface
+        │   ├── Result.jsx       # Scan result display with price breakdown
+        │   ├── AdminLogin.jsx   # Admin authentication page
         │   └── AdminDashboard.jsx # Admin control panel
         ├── api/                 # Axios API service helpers
         ├── hooks/               # Custom React hooks
         ├── layouts/             # Shared layout components
-        └── utils/               # Utility functions
+        └── utils/               # Utility & formatting functions
 ```
 
 ---
@@ -95,11 +98,10 @@ Ensure the following are installed on your machine before proceeding:
 
 | Requirement | Version | Notes                      |
 | ----------- | ------- | -------------------------- |
-| Python      | 3.11+   | Required for the backend   |
-| Node.js     | 18+     | Required for the frontend  |
-| npm         | 9+      | Comes bundled with Node.js |
-| Git         | Any     | For cloning the repository |
-| pip         | Latest  | Python package manager     |
+| **Python**  | 3.11+   | Required for backend execution |
+| **Node.js** | 18+     | Required for frontend tooling |
+| **npm**     | 9+      | Bundled with Node.js       |
+| **Git**     | Any     | For repository management  |
 
 ---
 
@@ -135,21 +137,11 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> ⚠️ **Note:** The `requirements.txt` includes heavy ML packages (`torch`, `ultralytics`, `opencv-python`). Installation may take several minutes and requires ~3–5 GB of disk space.
+#### 4. Configure environment variables
 
-#### 4. Add the YOLOv11 model weights
+Create a `.env` file in the `backend/` directory (see [Environment Variables](#environment-variables) section below).
 
-Download the trained model file (`best.pt`) and place it in:
-
-```
-backend/weights/best.pt
-```
-
-> The model file can be obtained from the project maintainer or via the `MODEL_URL` in `.env`.
-
-#### 5. Configure environment variables
-
-Create a `.env` file in the `backend/` directory (see [Environment Variables](#environment-variables) section below for required keys).
+> 💡 **YOLO-World Weights:** YOLO-World open-vocabulary models (`yolov8s-worldv2.pt` / `yolov8s-world.pt`) will automatically download on first startup or warmup run. No manual weight placement is required!
 
 ---
 
@@ -177,14 +169,17 @@ Create a `.env` file in the `frontend/` directory with the required keys (see [E
 
 ### Backend — `backend/.env`
 
-| Variable             | Description                                           | Example / Default                     |
-| -------------------- | ----------------------------------------------------- | ------------------------------------- |
-| `SUPABASE_URL`       | Your Supabase project URL                             | `https://xxxx.supabase.co`            |
-| `SUPABASE_KEY`       | Supabase **service_role** key (not anon key)          | `eyJhbGci...`                         |
-| `LLAMACLOUD_API_KEY` | LlamaCloud API key for LlamaParse PDF extraction      | `llx-...`                             |
-| `JWT_SECRET`         | Secret key used to sign admin JWT tokens              | `your-strong-random-secret`           |
-| `FRONTEND_URL`       | Allowed CORS origin (your frontend URL)               | `https://alescan.vercel.app`          |
-| `MODEL_URL`          | Google Drive link to download `best.pt` model weights | `https://drive.google.com/file/d/...` |
+| Variable                       | Description                                                     | Example / Default                                    |
+| ------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------- |
+| `SUPABASE_URL`                 | Your Supabase project URL                                       | `https://xxxx.supabase.co`                           |
+| `SUPABASE_KEY`                 | Supabase **service_role** key                                   | `eyJhbGci...`                                        |
+| `GOOGLE_SHEET_ID`              | DA Bantay Presyo Google Spreadsheet ID                          | `1QW1KwKXEPSPIKqTss0aD56O6knQTFvbK4hjdP5fqdZI`       |
+| `GOOGLE_SHEETS_CSV_URL`        | Direct CSV export URL for the Google Sheet                      | `https://docs.google.com/spreadsheets/d/.../gid=0`  |
+| `GOOGLE_SERVICE_ACCOUNT_FILE`  | Path to Google Service Account JSON file                        | `service_account.json`                               |
+| `GOOGLE_SERVICE_ACCOUNT_JSON`  | Inline JSON payload for Google Service Account                  | `{"type": "service_account", ...}`                   |
+| `GOOGLE_SHEETS_API_KEY`        | Optional Google Sheets API v4 key fallback                      | `AIzaSy...`                                          |
+| `JWT_SECRET`                   | Secret key used to sign admin JWT tokens                        | `your-strong-random-secret`                          |
+| `FRONTEND_URL`                 | Allowed CORS origin (your frontend deployment URL)             | `https://alescan.vercel.app`                         |
 
 ### Frontend — `frontend/.env`
 
@@ -203,18 +198,16 @@ Create a `.env` file in the `frontend/` directory with the required keys (see [E
 ```bash
 cd backend
 
-# Activate virtual environment first
+# Activate virtual environment
 .\venv\Scripts\Activate.ps1   # Windows
 
-# Run FastAPI with hot-reload
+# Run FastAPI with live reload
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 The API will be accessible at: `http://localhost:8000`
-
-Interactive API docs (Swagger UI): `http://localhost:8000/docs`
-
-Health check: `http://localhost:8000/health`
+- Interactive API Docs (Swagger UI): `http://localhost:8000/docs`
+- Health Check: `http://localhost:8000/health`
 
 ### Start the Frontend (Development)
 
@@ -223,87 +216,60 @@ cd frontend
 npm run dev
 ```
 
-The PWA will be accessible at: `http://localhost:5173`
-
-### Run Both Together
-
-Open two separate terminals — one for each service — and run both commands above simultaneously.
+The application will be accessible at: `http://localhost:5173`
 
 ---
 
 ## User Role Guide
 
-ALESCAN defines two distinct user roles. There is no public registration; the system is intentionally designed for guided, single-purpose consumer use and secure administrator management.
-
----
-
 ### Consumer (Public User)
 
-**Who:** General public, market shoppers, elderly consumers, barangay residents.
+**Who:** General public, market shoppers, and local consumers.
 
-**Access:** No login required. Fully anonymous and public.
+**Access:** Public access — no account registration or login required.
 
 **Capabilities:**
 
-| Action                  | Description                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| **View Landing Page**   | Access the public home page with instructions and SRP information            |
-| **Open Camera Scanner** | Launch the live camera view to scan a commodity                              |
-| **Scan a Commodity**    | Point the camera at pork liempo, whole chicken, or tilapia and tap Scan      |
-| **View Scan Results**   | See the product name, official SRP (₱/kg), confidence score, and data week   |
-| **Use Offline (PWA)**   | Install the app on a phone for offline access; price cache is stored locally |
+| Action                  | Description                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------- |
+| **View Landing Page**   | Access general info and instructions on SRP verification                                           |
+| **Open Camera Scanner** | Launch live camera stream for scanning market commodities                                         |
+| **Scan Commodity**      | Capture food items (pork, chicken, fish, vegetables, rice, etc.) for instant zero-shot detection |
+| **View SRP Results**    | Inspect prevailing price, price ranges (low/high), average price, unit, and detection confidence |
+| **Use Offline (PWA)**   | Install app on mobile devices for offline access and cached SRP viewing                           |
 
 **Consumer Flow:**
-
 ```
-Landing Page → Open Scanner → Point Camera → Tap Scan → View Result
+Landing Page ──> Open Scanner ──> Capture Commodity Image ──> YOLO-World Detection ──> SRP Result Page
 ```
 
 ---
 
 ### Administrator
 
-**Who:** Authorized personnel managing price data and system oversight (e.g., City Agriculture Office staff, IT admin).
+**Who:** Authorized personnel managing official price synchronization and market monitoring.
 
-**Access:** Login required via `/admin/login` using a username and bcrypt-hashed password stored in the `admin_users` Supabase table.
-
-**Authentication:** Upon successful login, a JWT token (valid for 8 hours) is issued. All subsequent admin API calls must include this token as a `Bearer` header.
+**Access:** Secured via `/admin/login` using credentials verified against the `admin_users` database table.
 
 **Capabilities:**
 
 | Action                             | Description                                                                              |
 | ---------------------------------- | ---------------------------------------------------------------------------------------- |
-| **Log In / Log Out**               | Authenticate via the Admin Login page at `/admin/login`                                  |
-| **View Dashboard Overview**        | See total scans, product count, active prices, error count, and last sync status         |
-| **Trigger Manual Price Sync**      | Manually initiate the DA Bantay Presyo PDF fetch → extract → normalize → upsert pipeline |
-| **Monitor Automated Sync**         | Scheduled sync runs every **Monday at 8:00 AM Philippine Time (PHT)** automatically      |
-| **View Scan Logs**                 | Browse the last 200 scan events including product, confidence score, and timestamp       |
-| **View Sync Logs**                 | Review sync history including extractor used, status, and notes                          |
-| **View Error Logs**                | Inspect system-level errors from any backend module                                      |
-| **View Analytics — Prices**        | Interactive line chart of weekly SRP trends per commodity                                |
-| **View Analytics — Scans**         | Daily scan volume, detection confidence split, and per-commodity performance             |
-| **View Analytics — AI Evaluation** | Model and extractor benchmark results (accuracy, F1, precision, recall)                  |
-| **Manage Violations**              | Submit and track consumer complaints with store details and supporting images            |
+| **Log In / Log Out**               | Authenticate via the Admin Login page                                                    |
+| **View Overview Dashboard**        | Monitor total scans, active products, sync status, and system error rates                |
+| **Manual Price Sync**              | Trigger immediate fetch, parse, and upsert pipeline from the DA Google Sheet             |
+| **Automated Monthly Sync**         | Automated cron schedule syncing official prices from DA Google Sheet                     |
+| **Dynamic Prompt Synchronization** | YOLO-World detection prompts dynamically update from active database commodities on sync|
+| **View Scan & Sync Logs**          | Review real-time detection logs, raw sync logs, and system error tracebacks              |
+| **Analytics & Reporting**          | Interactive charts for price trends, daily scan activity, and commodity performance      |
+| **Manage Violations**              | Log and manage price ceiling violation reports from consumers                            |
 
-**Admin Flow:**
-
-```
-/admin/login → Enter credentials → JWT issued → /admin Dashboard
-```
-
-**Admin Route Protection:**
-
-- All `/admin/api/*` endpoints (except `/admin/api/login`) require a valid JWT `Bearer` token.
-- Tokens are validated server-side by `AdminAuthMiddleware` on every protected request.
-- Tokens expire after **8 hours** and must be re-authenticated.
-
-**Supported Commodities (Current Model):**
-
-| Class ID | Slug            | Display Name      |
-| -------- | --------------- | ----------------- |
-| 0        | `pork_liempo`   | Pork Belly Liempo |
-| 1        | `tilapia_local` | Tilapia (Local)   |
-| 2        | `whole_chicken` | Whole Chicken     |
+**Supported Commodities (Dynamic via DA Google Sheet):**
+- **Rice:** Imported Commercial Rice (Special, Premium, Well Milled), Local Commercial Rice
+- **Meat Products:** Pork Liempo, Pork Kasim, Beef Rump, Whole Chicken
+- **Fish Products:** Tilapia, Bangus, Galunggong
+- **Vegetables & Spices:** Red Onion, White Onion, Garlic, Tomato, Cabbage, Carrot, Eggplant
+- **Other Basic Commodities:** Eggs, Fruits, Corn, Legumes
 
 ---
 
@@ -311,19 +277,11 @@ Landing Page → Open Scanner → Point Camera → Tap Scan → View Result
 
 ### Backend — Railway (Docker)
 
-The backend is containerized via `backend/Dockerfile`. Deploy to Railway by connecting your GitHub repository and pointing it to the `backend/` directory. Railway auto-detects the Dockerfile.
-
-Key production settings:
-
-- Port: `8000` (defined in the `CMD` directive)
-- Set all required environment variables via Railway's Variables panel.
+1. Deploy the `backend/` folder to Railway using the provided `Dockerfile`.
+2. Ensure environment variables (`SUPABASE_URL`, `SUPABASE_KEY`, `GOOGLE_SHEET_ID`, `JWT_SECRET`, `FRONTEND_URL`, etc.) are configured in Railway.
 
 ### Frontend — Vercel
 
-The frontend is deployed to Vercel. Connect the repository, set the **root directory** to `frontend/`, and Vercel will auto-detect the Vite configuration.
-
-Set all `VITE_*` environment variables via Vercel's Environment Variables settings.
-
-Live production URL: **https://alescan.vercel.app**
-
----
+1. Connect the GitHub repository to Vercel and set root directory to `frontend/`.
+2. Configure environment variables (`VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`).
+3. Production URL: **https://alescan.vercel.app**
