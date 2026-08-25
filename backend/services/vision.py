@@ -10,8 +10,13 @@ from services.db import get_all_active_commodities, get_latest_price, log_error
 logger = logging.getLogger(__name__)
 
 # ── Config ─────────────────────────────────────────────────────────
-MODEL_NAME = "yolov8s-worldv2.pt"
-CONFIDENCE_THRESHOLD = 0.45
+# Resolve model path relative to the backend root (parent of services/)
+# This ensures the model is found regardless of the CWD when uvicorn starts.
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
+MODEL_FILENAME = "yolov8s-worldv2.pt"
+MODEL_PATH = _BACKEND_ROOT / MODEL_FILENAME
+
+CONFIDENCE_THRESHOLD = 0.40  # Slightly lower for v2 model — still high-quality detections
 
 DEFAULT_COMMODITY_PROMPTS = [
     "Pork Liempo",
@@ -41,11 +46,14 @@ def get_model() -> YOLO:
     """Load YOLO-World model instance and set commodity text prompts."""
     global _model, _active_prompts
     if _model is None:
-        logger.info(f"Loading YOLO-World model ({MODEL_NAME})...")
+        # Prefer the absolute path (backend root); fall back to filename only
+        # in case the server is already run from the backend directory.
+        model_to_load = str(MODEL_PATH) if MODEL_PATH.exists() else MODEL_FILENAME
+        logger.info(f"Loading YOLO-World model from: {model_to_load}")
         try:
-            _model = YOLO(MODEL_NAME)
+            _model = YOLO(model_to_load)
         except Exception as e:
-            logger.warning(f"Failed loading {MODEL_NAME}, attempting fallback to yolov8s-world.pt ({e})")
+            logger.warning(f"Failed loading {model_to_load}, attempting fallback to yolov8s-world.pt ({e})")
             _model = YOLO("yolov8s-world.pt")
         
         refresh_yolo_world_prompts()
