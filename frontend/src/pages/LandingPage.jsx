@@ -462,58 +462,158 @@ export default function LandingPage() {
       {/* ── About ─────────────────────────────────────────────────── */}
       <section id="about" style={{ padding: '60px 24px' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <h2 style={{ fontSize: 'clamp(28px, 5vw, 34px)', fontWeight: 800, color: C.g900, marginBottom: 10 }}>About</h2>
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: C.primaryLight, borderRadius: 40,
+              padding: '4px 14px', width: 'fit-content',
+              border: `1px solid ${C.border}`, marginBottom: 12
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: C.g800 }}>
+                About ALESCAN
+              </span>
+            </div>
+            <h2 style={{ fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 800, color: C.g900, marginBottom: 12 }}>
+              Smart Market Price Verification
+            </h2>
+            <p style={{ fontSize: 16, color: C.textSecondary, maxWidth: 680, margin: '0 auto', lineHeight: 1.6 }}>
+              Discover how ALESCAN simplifies market price checking using AI camera recognition and official Department of Agriculture Bantay Presyo data.
+            </p>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, alignItems: 'flex-start' }}>
-            {/* Challenge */}
-            <div style={{ flex: '1 1 360px', background: C.surface, borderRadius: 20, padding: '32px 28px', border: `1px solid ${C.border}` }}>
-              <h3 style={{ fontSize: 22, fontWeight: 800, color: C.g900, marginBottom: 16 }}>The Challenge</h3>
-              <p style={{ fontSize: 15, color: C.textSecondary, lineHeight: 1.7, marginBottom: 16 }}>
-                The Department of Agriculture Bantay Presyo publishes monthly price monitoring sheets across ~85 agricultural commodities and categories.
-              </p>
-              <p style={{ fontSize: 15, color: C.textSecondary, lineHeight: 1.7, marginBottom: 16 }}>
-                Many consumers cannot easily navigate large market tables because:
-              </p>
-              <div style={{ background: '#fef2f2', borderRadius: 12, padding: '16px 20px', border: '1px solid #fee2e2' }}>
-                <ul style={{ paddingLeft: 18, margin: 0 }}>
-                  {[
-                    'The tables contain hundreds of rows and sub-columns.',
-                    'Manual price searching in public markets is time-consuming.',
-                    'Consumers are unaware of prevailing retail price ranges.',
-                    'Senior citizens and shoppers need instant visual assistance.',
-                  ].map((item, i) => (
-                    <li key={i} style={{ fontSize: 14, color: C.text, lineHeight: 1.7, marginBottom: i < 3 ? 4 : 0 }}>{item}</li>
-                  ))}
-                </ul>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gap: 36,
+            alignItems: 'center',
+          }}>
+            {/* Video Column */}
+            <div style={{
+              background: C.surface,
+              borderRadius: 24,
+              padding: '16px',
+              border: `1px solid ${C.border}`,
+              boxShadow: '0 12px 32px -8px rgba(0,0,0,0.08)',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                position: 'relative',
+                borderRadius: 16,
+                overflow: 'hidden',
+                background: '#000',
+                lineHeight: 0
+              }}>
+                <video
+                  controls
+                  playsInline
+                  preload="metadata"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: '480px',
+                    borderRadius: 16,
+                    objectFit: 'contain',
+                    display: 'block'
+                  }}
+                >
+                  <source src="/About_Video.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+              <div style={{
+                padding: '16px 8px 4px 8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 8
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: C.primary
+                  }} />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: C.g900 }}>
+                    App Video Walkthrough & Demo
+                  </span>
+                </div>
+                <span style={{ fontSize: 12, color: C.textMuted, fontWeight: 500 }}>
+                  ALESCAN Public Market System
+                </span>
               </div>
             </div>
 
-            {/* Solution */}
-            <div style={{ flex: '1 1 360px', background: C.surface, borderRadius: 20, padding: '32px 28px', border: `1px solid ${C.border}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 11, background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.primaryDark }}>
-                  <Icon d={Icons.zap} size={22} />
+            {/* Simplified Info Column */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* App Overview Card */}
+              <div style={{
+                background: C.surface,
+                borderRadius: 20,
+                padding: '24px 28px',
+                border: `1px solid ${C.border}`,
+                boxShadow: '0 4px 16px -4px rgba(0,0,0,0.04)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 10,
+                    background: C.primaryLight,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: C.primaryDark
+                  }}>
+                    <Icon d={Icons.zap} size={20} />
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: C.g900 }}>What is ALESCAN?</h3>
                 </div>
-                <h3 style={{ fontSize: 22, fontWeight: 800, color: C.g900 }}>Our Solution</h3>
+                <p style={{ fontSize: 14, color: C.textSecondary, lineHeight: 1.65 }}>
+                  ALESCAN is a mobile-first, vision-based price verification tool designed for shoppers, market inspectors, and senior citizens at the Olongapo City Public Market.
+                </p>
               </div>
-              <p style={{ fontSize: 15, color: C.textSecondary, lineHeight: 1.7, marginBottom: 20 }}>
-                Alescan converts static price sheets into an automated, AI-driven verification system accessible from any smartphone browser — <strong>no installation required</strong>.
-              </p>
-              <div style={{ background: C.primaryLight, borderRadius: 14, padding: '18px 20px' }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: C.g800, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.05em' }}>Core System Flow</p>
-                <ol style={{ paddingLeft: 18, margin: 0 }}>
-                  {[
-                    'Open the Website on any mobile or desktop browser.',
-                    'Camera captures photo of the commodity on tap.',
-                    'Open-vocabulary YOLO-World identifies the item.',
-                    'Latest monitored market price (Prevailing & Low-High) retrieved.',
-                    'Monitored price displayed clearly on screen.',
-                    'Scan event logged for analytics.',
-                  ].map((step, i) => (
-                    <li key={i} style={{ fontSize: 14, color: C.g800, lineHeight: 1.7, marginBottom: i < 5 ? 4 : 0 }}>{step}</li>
-                  ))}
-                </ol>
+
+              {/* Highlights Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+                {[
+                  {
+                    icon: Icons.camera,
+                    title: 'Zero Installation',
+                    desc: 'Runs instantly in any mobile browser without downloading an app.'
+                  },
+                  {
+                    icon: Icons.shield,
+                    title: 'YOLO-World AI',
+                    desc: 'Real-time open-vocabulary vision detection identifies fresh produce & meat.'
+                  },
+                  {
+                    icon: Icons.database,
+                    title: 'DA Bantay Presyo',
+                    desc: 'Directly synchronized with official monthly price reference tables.'
+                  },
+                  {
+                    icon: Icons.checkCircle,
+                    title: 'Consumer Protection',
+                    desc: 'Helps buyers quickly verify fair retail prices before purchasing.'
+                  }
+                ].map((item, i) => (
+                  <div key={i} style={{
+                    background: C.surface,
+                    borderRadius: 16,
+                    padding: '18px 20px',
+                    border: `1px solid ${C.border}`,
+                    transition: 'all 0.15s'
+                  }} className="hover-lift">
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 9,
+                      background: C.primaryLight,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: C.primaryDark, marginBottom: 10
+                    }}>
+                      <Icon d={item.icon} size={18} />
+                    </div>
+                    <h4 style={{ fontSize: 15, fontWeight: 700, color: C.g900, marginBottom: 4 }}>{item.title}</h4>
+                    <p style={{ fontSize: 13, color: C.textSecondary, lineHeight: 1.5 }}>{item.desc}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
