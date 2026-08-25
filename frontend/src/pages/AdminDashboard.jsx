@@ -7,7 +7,7 @@ import { useAdminAuth } from '../hooks/useAdminAuth'
 import {
   getStats, getScanLogs, getSyncLogs,
   getErrorLogs, getPriceRecords, triggerSync,
-  getAnalyticsPrices, getAnalyticsScans, getAnalyticsEvaluations,
+  getAnalyticsPrices, getAnalyticsScans,
   getViolations, createViolation, updateViolation, updateViolationStatus,
   getDailyVolume, getFilteredScanStats
 } from '../api/adminApi'
@@ -77,7 +77,6 @@ const NAV = [
   { id: 0, label: 'Overview', icon: 'home' },
   { id: 8, label: 'Live Map', icon: 'map' },
   { id: 5, label: 'Analytics', icon: 'analytics' },
-  { id: 6, label: 'AI Evaluation', icon: 'eval' },
   { id: 7, label: 'Violations', icon: 'violation' },
   { id: 1, label: 'Scan Logs', icon: 'scan' },
   { id: 2, label: 'Price Records', icon: 'price' },
@@ -770,14 +769,11 @@ export default function AdminDashboard() {
     setTabLoading(true); setData([])
     try {
       if (t === 5) {
-        const [prices, scans, models] = await Promise.all([
+        const [prices, scans] = await Promise.all([
           getAnalyticsPrices(),
-          getAnalyticsScans(),
-          getAnalyticsEvaluations()
+          getAnalyticsScans()
         ]);
-        setData({ prices, scans, models });
-      } else if (t === 6) {
-        setData(await getAnalyticsEvaluations());
+        setData({ prices, scans });
       } else if (t === 7) {
         setData(await getViolations());
       } else {
@@ -1433,7 +1429,8 @@ export default function AdminDashboard() {
                   )
                 })()}
               </div>
-            </>)})()}
+            </>)
+          })()}
           {/* REAL-TIME LOCATION MAP (active === 8) */}
           {active === 8 && (
             <ScanLocationMap />
@@ -1498,7 +1495,7 @@ export default function AdminDashboard() {
                             }}
                           >
                             <optgroup label="Preset Category Views">
-                              <option value="benchmark">🌟 Benchmark Core SRP Items</option>
+                              <option value="benchmark">🌟 Core SRP Items</option>
                               <option value="meat">🥩 Meat (Pork & Beef)</option>
                               <option value="poultry">🍗 Poultry & Eggs</option>
                               <option value="fish">🐟 Fish Products</option>
@@ -1824,166 +1821,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* AI EVALUATION */}
-          {active === 6 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {tabLoading ? <div style={{ padding: 40, textAlign: 'center', color: C.k400 }}>Loading evaluations...</div> : <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(350px,1fr))', gap: 20 }}>
-                  <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.k900 }}>Model Performance Metrics</h3>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: C.k400, background: C.k100, padding: '4px 10px', borderRadius: 6 }}>
-                        Version: <span style={{ color: C.g700 }}>{data?.models?.[data.models.length - 1]?.model_version || 'Unknown'}</span>
-                      </span>
-                    </div>
-                    {(() => {
-                      const latestModel = data?.models?.[data.models.length - 1] || {};
-                      const metrics = [
-                        {
-                          label: 'Accuracy',
-                          value: (latestModel.accuracy || 0) * 100,
-                          color: C.g600,
-                          bg: C.g50,
-                          border: C.g100,
-                          icon: '◎',
-                          definition: 'Accuracy indicates that the model is making more accurate predictions.'
-                        },
-                        {
-                          label: 'Precision',
-                          value: (latestModel.precision || 0) * 100,
-                          color: '#8b5cf6',
-                          bg: '#f5f3ff',
-                          border: '#ede9fe',
-                          icon: '◉',
-                          definition: 'Precision quantifies the proportion of true positives among all positive predictions, assessing the model\u0027s capability to avoid false positives.'
-                        },
-                        {
-                          label: 'Recall',
-                          value: (latestModel.recall || 0) * 100,
-                          color: '#0891b2',
-                          bg: '#ecfeff',
-                          border: '#cffafe',
-                          icon: '◈',
-                          definition: 'Recall calculates the proportion of true positives among all actual positives, measuring the model\u0027s ability to detect all instances of a class.'
-                        },
-                        {
-                          label: 'F1 Score',
-                          value: (latestModel.f1_score || 0) * 100,
-                          color: C.a700,
-                          bg: C.a50,
-                          border: C.a100,
-                          icon: '◆',
-                          definition: 'The F1 Score is the harmonic mean of precision and recall, providing a balanced assessment of a model\u0027s performance while considering both false positives and false negatives.'
-                        },
-                        {
-                          label: 'Confidence',
-                          value: (latestModel.avg_confidence || 0) * 100,
-                          color: C.r600,
-                          bg: C.r50,
-                          border: C.r100,
-                          icon: '◇',
-                          definition: 'Confidence score is a value, typically between 0 and 1, that quantifies the model\u0027s confidence in its prediction. A higher confidence score indicates a higher level of certainty, while a lower score indicates less certainty.'
-                        },
-                      ];
-                      return (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
-                          {metrics.map((m) => (
-                            <div
-                              key={m.label}
-                              style={{
-                                position: 'relative',
-                                padding: '18px 16px',
-                                borderRadius: 14,
-                                border: `1px solid ${m.border}`,
-                                background: m.bg,
-                                cursor: 'default',
-                                transition: 'all .2s ease',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = `0 8px 24px ${m.color}18`;
-                                const tip = e.currentTarget.querySelector('.metric-tip');
-                                if (tip) { tip.style.opacity = '1'; tip.style.visibility = 'visible'; tip.style.transform = 'translateX(-50%) translateY(0)'; }
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = 'none';
-                                const tip = e.currentTarget.querySelector('.metric-tip');
-                                if (tip) { tip.style.opacity = '0'; tip.style.visibility = 'hidden'; tip.style.transform = 'translateX(-50%) translateY(6px)'; }
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                                <span style={{ fontSize: 16, color: m.color, lineHeight: 1 }}>{m.icon}</span>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: m.color, textTransform: 'uppercase', letterSpacing: '.04em' }}>{m.label}</span>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                                <span style={{ fontSize: 28, fontWeight: 800, color: C.k900, lineHeight: 1 }}>{m.value.toFixed(1)}</span>
-                                <span style={{ fontSize: 14, fontWeight: 600, color: C.k400 }}>%</span>
-                              </div>
-                              <div style={{
-                                marginTop: 10, height: 5, borderRadius: 99,
-                                background: `${m.color}20`, overflow: 'hidden',
-                              }}>
-                                <div style={{
-                                  height: '100%', borderRadius: 99,
-                                  background: m.color, width: `${Math.min(m.value, 100)}%`,
-                                  transition: 'width .6s ease',
-                                }} />
-                              </div>
-                              {/* Hover tooltip */}
-                              <div
-                                className="metric-tip"
-                                style={{
-                                  position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%',
-                                  transform: 'translateX(-50%) translateY(6px)',
-                                  width: 240, padding: '12px 14px',
-                                  background: C.k900, color: '#fff',
-                                  fontSize: 12, lineHeight: 1.5, fontWeight: 400,
-                                  borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.2)',
-                                  opacity: 0, visibility: 'hidden',
-                                  transition: 'all .2s ease', pointerEvents: 'none',
-                                  zIndex: 50,
-                                }}
-                              >
-                                <strong style={{ display: 'block', marginBottom: 4, fontSize: 13, fontWeight: 700 }}>{m.label}</strong>
-                                {m.definition}
-                                <div style={{
-                                  position: 'absolute', bottom: -5, left: '50%',
-                                  width: 10, height: 10, background: C.k900,
-                                  borderRadius: 2, transform: 'translateX(-50%) rotate(45deg)',
-                                }} />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </div>
 
-                  <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
-                    <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Extraction Pipeline Metrics</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 340, overflowY: 'auto' }}>
-                      {(data?.extractors || []).map((ext, i) => (
-                        <div key={i} style={{ padding: 16, borderRadius: 12, border: `1px solid ${C.k100}`, background: C.k50 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <strong style={{ fontSize: 14, color: C.k900 }}>{ext.extractor_version}</strong>
-                            <span style={{ fontSize: 12, color: C.k400 }}>{new Date(ext.created_at).toLocaleDateString()}</span>
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, fontSize: 13 }}>
-                            <div><span style={{ color: C.k500 }}>OCR Accuracy:</span> <span style={{ fontWeight: 600, color: C.g700, fontSize: 16 }}>{(ext.extraction_accuracy * 100).toFixed(1)}%</span></div>
-                          </div>
-                          <p style={{ margin: '8px 0 0', fontSize: 12, color: C.k500, fontStyle: 'italic' }}>"{ext.notes}"</p>
-                        </div>
-                      ))}
-                      {(!data?.extractors || data.extractors.length === 0) && (
-                        <p style={{ fontSize: 13, color: C.k500, textAlign: 'center', padding: 20 }}>No extraction evaluation records found.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </>}
-            </div>
-          )}
 
           {/* VIOLATIONS */}
           {active === 7 && (
