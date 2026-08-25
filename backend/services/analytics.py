@@ -8,17 +8,25 @@ logger = logging.getLogger(__name__)
 def get_analytics_prices():
     try:
         sb = get_supabase()
-        # Fetch price records for active products
-        prices = (
-            sb.table("price_records")
-            .select("price_per_kg, price_prevailing, week_of, created_at, source, commodity_name, products(display_name, name)")
-            .order("week_of", desc=False)
-            .execute()
-        )
+        # Query price records safely using valid columns
+        try:
+            res = (
+                sb.table("price_records")
+                .select("price_per_kg, price_prevailing, week_of, created_at, source, commodity_name, products(display_name, name)")
+                .order("week_of", desc=False)
+                .execute()
+            )
+        except Exception:
+            res = (
+                sb.table("price_records")
+                .select("price_per_kg, week_of, created_at, source, products(display_name, name)")
+                .order("week_of", desc=False)
+                .execute()
+            )
         
-        # Group by product and week
+        # Group by product and week/date
         data = defaultdict(list)
-        for row in (prices.data or []):
+        for row in (res.data or []):
             prod = row.get("products") or {}
             prod_name = row.get("commodity_name") or prod.get("display_name") or prod.get("name")
             if not prod_name: continue
@@ -33,7 +41,7 @@ def get_analytics_prices():
         
         all_dates = sorted(list(set([
             row.get("week_of") or (row["created_at"][:10] if row.get("created_at") else datetime.now().strftime("%Y-%m-%d"))
-            for row in (prices.data or [])
+            for row in (res.data or [])
         ])))
         
         chart_data = []

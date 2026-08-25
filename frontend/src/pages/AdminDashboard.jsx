@@ -1469,14 +1469,24 @@ export default function AdminDashboard() {
                 <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
                   <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Commodity Price Trends</h3>
                   <div style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      {(() => {
-                        const priceRows = data?.prices || []
-                        const commKeys = Array.from(new Set(
-                          priceRows.flatMap(row => Object.keys(row).filter(k => k !== 'date'))
-                        ))
-                        const palette = [C.g600, C.a700, C.r600, '#0891b2', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#14b8a6']
+                    {(() => {
+                      const priceRows = data?.prices || []
+                      const commKeys = Array.from(new Set(
+                        priceRows.flatMap(row => Object.keys(row).filter(k => k !== 'date'))
+                      ))
+                      const palette = [C.g600, C.a700, C.r600, '#0891b2', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#14b8a6']
+
+                      if (!priceRows.length) {
                         return (
+                          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: C.k400 }}>
+                            <p style={{ margin: 0, fontSize: 14 }}>No price trend records found.</p>
+                            <p style={{ margin: '4px 0 0', fontSize: 12, color: C.k400 }}>Click <strong>Sync Now</strong> to fetch fresh prices from the DA Google Sheet.</p>
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={priceRows}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
                             <XAxis dataKey="date" tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} />
@@ -1487,9 +1497,9 @@ export default function AdminDashboard() {
                               <Line key={k} type="monotone" dataKey={k} stroke={palette[idx % palette.length]} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                             ))}
                           </LineChart>
-                        )
-                      })()}
-                    </ResponsiveContainer>
+                        </ResponsiveContainer>
+                      )
+                    })()}
                   </div>
                 </div>
 
