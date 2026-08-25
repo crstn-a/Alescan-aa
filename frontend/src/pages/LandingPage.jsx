@@ -509,63 +509,6 @@ export default function LandingPage() {
               Your browser does not support the video tag.
             </video>
           </div>
-
-          {/* Simplified App Information - Boxless presentation */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 840, margin: '0 auto' }}>
-            {/* What is ALESCAN? */}
-            <div style={{ textAlign: 'center', padding: '0 12px' }}>
-              <h3 style={{ fontSize: 22, fontWeight: 800, color: C.g900, marginBottom: 8 }}>
-                What is ALESCAN?
-              </h3>
-              <p style={{ fontSize: 15, color: C.textSecondary, lineHeight: 1.7, maxWidth: 720, margin: '0 auto' }}>
-                ALESCAN is a mobile-first, vision-based price verification tool designed for shoppers, market inspectors, and senior citizens at the Olongapo City Public Market.
-              </p>
-            </div>
-
-            {/* Highlights - Clean grid with icons */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 28,
-              marginTop: 8
-            }}>
-              {[
-                {
-                  icon: Icons.camera,
-                  title: 'Zero Installation',
-                  desc: 'Runs instantly in any mobile browser without downloading an app.'
-                },
-                {
-                  icon: Icons.shield,
-                  title: 'YOLO-World AI',
-                  desc: 'Real-time open-vocabulary vision detection identifies fresh produce & meat.'
-                },
-                {
-                  icon: Icons.database,
-                  title: 'DA Bantay Presyo',
-                  desc: 'Directly synchronized with official monthly price reference tables.'
-                },
-                {
-                  icon: Icons.checkCircle,
-                  title: 'Consumer Protection',
-                  desc: 'Helps buyers quickly verify fair retail prices before purchasing.'
-                }
-              ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 9,
-                    background: C.primaryLight,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: C.primaryDark
-                  }}>
-                    <Icon d={item.icon} size={18} />
-                  </div>
-                  <h4 style={{ fontSize: 16, fontWeight: 700, color: C.g900 }}>{item.title}</h4>
-                  <p style={{ fontSize: 14, color: C.textSecondary, lineHeight: 1.5 }}>{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
