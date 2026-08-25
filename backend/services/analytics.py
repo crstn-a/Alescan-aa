@@ -8,34 +8,42 @@ logger = logging.getLogger(__name__)
 def get_analytics_prices():
     try:
         sb = get_supabase()
-        # Fetch the latest prices for active products
-        prices = sb.table("price_records").select("price_per_kg, week_of, source, products(display_name)").order("week_of", desc=False).execute()
+        # Fetch price records for active products
+        prices = (
+            sb.table("price_records")
+            .select("price_per_kg, price_prevailing, week_of, created_at, source, commodity_name, products(display_name, name)")
+            .order("week_of", desc=False)
+            .execute()
+        )
         
         # Group by product and week
         data = defaultdict(list)
-        for row in prices.data:
-            if not row.get("products"): continue
-            prod_name = row["products"]["display_name"]
+        for row in (prices.data or []):
+            prod = row.get("products") or {}
+            prod_name = row.get("commodity_name") or prod.get("display_name") or prod.get("name")
+            if not prod_name: continue
+            
+            p_val = float(row.get("price_prevailing") if row.get("price_prevailing") is not None else (row.get("price_per_kg") or 0.0))
+            date_val = row.get("week_of") or (row["created_at"][:10] if row.get("created_at") else datetime.now().strftime("%Y-%m-%d"))
             data[prod_name].append({
-                "date": row["week_of"],
-                "price": row["price_per_kg"],
-                "source": row["source"]
+                "date": date_val,
+                "price": p_val,
+                "source": row.get("source", "DA Bantay Presyo (Sheet Sync)")
             })
         
-        # Format for Recharts: { name: "Week 1", "Whole Chicken": 200, "Tilapia": 150 }
-        # Let's get all unique dates
-        all_dates = sorted(list(set([row["week_of"] for row in prices.data])))
+        all_dates = sorted(list(set([
+            row.get("week_of") or (row["created_at"][:10] if row.get("created_at") else datetime.now().strftime("%Y-%m-%d"))
+            for row in (prices.data or [])
+        ])))
         
         chart_data = []
         for d in all_dates:
             entry = {"date": d}
             for prod_name, records in data.items():
-                # find the record for this date or the last known price
                 price_for_date = next((r["price"] for r in records if r["date"] == d), None)
                 if price_for_date is not None:
                     entry[prod_name] = price_for_date
                 else:
-                    # carry over the last known price if it exists
                     past_prices = [r["price"] for r in records if r["date"] <= d]
                     if past_prices:
                         entry[prod_name] = past_prices[-1]

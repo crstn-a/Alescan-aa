@@ -816,11 +816,11 @@ export default function AdminDashboard() {
       setToast({
         type: ok ? 'ok' : 'warn',
         text: ok
-          ? `Sync complete — ${res.result.count} prices via ${res.result.extractor}`
+          ? `Sync complete — ${res.result.count} prices via ${res.result.extractor === 'sheet' ? 'DA Google Sheet' : res.result.extractor}`
           : `Sync issue: ${res.result?.error || 'unknown'}`,
       })
       loadStats()
-      if (active === 3) loadTab(3)
+      loadTab(active)
     } catch {
       setToast({ type: 'err', text: 'Sync failed — is the backend running?' })
     } finally {
@@ -1470,16 +1470,25 @@ export default function AdminDashboard() {
                   <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.k900 }}>Commodity Price Trends</h3>
                   <div style={{ height: 300 }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={data?.prices || []}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
-                        <XAxis dataKey="date" tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} tickFormatter={v => `₱${v}`} />
-                        <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}`, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }} />
-                        <Legend iconType="circle" wrapperStyle={{ fontSize: 13, paddingTop: 10 }} />
-                        <Line type="monotone" dataKey="Whole Chicken" stroke={C.a700} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                        <Line type="monotone" dataKey="Tilapia (Local)" stroke={C.g600} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                        <Line type="monotone" dataKey="Pork Belly Liempo" stroke={C.r600} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                      </LineChart>
+                      {(() => {
+                        const priceRows = data?.prices || []
+                        const commKeys = Array.from(new Set(
+                          priceRows.flatMap(row => Object.keys(row).filter(k => k !== 'date'))
+                        ))
+                        const palette = [C.g600, C.a700, C.r600, '#0891b2', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#14b8a6']
+                        return (
+                          <LineChart data={priceRows}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.k100} />
+                            <XAxis dataKey="date" tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 12, fill: C.k500 }} axisLine={false} tickLine={false} tickFormatter={v => `₱${v}`} />
+                            <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.k100}`, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }} />
+                            <Legend iconType="circle" wrapperStyle={{ fontSize: 13, paddingTop: 10 }} />
+                            {commKeys.map((k, idx) => (
+                              <Line key={k} type="monotone" dataKey={k} stroke={palette[idx % palette.length]} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                            ))}
+                          </LineChart>
+                        )
+                      })()}
                     </ResponsiveContainer>
                   </div>
                 </div>
