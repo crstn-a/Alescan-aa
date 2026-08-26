@@ -78,6 +78,7 @@ export default function ReportVendor() {
   const [reports, setReports] = useState([])
   const [reportsLoading, setReportsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('form') // 'form' | 'history'
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const update = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }))
 
@@ -179,6 +180,8 @@ export default function ReportVendor() {
         }
         .report-card { transition:all .15s; }
         .report-card:hover { transform:translateY(-1px); box-shadow:0 8px 20px -6px rgba(0,0,0,.1); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
         @media (max-width: 640px) {
           .report-grid { grid-template-columns: 1fr !important; }
         }
@@ -213,7 +216,7 @@ export default function ReportVendor() {
               <p style={{ fontSize:11, color:C.textMuted, margin:0 }}>{user?.email}</p>
             </div>
             <button
-              onClick={() => { logout(); navigate('/') }}
+              onClick={() => setShowLogoutModal(true)}
               style={{
                 padding:'8px 16px', borderRadius:8, border:`1px solid ${C.border}`,
                 background:C.surface, color:C.textSecondary, fontSize:13, fontWeight:600,
@@ -508,6 +511,123 @@ export default function ReportVendor() {
             )}
           </div>
         )}
+      </div>
+
+      {/* ── Logout Confirmation Modal ── */}
+      {showLogoutModal && (
+        <LogoutModal
+          onConfirm={() => {
+            setShowLogoutModal(false)
+            logout()
+            navigate('/')
+          }}
+          onCancel={() => setShowLogoutModal(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+/* ── Logout Modal Component ── */
+function LogoutModal({ onConfirm, onCancel }) {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
+
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'rgba(0, 0, 0, 0.45)',
+        backdropFilter: 'blur(5px)',
+        WebkitBackdropFilter: 'blur(5px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+        animation: 'fadeIn .15s ease',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: C.surface,
+          borderRadius: 20,
+          padding: '32px 28px',
+          width: '100%',
+          maxWidth: 380,
+          textAlign: 'center',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.18)',
+          border: `1px solid ${C.border}`,
+          animation: 'scaleIn .18s ease',
+        }}
+      >
+        <div style={{
+          width: 58,
+          height: 58,
+          borderRadius: '50%',
+          background: C.errorBg,
+          border: `1px solid ${C.errorBorder}`,
+          margin: '0 auto 18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: C.errorDark,
+        }}>
+          <Icon d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" size={26} />
+        </div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.g900, margin: '0 0 8px' }}>Log Out?</h2>
+        <p style={{ fontSize: 14, color: C.textSecondary, margin: '0 0 24px', lineHeight: 1.5 }}>
+          Are you sure you want to log out of your account? You will need to sign in again to submit or view vendor reports.
+        </p>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1,
+              padding: '11px',
+              borderRadius: 10,
+              border: `1px solid ${C.border}`,
+              background: C.surface,
+              fontSize: 14,
+              fontWeight: 600,
+              color: C.textSecondary,
+              cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = C.bg}
+            onMouseLeave={e => e.currentTarget.style.background = C.surface}
+          >
+            No, stay
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              flex: 1,
+              padding: '11px',
+              borderRadius: 10,
+              border: 'none',
+              background: C.error,
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#fff',
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.25)',
+              transition: 'all .15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = C.errorDark}
+            onMouseLeave={e => e.currentTarget.style.background = C.error}
+          >
+            Yes, log out
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -530,9 +530,6 @@ export default function LandingPage() {
               padding: '4px 14px', width: 'fit-content',
               border: '1px solid #fee2e2', marginBottom: 12,
             }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#991b1b' }}>
-                🛡️ Consumer Protection
-              </span>
             </div>
             <h2 style={{ fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 800, color: C.g900, marginBottom: 12 }}>
               Report Overpriced Vendors

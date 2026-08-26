@@ -305,9 +305,17 @@ function Toast({ toast }) {
 
 /* ── Logout Modal ───────────────────────────────────────────────────── */
 function LogoutModal({ onConfirm, onCancel }) {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
+
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,.45)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, animation: 'fadeIn .15s ease' }}>
-      <div style={{ background: C.white, borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 360, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,.18)', animation: 'scaleIn .18s ease' }}>
+    <div onClick={onCancel} style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,.45)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, animation: 'fadeIn .15s ease' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: C.white, borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 360, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,.18)', animation: 'scaleIn .18s ease' }}>
         <div style={{ width: 58, height: 58, borderRadius: '50%', background: C.logoutRedBg, border: `1px solid ${C.logoutRedBorder}`, margin: '0 auto 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.logoutRed }}>
           <Svg d={IC.logout.d} size={26} />
         </div>
