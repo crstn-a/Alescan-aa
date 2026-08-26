@@ -9,7 +9,8 @@ import {
   getErrorLogs, getPriceRecords, triggerSync,
   getAnalyticsPrices, getAnalyticsScans,
   getViolations, createViolation, updateViolation, updateViolationStatus,
-  getDailyVolume, getFilteredScanStats
+  getDailyVolume, getFilteredScanStats,
+  getVendorReports, updateReportStatus, getReportStats
 } from '../api/adminApi'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -77,6 +78,7 @@ const NAV = [
   { id: 0, label: 'Overview', icon: 'home' },
 
   { id: 5, label: 'Analytics', icon: 'analytics' },
+  { id: 8, label: 'Reports', icon: 'report' },
   { id: 7, label: 'Violations', icon: 'violation' },
   { id: 1, label: 'Scan Logs', icon: 'scan' },
   { id: 2, label: 'Price Records', icon: 'price' },
@@ -738,6 +740,13 @@ export default function AdminDashboard() {
   const [volumeData, setVolumeData] = useState(null)
   const [volumeLoading, setVolumeLoading] = useState(false)
 
+  // Vendor reports state
+  const [reportStats, setReportStats] = useState(null)
+  const [reportFilter, setReportFilter] = useState('all')
+  const [expandedReport, setExpandedReport] = useState(null)
+  const [reportNotes, setReportNotes] = useState({})
+  const [updatingReport, setUpdatingReport] = useState(null)
+
   // Scan filter state for overview
   const [scanFilterMode, setScanFilterMode] = useState('all')  // 'all' | 'daily' | 'weekly' | 'monthly'
   const [scanFilterDate, setScanFilterDate] = useState(() => {
@@ -776,6 +785,10 @@ export default function AdminDashboard() {
         setData({ prices, scans });
       } else if (t === 7) {
         setData(await getViolations());
+      } else if (t === 8) {
+        const [reports, rStats] = await Promise.all([getVendorReports(), getReportStats()]);
+        setData(reports);
+        setReportStats(rStats);
       } else {
         const fn = [null, getScanLogs, getPriceRecords, getSyncLogs, getErrorLogs][t]
         if (fn) setData(await fn())
@@ -1845,6 +1858,216 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* VENDOR REPORTS (active === 8) — Market Officer Task Cards */}
+          {active === 8 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+              {/* Stats Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }}>
+                {[
+                  { label: 'Total Reports', value: reportStats?.total ?? '—', icon: 'report', accent: true },
+                  { label: 'Pending', value: reportStats?.pending ?? '—', icon: 'report' },
+                  { label: 'Reviewing', value: reportStats?.reviewing ?? '—', icon: 'scan' },
+                  { label: 'Resolved', value: reportStats?.resolved ?? '—', icon: 'eval' },
+                ].map((s, i) => (
+                  <StatCard key={i} label={s.label} value={s.value} icon={s.icon} accent={s.accent} loading={tabLoading} />
+                ))}
+              </div>
+
+              {/* Filter Tabs */}
+              <div style={{ display: 'flex', gap: 6, background: C.k50, padding: 4, borderRadius: 10, border: `1px solid ${C.k100}`, width: 'fit-content' }}>
+                {['all', 'pending', 'reviewing', 'resolved', 'dismissed'].map(f => (
+                  <button key={f} onClick={() => setReportFilter(f)} style={{
+                    padding: '7px 16px', borderRadius: 8, border: 'none', fontSize: 12, fontWeight: 600,
+                    background: reportFilter === f ? C.g800 : 'transparent',
+                    color: reportFilter === f ? '#fff' : C.k500,
+                    cursor: 'pointer', transition: 'all .15s', textTransform: 'capitalize',
+                  }}>{f === 'all' ? 'All' : f}</button>
+                ))}
+              </div>
+
+              {/* Report Cards */}
+              {tabLoading ? (
+                <div style={{ padding: 60, textAlign: 'center', color: C.k400, fontSize: 13 }}>
+                  <div style={{ width: 20, height: 20, border: `2.5px solid ${C.k200}`, borderTopColor: C.g600, borderRadius: '50%', animation: 'spin .7s linear infinite', margin: '0 auto 12px' }} />
+                  Loading reports...
+                </div>
+              ) : (() => {
+                const filtered = (Array.isArray(data) ? data : []).filter(r => reportFilter === 'all' || r.status === reportFilter);
+                if (filtered.length === 0) return (
+                  <div style={{ padding: 48, textAlign: 'center', background: C.white, borderRadius: 14, border: `1px solid ${C.k100}` }}>
+                    <p style={{ fontSize: 14, color: C.k400, margin: 0 }}>No {reportFilter !== 'all' ? reportFilter : ''} reports found.</p>
+                  </div>
+                );
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {filtered.map(r => {
+                      const isExpanded = expandedReport === r.id;
+                      const statusColors = {
+                        pending:   { bg: '#fffbeb', color: '#b45309', border: '#fef3c7' },
+                        reviewing: { bg: '#eff6ff', color: '#1d4ed8', border: '#dbeafe' },
+                        resolved:  { bg: C.g50,     color: C.g700,   border: C.g100 },
+                        dismissed: { bg: C.k50,     color: C.k500,   border: C.k200 },
+                      };
+                      const sc = statusColors[r.status] || statusColors.pending;
+                      return (
+                        <div key={r.id} style={{
+                          background: C.white, borderRadius: 14, border: `1px solid ${C.k100}`,
+                          boxShadow: '0 1px 4px rgba(0,0,0,.04)', overflow: 'hidden',
+                          transition: 'all .15s',
+                        }}>
+                          {/* Card Header — clickable */}
+                          <div
+                            onClick={() => setExpandedReport(isExpanded ? null : r.id)}
+                            style={{
+                              padding: '16px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                              justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                              {/* Notification dot for pending */}
+                              {r.status === 'pending' && (
+                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b', flexShrink: 0, boxShadow: '0 0 6px rgba(245,158,11,.4)' }} />
+                              )}
+                              <span style={{
+                                fontSize: 12, fontWeight: 800, color: C.g800,
+                                background: C.g50, padding: '3px 10px', borderRadius: 6,
+                                border: `1px solid ${C.g100}`, letterSpacing: '.03em', flexShrink: 0,
+                              }}>{r.ticket_number}</span>
+                              <div style={{ minWidth: 0 }}>
+                                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: C.k900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {r.vendor_name} — {r.commodity_name}
+                                </p>
+                                <p style={{ margin: '2px 0 0', fontSize: 12, color: C.k400 }}>
+                                  by {r.reporter_name} · {fmtDt(r.created_at)}
+                                </p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                              <span style={{ fontSize: 15, fontWeight: 700, color: '#dc2626' }}>₱{Number(r.price_seen).toFixed(2)}</span>
+                              <span style={{
+                                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99,
+                                background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
+                                textTransform: 'capitalize',
+                              }}>{r.status}</span>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.k400} strokeWidth="2" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
+                                <path d="M6 9l6 6 6-6"/>
+                              </svg>
+                            </div>
+                          </div>
+
+                          {/* Expanded Details */}
+                          {isExpanded && (
+                            <div style={{ padding: '0 20px 20px', borderTop: `1px solid ${C.k100}`, animation: 'fadeIn .15s ease' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, padding: '16px 0' }}>
+                                <div>
+                                  <p style={{ fontSize: 11, fontWeight: 700, color: C.k400, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Vendor</p>
+                                  <p style={{ fontSize: 14, fontWeight: 600, color: C.k900, margin: 0 }}>{r.vendor_name}</p>
+                                </div>
+                                <div>
+                                  <p style={{ fontSize: 11, fontWeight: 700, color: C.k400, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Store #</p>
+                                  <p style={{ fontSize: 14, fontWeight: 600, color: C.k900, margin: 0 }}>{r.store_number}</p>
+                                </div>
+                                <div>
+                                  <p style={{ fontSize: 11, fontWeight: 700, color: C.k400, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Commodity</p>
+                                  <p style={{ fontSize: 14, fontWeight: 600, color: C.k900, margin: 0 }}>{r.commodity_name}</p>
+                                </div>
+                                <div>
+                                  <p style={{ fontSize: 11, fontWeight: 700, color: C.k400, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Reporter</p>
+                                  <p style={{ fontSize: 14, fontWeight: 600, color: C.k900, margin: 0 }}>{r.reporter_name}</p>
+                                  <p style={{ fontSize: 12, color: C.k400, margin: 0 }}>{r.reporter_email}</p>
+                                </div>
+                              </div>
+
+                              {/* Complaint */}
+                              <div style={{ padding: '12px 16px', borderRadius: 10, background: C.k50, border: `1px solid ${C.k100}`, marginBottom: 16 }}>
+                                <p style={{ fontSize: 11, fontWeight: 700, color: C.k400, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Complaint</p>
+                                <p style={{ fontSize: 13, color: C.k700, margin: 0, lineHeight: 1.6 }}>{r.complaint_description}</p>
+                              </div>
+
+                              {/* Image */}
+                              {r.image_url && (
+                                <div style={{ marginBottom: 16 }}>
+                                  <p style={{ fontSize: 11, fontWeight: 700, color: C.k400, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Evidence Photo</p>
+                                  <a href={r.image_url} target="_blank" rel="noopener noreferrer">
+                                    <img src={r.image_url} alt="Evidence" style={{ maxHeight: 160, borderRadius: 10, objectFit: 'cover', border: `1px solid ${C.k100}` }} />
+                                  </a>
+                                </div>
+                              )}
+
+                              {/* Officer Notes Input */}
+                              <div style={{ marginBottom: 16 }}>
+                                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.k700, marginBottom: 6 }}>Officer Notes</label>
+                                <textarea
+                                  value={reportNotes[r.id] ?? r.officer_notes ?? ''}
+                                  onChange={e => setReportNotes(prev => ({ ...prev, [r.id]: e.target.value }))}
+                                  placeholder="Add notes about this report..."
+                                  rows={2}
+                                  style={{
+                                    width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.k200}`,
+                                    fontSize: 13, color: C.k900, background: C.white, resize: 'vertical',
+                                    outline: 'none', transition: 'border-color .15s', fontFamily: 'inherit',
+                                  }}
+                                  onFocus={e => e.target.style.borderColor = C.g500}
+                                  onBlur={e => e.target.style.borderColor = C.k200}
+                                />
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                {['pending', 'reviewing', 'resolved', 'dismissed'].filter(s => s !== r.status).map(s => {
+                                  const btnColors = {
+                                    pending:   { bg: '#fffbeb', color: '#b45309', border: '#fef3c7', hoverBg: '#fef3c7' },
+                                    reviewing: { bg: '#eff6ff', color: '#1d4ed8', border: '#dbeafe', hoverBg: '#dbeafe' },
+                                    resolved:  { bg: C.g50,     color: C.g700,   border: C.g100,   hoverBg: C.g100 },
+                                    dismissed: { bg: C.k50,     color: C.k500,   border: C.k200,   hoverBg: C.k200 },
+                                  };
+                                  const bc = btnColors[s];
+                                  return (
+                                    <button
+                                      key={s}
+                                      disabled={updatingReport === r.id}
+                                      onClick={async () => {
+                                        setUpdatingReport(r.id);
+                                        try {
+                                          const notes = reportNotes[r.id] ?? r.officer_notes ?? null;
+                                          await updateReportStatus(r.id, s, notes);
+                                          setToast({ type: 'ok', text: `Report ${r.ticket_number} marked as ${s}` });
+                                          loadTab(8);
+                                        } catch (e) {
+                                          if (e.message === 'unauthorized') { logout(); navigate('/admin/login'); }
+                                          setToast({ type: 'err', text: 'Failed to update report' });
+                                        } finally {
+                                          setUpdatingReport(null);
+                                          setTimeout(() => setToast(null), 3000);
+                                        }
+                                      }}
+                                      style={{
+                                        padding: '8px 16px', borderRadius: 8, border: `1px solid ${bc.border}`,
+                                        background: bc.bg, color: bc.color, fontSize: 12, fontWeight: 600,
+                                        cursor: updatingReport === r.id ? 'not-allowed' : 'pointer',
+                                        opacity: updatingReport === r.id ? 0.5 : 1,
+                                        transition: 'all .15s', textTransform: 'capitalize',
+                                      }}
+                                      onMouseEnter={e => e.currentTarget.style.background = bc.hoverBg}
+                                      onMouseLeave={e => e.currentTarget.style.background = bc.bg}
+                                    >
+                                      Mark as {s}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           {/* ERROR LOGS (active === 4) DEDICATED HIGHLIGHTED VIEW */}
           {active === 4 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1876,7 +2099,7 @@ export default function AdminDashboard() {
           )}
 
           {/* OTHER DATA TABS (Scan Logs, Price Records, Sync Logs) */}
-          {active !== 0 && active !== 4 && active !== 5 && active !== 6 && active !== 7 && (
+          {active !== 0 && active !== 4 && active !== 5 && active !== 6 && active !== 7 && active !== 8 && (
             <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.k100}`, boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden' }}>
               <div style={{ padding: '15px 20px', borderBottom: `1px solid ${C.k100}`, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 34, height: 34, borderRadius: 9, background: C.g50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.g600 }}>

@@ -186,6 +186,7 @@ export default function LandingPage() {
               <a href="#home" className="nav-link" style={{ fontSize: 14, fontWeight: 600, color: C.text, textDecoration: 'none' }}>Home</a>
               <a href="#how-it-works" className="nav-link" style={{ fontSize: 14, fontWeight: 500, color: C.textSecondary, textDecoration: 'none' }}>How it works</a>
               <a href="#about" className="nav-link" style={{ fontSize: 14, fontWeight: 500, color: C.textSecondary, textDecoration: 'none' }}>About</a>
+              <a href="#report" className="nav-link" style={{ fontSize: 14, fontWeight: 500, color: C.textSecondary, textDecoration: 'none' }}>Report</a>
               <button
                 className="use-scanner-btn"
                 onClick={handleStartScanning}
@@ -262,6 +263,14 @@ export default function LandingPage() {
                     style={{ fontSize: 16, fontWeight: 500, color: C.textSecondary, textDecoration: 'none', padding: '8px 0' }}
                   >
                     About
+                  </a>
+                  <a
+                    href="#report"
+                    className="nav-link"
+                    onClick={(e) => handleNavClick(e, 'report')}
+                    style={{ fontSize: 16, fontWeight: 500, color: C.textSecondary, textDecoration: 'none', padding: '8px 0' }}
+                  >
+                    Report
                   </a>
                   <button
                     className="use-scanner-btn"
@@ -505,6 +514,122 @@ export default function LandingPage() {
               <source src="/About_Video.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
+          </div>
+        </div>
+      </section>
+
+
+      {/* ── Report a Vendor ────────────────────────────────────────── */}
+      <section id="report" style={{ padding: '60px 24px', background: C.surface }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: '#fef2f2', borderRadius: 40,
+              padding: '4px 14px', width: 'fit-content',
+              border: '1px solid #fee2e2', marginBottom: 12,
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#991b1b' }}>
+                🛡️ Consumer Protection
+              </span>
+            </div>
+            <h2 style={{ fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 800, color: C.g900, marginBottom: 12 }}>
+              Report Overpriced Vendors
+            </h2>
+            <p style={{ fontSize: 16, color: C.textSecondary, maxWidth: 640, margin: '0 auto', lineHeight: 1.6 }}>
+              Spotted a vendor selling above the suggested retail price? Help keep market prices fair by filing a report.
+              Your submission becomes a task ticket for our Market Officers.
+            </p>
+          </div>
+
+          {/* 3-Step Visual Guide */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 24, marginBottom: 40 }}>
+            {[
+              {
+                step: '1',
+                icon: 'M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M8.5 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M20 8v6M23 11h-6',
+                title: 'Create an Account',
+                desc: 'Sign up with your name, email, and phone number. It only takes a minute.',
+              },
+              {
+                step: '2',
+                icon: 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3',
+                title: 'Sign In',
+                desc: 'Log in with your email and password to access the reporting system.',
+              },
+              {
+                step: '3',
+                icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8M16 17H8M10 9H8',
+                title: 'Submit Your Report',
+                desc: 'Fill in vendor details, commodity, and the price you saw. A Market Officer will handle it.',
+              },
+            ].map((s, i) => (
+              <div key={i} className="step-card" style={{
+                background: C.bg,
+                borderRadius: 18,
+                padding: '28px 24px',
+                border: `1px solid ${C.border}`,
+                position: 'relative',
+              }}>
+                {/* Step number badge */}
+                <div style={{
+                  position: 'absolute', top: -12, left: 24,
+                  width: 28, height: 28, borderRadius: 8,
+                  background: C.primaryDark, color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 800,
+                  boxShadow: '0 2px 8px rgba(22,101,52,.3)',
+                }}>
+                  {s.step}
+                </div>
+                <div style={{
+                  width: 52, height: 52, borderRadius: 13,
+                  background: C.primaryLight,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: C.primaryDark, marginBottom: 18, marginTop: 8,
+                }}>
+                  <Icon d={s.icon} size={26} />
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: C.g900, marginBottom: 8 }}>{s.title}</h3>
+                <p style={{ fontSize: 14, color: C.textSecondary, lineHeight: 1.65, margin: 0 }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div style={{ textAlign: 'center' }}>
+            <button
+              className="start-scanning-btn"
+              onClick={() => navigate('/user/signup')}
+              style={{
+                background: C.primaryDark,
+                border: 'none',
+                borderRadius: 12,
+                padding: '15px 36px',
+                fontSize: 16,
+                fontWeight: 700,
+                color: '#fff',
+                transition: 'all 0.15s',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                boxShadow: '0 4px 16px rgba(22,101,52,.25)',
+                cursor: 'pointer',
+              }}
+            >
+              <Icon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8M16 17H8M10 9H8" size={18} />
+              Report a Vendor Now
+            </button>
+            <p style={{ fontSize: 13, color: C.textMuted, marginTop: 12 }}>
+              Already have an account?{' '}
+              <span
+                onClick={() => navigate('/user/login')}
+                style={{ color: C.primaryDark, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Sign in here
+              </span>
+            </p>
           </div>
         </div>
       </section>

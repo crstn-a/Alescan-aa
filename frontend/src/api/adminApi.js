@@ -197,3 +197,47 @@ export const updateViolationStatus = async (violationId, status) => {
 
   return resp.json();
 };
+
+// 🔹 Vendor Reports (Market Officer Tasks)
+export const getVendorReports = (limit = 50, status = null) => {
+  const params = new URLSearchParams({ limit });
+  if (status) params.set('status', status);
+  return adminFetch(`/admin/api/reports?${params.toString()}`);
+};
+
+export const getReportStats = () => adminFetch('/admin/api/reports/stats');
+
+export const updateReportStatus = async (reportId, status, officerNotes = null) => {
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  const formData = new FormData();
+  formData.append('status', status);
+  if (officerNotes !== null) formData.append('officer_notes', officerNotes);
+
+  let resp;
+  try {
+    resp = await fetch(`${API}/admin/api/reports/${reportId}/status`, {
+      method: 'PATCH',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+  } catch {
+    throw new Error("Network error — cannot reach backend");
+  }
+
+  if (resp.status === 401 || resp.status === 403) {
+    throw new Error("unauthorized");
+  }
+
+  if (!resp.ok) {
+    let message = `HTTP ${resp.status}`;
+    try {
+      const data = await resp.json();
+      message = data.detail || message;
+    } catch { }
+    throw new Error(message);
+  }
+
+  return resp.json();
+};

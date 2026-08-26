@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import scan, prices, admin
+from routers import scan, prices, admin, reports
 from middleware import AdminAuthMiddleware
 from scheduler import start_scheduler
 from dotenv import load_dotenv
@@ -39,6 +39,7 @@ app.add_middleware(AdminAuthMiddleware)
 app.include_router(scan.router,   tags=["scan"])
 app.include_router(prices.router, tags=["prices"])
 app.include_router(admin.router,  prefix="/admin/api", tags=["admin"])
+app.include_router(reports.router, tags=["reports"])
 
 # ── Startup ───────────────────────────────────────────────────────────
 @app.on_event("startup")

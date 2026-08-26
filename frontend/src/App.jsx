@@ -4,6 +4,9 @@ import Result from './pages/Result'
 import AdminLogin from './pages/AdminLogin'
 import AdminDashboard from './pages/AdminDashboard'
 import LandingPage from './pages/LandingPage'
+import UserSignup from './pages/UserSignup'
+import UserLogin from './pages/UserLogin'
+import ReportVendor from './pages/ReportVendor'
 
 export default function App() {
   return (
@@ -16,6 +19,11 @@ export default function App() {
           <Route path="/scanner" element={<Scanner />} />
           <Route path="/result" element={<Result />} />
 
+          {/* User auth & report */}
+          <Route path="/user/signup" element={<UserSignup />} />
+          <Route path="/user/login" element={<UserLogin />} />
+          <Route path="/report" element={<ReportVendor />} />
+
           {/* Admin dashboard */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
@@ -27,4 +35,4 @@ export default function App() {
       </BrowserRouter>
     </div>
   )
-}
+}

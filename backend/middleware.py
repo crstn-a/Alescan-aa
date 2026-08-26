@@ -16,6 +16,10 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
         if path.startswith("/admin/api/login"):
             return await call_next(request)
 
+        # ✅ Allow public report endpoints (user auth handled separately)
+        if path.startswith("/api/reports"):
+            return await call_next(request)
+
         # ✅ Protect only admin API routes
         if path.startswith("/admin/api"):
             auth = request.headers.get("Authorization")

@@ -509,3 +509,96 @@ def analytics_daily_volume(
     end_date: str = Query(..., description="End date YYYY-MM-DD"),
 ):
     return get_daily_volume(start_date, end_date)
+
+
+# ── VENDOR REPORTS (Market Officer Tasks) ─────────────────────────────
+
+@router.get("/reports")
+def get_vendor_reports(
+    limit: int = Query(50, ge=1, le=200),
+    status: str = Query(None),
+):
+    """List all vendor reports for the admin dashboard."""
+    try:
+        sb = get_supabase()
+        query = (
+            sb.table("vendor_reports")
+            .select("id, user_id, vendor_name, store_number, commodity_name, price_seen, complaint_description, image_url, status, officer_notes, created_at, updated_at, public_users(first_name, last_name, email)")
+            .order("created_at", desc=True)
+            .limit(limit)
+        )
+        if status:
+            query = query.eq("status", status)
+        result = query.execute()
+
+        reports = []
+        for r in (result.data or []):
+            r["ticket_number"] = f"RPT-{r['id']:05d}"
+            reporter = r.pop("public_users", None) or {}
+            r["reporter_name"] = f"{reporter.get('first_name', '')} {reporter.get('last_name', '')}".strip() or "Unknown"
+            r["reporter_email"] = reporter.get("email", "")
+            reports.append(r)
+
+        return reports
+    except Exception as e:
+        log_error("admin", f"get_vendor_reports failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/reports/{report_id}/status")
+def update_report_status(
+    report_id: int,
+    status: str = Form(...),
+    officer_notes: str = Form(None),
+):
+    """Update the status and officer notes of a vendor report."""
+    valid_statuses = {"pending", "reviewing", "resolved", "dismissed"}
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
+
+    try:
+        sb = get_supabase()
+        update_data = {"status": status, "updated_at": "now()"}
+        if officer_notes is not None:
+            update_data["officer_notes"] = officer_notes
+
+        result = (
+            sb.table("vendor_reports")
+            .update(update_data)
+            .eq("id", report_id)
+            .execute()
+        )
+
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Report not found")
+
+        logger.info(f"Report {report_id} status updated to: {status}")
+        return {"status": "success", "data": result.data[0]}
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_error("admin", f"update_report_status failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/reports/stats")
+def get_report_stats():
+    """Return counts of reports by status for dashboard badges."""
+    try:
+        sb = get_supabase()
+        result = (
+            sb.table("vendor_reports")
+            .select("id, status")
+            .execute()
+        )
+        counts = {"total": 0, "pending": 0, "reviewing": 0, "resolved": 0, "dismissed": 0}
+        for r in (result.data or []):
+            counts["total"] += 1
+            s = r.get("status", "pending")
+            if s in counts:
+                counts[s] += 1
+        return counts
+    except Exception as e:
+        log_error("admin", f"get_report_stats failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
