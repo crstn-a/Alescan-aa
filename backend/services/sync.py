@@ -50,14 +50,7 @@ def run_sync() -> dict:
             "error": str(e)
         }
 
-    # ── Stage 4: Refresh YOLO-World Dynamic Prompts ──────────
-    try:
-        from services.vision import refresh_yolo_world_prompts
-        refresh_yolo_world_prompts()
-    except Exception as e:
-        logger.warning(f"Vision prompt refresh non-fatal warning: {e}")
-
-    # ── Stage 5: Log Success ────────────────────────────────
+    # ── Stage 4: Log Success ────────────────────────────────
     _write_sync_log(extractor, "success", f"Inserted {len(records)} prices from DA Google Sheet")
     logger.info(f"Sync complete — {len(records)} prices via {extractor}")
 

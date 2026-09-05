@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Install ALL required system dependencies for OpenCV + YOLO
+# Install ALL required system dependencies for OpenCV + YOLOv26
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libsm6 \

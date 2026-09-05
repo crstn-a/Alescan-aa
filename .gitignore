@@ -252,5 +252,12 @@ service_account*.json
 backend/service_account*.json
 backend/migrations/*.sql
 test_location_scan.py
+backend/train_model.py
+backend/test_yolov26.py
+backend/migrations/*
 
-backend/yolov8s-worldv2.pt
+# YOLOv26 model weights (large binary files)
+*.pt
+backend/model/runs/
+# Keep data.yaml and dataset tracked
+!backend/model/data.yaml

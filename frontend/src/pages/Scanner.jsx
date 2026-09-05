@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { scanImage } from '../api/scanApi'
-import { loadModel, detectActiveCommodity } from '../utils/yoloInference'
 import TermsModal from '../components/TermsModal'
 
 // ── Colour Palette (White & Green) ────────────────────────────────────

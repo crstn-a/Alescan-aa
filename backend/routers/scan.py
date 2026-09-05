@@ -12,7 +12,7 @@ async def scan_commodity(
 ):
     """
     Accepts a photo upload from the camera.
-    Runs server-side YOLO-World open-vocabulary detection,
+    Runs server-side YOLOv26 custom-trained detection,
     fetches latest monitored market prices (Prevailing, Low, High),
     logs the scan event, and returns detection results to client.
     """
@@ -23,7 +23,7 @@ async def scan_commodity(
         log_error("scan", f"Image read failed: {e}")
         raise HTTPException(status_code=400, detail="Could not read uploaded image")
 
-    # ── Step 2: Run YOLO-World inference ──────────────────────────
+    # ── Step 2: Run YOLOv26 inference ─────────────────────────────
     try:
         result = run_inference(image_bytes)
     except ValueError as e:

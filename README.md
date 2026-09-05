@@ -1,6 +1,6 @@
 # ALESCAN: Palengke SRP Scanner
 
-> A Progressive Web App (PWA) for real-time SRP (Suggested Retail Price) verification of basic commodities in Olongapo City Public Market, powered by **YOLO-World** open-vocabulary computer vision and sourced directly from the Department of Agriculture (DA) official price monitoring Google Sheet.
+> A Progressive Web App (PWA) for real-time SRP (Suggested Retail Price) verification of basic commodities in Olongapo City Public Market, powered by **YOLOv26** custom-trained computer vision and sourced directly from the Department of Agriculture (DA) official price monitoring Google Sheet.
 
 ---
 
@@ -26,7 +26,7 @@
 
 ALESCAN is a city-level public service tool designed to help ordinary consumers verify whether market prices for basic commodities (such as pork, chicken, fish, vegetables, rice, and spices) adhere to official government-set SRP standards. 
 
-Users point their smartphone camera at a commodity, and the system instantly identifies the item using zero-shot **YOLO-World** open-vocabulary detection. The app resolves commodity specifications and displays the latest prevailing market prices synced directly from the Department of Agriculture's official price monitoring spreadsheet.
+Users point their smartphone camera at a commodity, and the system instantly identifies the item using a custom-trained **YOLOv26** object detection model with 54 commodity classes. The app resolves commodity specifications and displays the latest prevailing market prices synced directly from the Department of Agriculture's official price monitoring spreadsheet.
 
 ---
 
@@ -36,7 +36,7 @@ Users point their smartphone camera at a commodity, and the system instantly ide
 | -------------- | -------------------------------------------------------------- |
 | **Frontend**   | React 19, Vite, Vanilla CSS, PWA (`vite-plugin-pwa`)           |
 | **Backend**    | Python 3.11, FastAPI, Uvicorn                                  |
-| **AI / Vision**| **YOLO-World** (Ultralytics Open-Vocabulary Object Detection)   |
+| **AI / Vision**| **YOLOv26** (Custom-Trained Object Detection, 54 Classes)       |
 | **Data Source**| **DA Google Sheet** (Service Account OAuth2 / CSV Stream API) |
 | **Database**   | Supabase (PostgreSQL)                                          |
 | **Auth**       | JWT (`python-jose`), `bcrypt`                                  |
@@ -56,17 +56,23 @@ Alescan-aa/
 │   ├── requirements.txt         # Python dependencies
 │   ├── Dockerfile               # Production Docker container definition
 │   ├── service_account.json     # Optional Google Service Account credentials
+│   ├── train_model.py           # YOLOv26 model training script
+│   ├── test_yolov26.py          # Sanity check for YOLOv26 model & class mapping
 │   ├── test_sheet_sync.py       # Sanity check for Google Sheet CSV parsing
-│   ├── test_yolo_world.py       # Sanity check for YOLO-World prompt mapping
+│   ├── model/
+│   │   ├── data.yaml            # Roboflow dataset config (54 commodity classes)
+│   │   ├── best.pt              # Trained YOLOv26 model weights
+│   │   ├── train/               # Training images & labels
+│   │   ├── valid/               # Validation images & labels
+│   │   └── test/                # Test images & labels
 │   ├── routers/
-│   │   ├── scan.py              # POST /scan — YOLO-World commodity inference
+│   │   ├── scan.py              # POST /scan — YOLOv26 commodity inference
 │   │   ├── prices.py            # GET /prices — SRP lookup & active commodity lists
 │   │   └── admin.py             # Admin API (stats, logs, manual sync, analytics)
 │   └── services/
-│       ├── vision.py            # YOLO-World model loader & dynamic text prompt manager
+│       ├── vision.py            # YOLOv26 model loader & inference engine
 │       ├── sync.py              # Google Sheet fetch → parse → database upsert pipeline
 │       ├── sheet_fetcher.py     # DA Google Sheet client (Direct CSV, OAuth2, API key)
-│       ├── normalizer.py        # Commodity title normalization & slug mapping
 │       ├── analytics.py         # Analytics data aggregation
 │       ├── auth.py              # Password hashing & JWT token management
 │       └── db.py                # Supabase client & database helpers
@@ -140,7 +146,7 @@ pip install -r requirements.txt
 
 Create a `.env` file in the `backend/` directory (see [Environment Variables](#environment-variables) section below).
 
-> 💡 **YOLO-World Weights:** YOLO-World open-vocabulary models (`yolov8s-worldv2.pt` / `yolov8s-world.pt`) will automatically download on first startup or warmup run. No manual weight placement is required!
+> 💡 **YOLOv26 Model Weights:** The trained model weights (`best.pt`) must be placed in `backend/model/best.pt`. To train a new model from the Roboflow dataset, run `python train_model.py` from the backend directory.
 
 ---
 
@@ -233,13 +239,13 @@ The application will be accessible at: `http://localhost:5173`
 | ----------------------- | ------------------------------------------------------------------------------------------------- |
 | **View Landing Page**   | Access general info and instructions on SRP verification                                           |
 | **Open Camera Scanner** | Launch live camera stream for scanning market commodities                                         |
-| **Scan Commodity**      | Capture food items (pork, chicken, fish, vegetables, rice, etc.) for instant zero-shot detection |
+| **Scan Commodity**      | Capture food items (pork, chicken, fish, vegetables, rice, etc.) for instant AI-powered detection |
 | **View SRP Results**    | Inspect prevailing price, price ranges (low/high), average price, unit, and detection confidence |
 | **Use Offline (PWA)**   | Install app on mobile devices for offline access and cached SRP viewing                           |
 
 **Consumer Flow:**
 ```
-Landing Page ──> Open Scanner ──> Capture Commodity Image ──> YOLO-World Detection ──> SRP Result Page
+Landing Page ──> Open Scanner ──> Capture Commodity Image ──> YOLOv26 Detection ──> SRP Result Page
 ```
 
 ---
@@ -258,17 +264,19 @@ Landing Page ──> Open Scanner ──> Capture Commodity Image ──> YOLO-W
 | **View Overview Dashboard**        | Monitor total scans, active products, sync status, and system error rates                |
 | **Manual Price Sync**              | Trigger immediate fetch, parse, and upsert pipeline from the DA Google Sheet             |
 | **Automated Monthly Sync**         | Automated cron schedule syncing official prices from DA Google Sheet                     |
-| **Dynamic Prompt Synchronization** | YOLO-World detection prompts dynamically update from active database commodities on sync|
 | **View Scan & Sync Logs**          | Review real-time detection logs, raw sync logs, and system error tracebacks              |
 | **Analytics & Reporting**          | Interactive charts for price trends, daily scan activity, and commodity performance      |
 | **Manage Violations**              | Log and manage price ceiling violation reports from consumers                            |
 
-**Supported Commodities (Dynamic via DA Google Sheet):**
-- **Rice:** Imported Commercial Rice (Special, Premium, Well Milled), Local Commercial Rice
-- **Meat Products:** Pork Liempo, Pork Kasim, Beef Rump, Whole Chicken
-- **Fish Products:** Tilapia, Bangus, Galunggong
-- **Vegetables & Spices:** Red Onion, White Onion, Garlic, Tomato, Cabbage, Carrot, Eggplant
-- **Other Basic Commodities:** Eggs, Fruits, Corn, Legumes
+**Supported Commodities (54 Classes — Custom-Trained YOLOv26 Model):**
+- **Fish Products:** Alumahan Indian Mackerel, Bangus, Bonito Frigate Tuna, Galunggong Local, Salmon Head Imported, Sardines Tamban, Squid Pusit Bisaya Local, Tambakol Yellow Fin Tuna Local
+- **Meat Products:** Beef Brisket Local, Beef Rump Local, Pork Belly Liempo Local, Pork Picnic Shoulder Kasim Local, Whole Chicken
+- **Lowland Vegetables:** Ampalaya, Eggplant, Squash, Tomato, Chayote, Pole Sitao
+- **Highland Vegetables:** Bell Pepper Green, Bell Pepper Red, Broccoli Local, Cabbage Scorpio, Carrots Local, Cauliflower Local, Celery, Lettuce Green Ice, Lettuce Iceberg, Lettuce Romaine, Pechay Baguio, White Potato Local, Habichuelas Baguio Beans
+- **Spices:** Chili Green Local, Chili Red Local, Garlic Imported, Ginger Local, Red Onion Local, White Onion Local
+- **Fruits:** Avocado, Banana Lakatan, Banana Latundan, Banana Saba, Calamansi, Mango Carabao, Melon, Papaya, Pomelo, Watermelon
+- **Corn & Legumes:** Corn White, Corn Yellow, Mungbean
+- **Other:** Sugar Brown, Sugar Refined, Sugar Wash
 
 ---
 
@@ -278,6 +286,7 @@ Landing Page ──> Open Scanner ──> Capture Commodity Image ──> YOLO-W
 
 1. Deploy the `backend/` folder to Railway using the provided `Dockerfile`.
 2. Ensure environment variables (`SUPABASE_URL`, `SUPABASE_KEY`, `GOOGLE_SHEET_ID`, `JWT_SECRET`, `FRONTEND_URL`, etc.) are configured in Railway.
+3. Place the trained `model/best.pt` weights in the deployed container.
 
 ### Frontend — Vercel
 

@@ -342,7 +342,7 @@ export default function LandingPage() {
                   margin: '16px 0 4px',
                 }}>
                   A Vision-Based Centralized Price Verification Scanner for Public Markets
-                  Using Open-Vocabulary Computer Vision and Automated Price Synchronization from the
+                  Using AI-Powered Computer Vision and Automated Price Synchronization from the
                   Department of Agriculture Bantay Presyo Monthly Sheet.
                 </p>
 
@@ -391,7 +391,7 @@ export default function LandingPage() {
                 <div className="stats-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginTop: 48 }}>
                   {[
                     { top: 'Updated Monthly', bot: 'DA Bantay Presyo' },
-                    { top: 'Powered by', bot: 'YOLO-World AI' },
+                    { top: 'Powered by', bot: 'YOLOv26 AI' },
                     { top: 'No Installation', bot: 'Works in Browser' },
                   ].map((s, i) => (
                     <div key={i}>
