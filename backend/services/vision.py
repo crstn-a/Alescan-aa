@@ -39,13 +39,17 @@ def get_model() -> YOLO:
     """Load the custom-trained YOLOv26 model for commodity detection."""
     global _model
     if _model is None:
-        model_to_load = str(MODEL_PATH) if MODEL_PATH.exists() else "best.pt"
-        logger.info(f"Loading YOLOv26 custom model from: {model_to_load}")
+        if not MODEL_PATH.exists():
+            error_msg = f"YOLOv26 model weights file not found at {MODEL_PATH}. Ensure backend/model/best.pt is committed and present."
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+
+        logger.info(f"Loading YOLOv26 custom model from: {MODEL_PATH}")
         try:
-            _model = YOLO(model_to_load)
+            _model = YOLO(str(MODEL_PATH))
         except Exception as e:
             logger.error(f"Failed to load YOLOv26 model: {e}")
-            raise RuntimeError(f"Could not load YOLOv26 model from {model_to_load}: {e}")
+            raise RuntimeError(f"Could not load YOLOv26 model from {MODEL_PATH}: {e}")
 
         logger.info(f"YOLOv26 model initialized successfully ({len(CLASS_NAMES)} classes)")
     return _model

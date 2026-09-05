@@ -40,6 +40,16 @@ export async function scanImage(blob) {
     return { ok: false, type: 'no_price', message: 'Price data not synced yet from DA Google Sheet' }
   }
 
+  try {
+    const errData = await resp.json()
+    if (errData && errData.detail) {
+      const msg = typeof errData.detail === 'string' ? errData.detail : (errData.detail.message || JSON.stringify(errData.detail))
+      return { ok: false, type: 'server_error', message: msg }
+    }
+  } catch {
+    // fallback if response body is not JSON
+  }
+
   return { ok: false, type: 'network', message: `Server error ${resp.status}` }
 }
 

@@ -229,9 +229,11 @@ logs
 *.sqlite
 *.sqlite3
 
-# Model weights and data
+# Model datasets and training outputs
 data/
-model/
+backend/model/train/
+backend/model/valid/
+backend/model/test/
 
 # Build directories
 build/
@@ -256,8 +258,14 @@ backend/train_model.py
 backend/test_yolov26.py
 backend/migrations/*
 
-# YOLOv26 model weights (large binary files)
-*.pt
+# YOLOv26 model training artifacts (keep best.pt and data.yaml tracked)
 backend/model/runs/
-# Keep data.yaml and dataset tracked
-!backend/model/data.yaml
+backend/yolo11s.pt
+yolo11s.pt
+backend/model/runs/*
+backend/model/test/*
+backend/model/train/*
+backend/model/valid/*
+backend/model/data.yaml
+backend/model/README.dataset.txt
+backend/model/README.roboflow.txt

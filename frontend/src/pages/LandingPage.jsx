@@ -532,7 +532,7 @@ export default function LandingPage() {
             }}>
             </div>
             <h2 style={{ fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 800, color: C.g900, marginBottom: 12 }}>
-              Report Overpriced Vendors
+              Report Price Concern
             </h2>
             <p style={{ fontSize: 16, color: C.textSecondary, maxWidth: 640, margin: '0 auto', lineHeight: 1.6 }}>
               Spotted a vendor selling above the suggested retail price? Help keep market prices fair by filing a report.
@@ -616,7 +616,7 @@ export default function LandingPage() {
               }}
             >
               <Icon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8M16 17H8M10 9H8" size={18} />
-              Report a Vendor Now
+              Report Price Concern
             </button>
             <p style={{ fontSize: 13, color: C.textMuted, marginTop: 12 }}>
               Already have an account?{' '}
