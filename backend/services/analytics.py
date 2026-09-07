@@ -102,9 +102,9 @@ def get_analytics_scans(start_date: str = None, end_date: str = None):
 
         for row in (all_scans.data or []):
             conf = row.get("confidence") or 0
-            is_success = conf >= 0.75
-            is_low_conf = 0.5 <= conf < 0.75
-            is_failed = conf < 0.5 or not row.get("products")
+            is_success = conf >= 0.70
+            is_low_conf = 0.50 <= conf < 0.70
+            is_failed = conf < 0.50 or not row.get("products")
             
             if is_success: success += 1
             elif is_low_conf: low_conf += 1
@@ -127,7 +127,14 @@ def get_analytics_scans(start_date: str = None, end_date: str = None):
 
         volume_chart = [{"date": k, "scans": v} for k, v in sorted(daily_volume.items())]
         perf_chart = [
-            {"name": k, "total": v["total"], "Success": v["success"], "Low Confidence": v["low_conf"], "Failed": v["failed"]}
+            {
+                "name": k,
+                "total": v["total"],
+                "Success": v["success"],
+                "Medium Confidence": v["low_conf"],
+                "Low Confidence": v["low_conf"],
+                "Failed": v["failed"]
+            }
             for k, v in sorted(commodity_perf.items(), key=lambda item: (-item[1]["total"], item[0]))
         ]
         
@@ -135,14 +142,14 @@ def get_analytics_scans(start_date: str = None, end_date: str = None):
         if total > 0:
             detection_split = [
                 {"name": "High Confidence", "value": round((success / total) * 100, 1)},
-                {"name": "Low Confidence", "value": round((low_conf / total) * 100, 1)},
-                {"name": "Failed/Unidentified", "value": round((failed / total) * 100, 1)}
+                {"name": "Medium Confidence", "value": round((low_conf / total) * 100, 1)},
+                {"name": "Low Confidence / Failed", "value": round((failed / total) * 100, 1)}
             ]
         else:
             detection_split = [
                 {"name": "High Confidence", "value": 0},
-                {"name": "Low Confidence", "value": 0},
-                {"name": "Failed/Unidentified", "value": 0}
+                {"name": "Medium Confidence", "value": 0},
+                {"name": "Low Confidence / Failed", "value": 0}
             ]
         
         return {

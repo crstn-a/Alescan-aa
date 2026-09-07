@@ -555,7 +555,7 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
                   <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 700, color: C.k800 }}>Commodity</th>
                   <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 700, color: C.k800 }}>Total Scans</th>
                   <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 700, color: C.g700 }}>Success</th>
-                  <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 700, color: C.a700 }}>Low Conf.</th>
+                  <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 700, color: C.a700 }}>Med Conf.</th>
                   <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 700, color: C.r600 }}>Failed</th>
                   <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, color: C.k800 }}>Success Rate</th>
                 </tr>
@@ -568,9 +568,9 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
                       <td style={{ padding: '10px 12px', fontWeight: 600, color: C.k900 }}>{row.name}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: C.k700 }}>{row.total}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: C.g700 }}>{row.Success}</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: C.a700 }}>{row['Low Confidence']}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: C.a700 }}>{row['Medium Confidence'] ?? row['Low Confidence'] ?? 0}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: C.r600 }}>{row.Failed}</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: rate >= 80 ? C.g700 : C.a700 }}>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: rate >= 70 ? C.g700 : C.a700 }}>
                         {rate}%
                       </td>
                     </tr>

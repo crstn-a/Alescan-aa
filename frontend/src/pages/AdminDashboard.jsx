@@ -108,7 +108,7 @@ function Badge({ label, v = 'green' }) {
 function ConfBadge({ v }) {
   if (!v) return <Badge label="No det." v="gray" />
   const pct = (v * 100).toFixed(1)
-  return <Badge label={`${pct}%`} v={v >= 0.75 ? 'green' : v >= 0.60 ? 'amber' : 'red'} />
+  return <Badge label={`${pct}%`} v={v >= 0.70 ? 'green' : v >= 0.50 ? 'amber' : 'red'} />
 }
 
 function StatusBadge({ val }) {
@@ -1806,7 +1806,7 @@ export default function AdminDashboard() {
                               <th style={{ textAlign: 'left', padding: '10px 14px', color: C.k500, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>Commodity Name</th>
                               <th style={{ textAlign: 'center', padding: '10px 14px', color: C.k500, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>Total Scans</th>
                               <th style={{ textAlign: 'center', padding: '10px 14px', color: C.g700, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>High Conf</th>
-                              <th style={{ textAlign: 'center', padding: '10px 14px', color: C.a700, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>Low Conf</th>
+                              <th style={{ textAlign: 'center', padding: '10px 14px', color: C.a700, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>Med Conf</th>
                               <th style={{ textAlign: 'center', padding: '10px 14px', color: C.r600, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>Failed</th>
                               <th style={{ textAlign: 'right', padding: '10px 14px', color: C.k500, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em' }}>Accuracy</th>
                             </tr>
@@ -1821,9 +1821,9 @@ export default function AdminDashboard() {
                                     {row.total > 0 ? row.total : <span style={{ fontSize: 11, color: C.k400, background: C.k100, padding: '2px 6px', borderRadius: 4 }}>Zero scans</span>}
                                   </td>
                                   <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: C.g700 }}>{row.Success || 0}</td>
-                                  <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: C.a700 }}>{row['Low Confidence'] || 0}</td>
+                                  <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: C.a700 }}>{row['Medium Confidence'] ?? row['Low Confidence'] ?? 0}</td>
                                   <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: C.r600 }}>{row.Failed || 0}</td>
-                                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: rate !== null ? (rate >= 75 ? C.g700 : C.a700) : C.k400 }}>
+                                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: rate !== null ? (rate >= 70 ? C.g700 : C.a700) : C.k400 }}>
                                     {rate !== null ? `${rate}%` : '—'}
                                   </td>
                                 </tr>
