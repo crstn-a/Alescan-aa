@@ -143,8 +143,8 @@ def _write_sync_log(extractor: str, status: str, notes: str = None):
         get_supabase().table("sync_logs").insert({
             "extractor_used": extractor,
             "status": status,
-            "pdf_url": "https://docs.google.com/spreadsheets/d/1gRn9QDtVOKjHPj-T89VqkrZf1DMeNU-NEViXgAH2hOQ",
+            "pdf_url": "https://docs.google.com/spreadsheets/d/1QW1KwKXEPSPIKqTss0aD56O6knQTFvbK4hjdP5fqdZI",
             "notes": notes,
         }).execute()
     except Exception as e:
-        logger.error(f"Failed to write sync log: {e}")
+        logger.error(f"Failed to write sync log: {e}")
