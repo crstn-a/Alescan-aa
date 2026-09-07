@@ -269,25 +269,74 @@ def sync_logs(limit: int = Query(20, ge=1, le=100)):
             if log.get("status") == "success" and log.get("synced_at"):
                 try:
                     dt = _parse_iso(log["synced_at"])
-                    t_start = (dt - timedelta(minutes=2)).isoformat()
-                    t_end = (dt + timedelta(minutes=2)).isoformat()
+                    t_start = (dt - timedelta(minutes=15)).isoformat()
+                    t_end = (dt + timedelta(minutes=15)).isoformat()
+                    day_str = dt.strftime("%Y-%m-%d")
+
+                    # Try window +/- 15 mins first
                     recs = (
                         sb.table("price_records")
-                        .select("id, price_per_kg, created_at, products(display_name, name)")
+                        .select("id, product_id, price_per_kg, price_low, price_high, category, created_at, week_of, products(id, display_name, name)")
                         .gte("created_at", t_start)
                         .lte("created_at", t_end)
                         .order("created_at", desc=False)
                         .execute()
-                    )
+                    ).data or []
+
+                    # Fallback to week_of / date match if window returned empty
+                    if not recs:
+                        recs = (
+                            sb.table("price_records")
+                            .select("id, product_id, price_per_kg, price_low, price_high, category, created_at, week_of, products(id, display_name, name)")
+                            .eq("week_of", day_str)
+                            .order("created_at", desc=False)
+                            .execute()
+                        ).data or []
+
+                    # Bulk query previous price for each product_id prior to t_start
+                    product_ids = list({r.get("product_id") for r in recs if r.get("product_id")})
+                    prev_map = {}
+                    if product_ids:
+                        prev_recs = (
+                            sb.table("price_records")
+                            .select("product_id, price_per_kg, created_at, week_of")
+                            .in_("product_id", product_ids)
+                            .lt("created_at", t_start)
+                            .order("created_at", desc=True)
+                            .execute()
+                        ).data or []
+                        for pr in prev_recs:
+                            pid = pr.get("product_id")
+                            if pid and pid not in prev_map:
+                                prev_map[pid] = {
+                                    "price": float(pr.get("price_per_kg") or 0.0),
+                                    "date": pr.get("week_of") or (pr.get("created_at")[:10] if pr.get("created_at") else None)
+                                }
+
                     details = []
-                    for r in (recs.data or []):
+                    for r in recs:
                         prod = r.get("products") or {}
                         prod_name = prod.get("display_name") or prod.get("name") or "Commodity"
-                        prev_val = float(r.get("price_prevailing") or r.get("price_per_kg") or 0.0)
+                        pid = r.get("product_id")
+                        prev_val = float(r.get("price_per_kg") or 0.0)
+                        
+                        prev_info = prev_map.get(pid)
+                        price_from = prev_info["price"] if prev_info else None
+                        prev_date = prev_info["date"] if prev_info else None
+                        
+                        diff = round(prev_val - price_from, 2) if price_from is not None else None
+                        pct = round((diff / price_from) * 100, 1) if price_from and price_from > 0 else None
+
                         details.append({
+                            "product_id": pid,
                             "product": prod_name,
                             "category": r.get("category", "General"),
+                            "price_from": price_from,
                             "price_to": prev_val,
+                            "price_change": diff,
+                            "price_change_pct": pct,
+                            "prev_date": prev_date,
+                            "price_low": r.get("price_low"),
                             "price_high": r.get("price_high"),
                         })
                     log["details"] = details
