@@ -6,7 +6,7 @@ from pathlib import Path
 from PIL import Image
 from ultralytics import YOLO
 
-from services.db import get_all_active_commodities, get_latest_price, log_error
+from services.db import get_all_active_commodities, get_latest_price, get_product_by_name, log_error
 
 logger = logging.getLogger(__name__)
 
@@ -118,9 +118,15 @@ def run_inference(image_bytes: bytes) -> dict:
 
     # Look up monitored price and auto-resolve spec (Local vs Imported)
     price_info = get_latest_price(detected_name)
+    product_id = price_info.get("product_id") if price_info else None
+    if not product_id and detected_name:
+        prod = get_product_by_name(detected_name)
+        if prod:
+            product_id = prod.get("id")
 
     return {
         "commodity_name":   detected_name,
+        "product_id":       product_id,
         "category":         price_info.get("category") if price_info else "General",
         "specification":    price_info.get("specification") if price_info else None,
         "unit":             price_info.get("unit", "kg") if price_info else "kg",

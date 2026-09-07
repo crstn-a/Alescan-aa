@@ -59,6 +59,8 @@ async def scan_commodity(
         result["price_high"] = float(price_db.get("price_high", 0.0))
         result["unit"] = price_db.get("unit", "kg")
         result["specification"] = price_db.get("specification")
+        if price_db.get("product_id"):
+            result["product_id"] = price_db.get("product_id")
 
     # ── Step 5: Log scan event ────────────────────────────────────
     log_scan_event(result, result)

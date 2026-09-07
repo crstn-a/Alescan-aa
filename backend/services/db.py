@@ -44,6 +44,68 @@ def get_all_active_commodities() -> list[str]:
         return []
 
 
+def get_product_by_name(commodity_name: str) -> dict | None:
+    """
+    Fetch product record from 'products' table by slug, exact name, or fuzzy match.
+    Returns dict containing product 'id', 'name', 'display_name', 'slug', or None.
+    """
+    if not commodity_name:
+        return None
+    sb = get_supabase()
+    try:
+        import re
+        slug = re.sub(r"[^a-z0-9]+", "_", commodity_name.lower()).strip("_")
+
+        # Step 1: Exact slug match
+        prod_res_by_slug = (
+            sb.table("products")
+            .select("id, name, display_name, slug")
+            .eq("slug", slug)
+            .execute()
+        )
+        if prod_res_by_slug.data:
+            return prod_res_by_slug.data[0]
+
+        # Step 2: Exact name match
+        try:
+            prod_res_by_name = (
+                sb.table("products")
+                .select("id, name, display_name, slug")
+                .eq("name", commodity_name)
+                .execute()
+            )
+            if prod_res_by_name.data:
+                return prod_res_by_name.data[0]
+        except Exception:
+            pass
+
+        # Step 3: Word-level fuzzy match
+        all_prods = sb.table("products").select("id, name, display_name, slug").execute()
+        c_low = commodity_name.lower()
+        c_words = set(w for w in re.split(r"\W+", c_low) if len(w) > 2)
+        best_prod = None
+        best_score = 0
+
+        for p in (all_prods.data or []):
+            p_name = (p.get("display_name") or p.get("name") or "").lower()
+            p_words = set(w for w in re.split(r"\W+", p_name) if len(w) > 2)
+
+            if c_words and p_words:
+                overlap = len(c_words & p_words)
+                union = len(c_words | p_words)
+                jaccard = overlap / union if union > 0 else 0
+
+                if overlap > 0 and jaccard >= 0.5:
+                    if jaccard > best_score:
+                        best_score = jaccard
+                        best_prod = p
+
+        return best_prod
+    except Exception as e:
+        logger.error(f"get_product_by_name failed for {commodity_name}: {e}")
+        return None
+
+
 def get_latest_price(commodity_name: str) -> dict | None:
     """
     Fetch the most recent monitored price for a commodity name.
@@ -54,71 +116,9 @@ def get_latest_price(commodity_name: str) -> dict | None:
         return None
     sb = get_supabase()
     try:
-        import re
-        slug = re.sub(r"[^a-z0-9]+", "_", commodity_name.lower()).strip("_")
-
-        # Step 1: Try exact slug match first (safest, never has parse issues)
-        prod_res_by_slug = (
-            sb.table("products")
-            .select("id, name, display_name, slug")
-            .eq("slug", slug)
-            .execute()
-        )
-
-        prod_id = None
-        matched_name = commodity_name
-        if prod_res_by_slug.data:
-            prod_id = prod_res_by_slug.data[0]["id"]
-            matched_name = prod_res_by_slug.data[0].get("display_name") or prod_res_by_slug.data[0].get("name") or commodity_name
-
-        # Try exact name match if slug didn't work
-        if not prod_id:
-            try:
-                prod_res_by_name = (
-                    sb.table("products")
-                    .select("id, name, display_name, slug")
-                    .eq("name", commodity_name)
-                    .execute()
-                )
-                if prod_res_by_name.data:
-                    prod_id = prod_res_by_name.data[0]["id"]
-                    matched_name = prod_res_by_name.data[0].get("display_name") or prod_res_by_name.data[0].get("name") or commodity_name
-            except Exception:
-                pass
-
-        # Step 2: Conservative word-level fuzzy match (avoids false positives)
-        # Only match if the root words of commodity_name are ALL present in the product name
-        if not prod_id:
-            all_prods = sb.table("products").select("id, name, display_name, slug").execute()
-            c_low = commodity_name.lower()
-            # Extract root words (filter out short/common words)
-            c_words = set(w for w in re.split(r"\W+", c_low) if len(w) > 2)
-            best_prod_id = None
-            best_prod_name = None
-            best_score = 0
-
-            for p in (all_prods.data or []):
-                p_name = (p.get("display_name") or p.get("name") or "").lower()
-                p_words = set(w for w in re.split(r"\W+", p_name) if len(w) > 2)
-
-                # Require that ALL root words of the query appear in the product name,
-                # or ALL words of the product name appear in the query.
-                # This prevents "Tilapia" from matching "Tilapia (Local)" AND "Well Milled Rice".
-                if c_words and p_words:
-                    overlap = len(c_words & p_words)
-                    union = len(c_words | p_words)
-                    jaccard = overlap / union if union > 0 else 0
-
-                    # Strict: require majority overlap (>=0.5 Jaccard) AND at least 1 common word
-                    if overlap > 0 and jaccard >= 0.5:
-                        if jaccard > best_score:
-                            best_score = jaccard
-                            best_prod_id = p["id"]
-                            best_prod_name = p.get("display_name") or p.get("name")
-
-            if best_prod_id:
-                prod_id = best_prod_id
-                matched_name = best_prod_name
+        prod = get_product_by_name(commodity_name)
+        prod_id = prod["id"] if prod else None
+        matched_name = (prod.get("display_name") or prod.get("name") if prod else commodity_name)
 
         if prod_id:
             price_res = (
@@ -161,10 +161,18 @@ def log_scan_event(result: dict, price: dict | None):
     """Write a scan event row regardless of confidence outcome."""
     try:
         sb = get_supabase()
-        price_shown = price.get("price_prevailing") if price else None
+        product_id = result.get("product_id") if isinstance(result, dict) else None
+        if not product_id and price and isinstance(price, dict):
+            product_id = price.get("product_id")
+        if not product_id and result and isinstance(result, dict) and result.get("commodity_name"):
+            prod = get_product_by_name(result.get("commodity_name"))
+            if prod:
+                product_id = prod.get("id")
+
+        price_shown = price.get("price_prevailing") if price and isinstance(price, dict) else None
         payload = {
-            "product_id": result.get("product_id"),
-            "confidence": result.get("confidence"),
+            "product_id": product_id,
+            "confidence": result.get("confidence") if isinstance(result, dict) else None,
             "price_shown": price_shown,
         }
         sb.table("scan_events").insert(payload).execute()
@@ -180,4 +188,4 @@ def log_error(module: str, message: str):
             "message": message
         }).execute()
     except Exception as e:
-        logger.error(f"[{module}] Failed to record log to Supabase ({e}): {message}")
+        logger.error(f"[{module}] Failed to record log to Supabase ({e}): {message}")
