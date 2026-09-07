@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { getAnalyticsPrices, getAnalyticsScans } from '../api/adminApi';
 
 const C = {
   g900: '#064e3b',
@@ -37,19 +38,106 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
 
   const reportId = `REP-${generatedAt.getFullYear()}${String(generatedAt.getMonth() + 1).padStart(2, '0')}${String(generatedAt.getDate()).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-  const totalScans = data?.scans?.total_scans || 0;
-  const detectionSplit = data?.scans?.detection_split || [];
+  // Date Filter States
+  const today = new Date();
+  const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const todayIsoStr = today.toISOString().split('T')[0];
+
+  const [filterMode, setFilterMode] = useState('all'); // 'all', 'monthly', 'weekly', 'custom'
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthStr);
+  const [selectedWeekDate, setSelectedWeekDate] = useState(todayIsoStr);
+  const [customStart, setCustomStart] = useState(todayIsoStr);
+  const [customEnd, setCustomEnd] = useState(todayIsoStr);
+
+  const [reportScans, setReportScans] = useState(data?.scans || {});
+  const [reportPrices, setReportPrices] = useState(data?.prices || []);
+  const [loading, setLoading] = useState(false);
+
+  // Compute active date range (startDate, endDate) & period label
+  const getFilterBounds = useCallback(() => {
+    if (filterMode === 'all') {
+      return { startDate: null, endDate: null, label: 'All Time (Full Dataset)' };
+    }
+
+    if (filterMode === 'monthly') {
+      if (!selectedMonth) return { startDate: null, endDate: null, label: 'Monthly Report' };
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const lastDay = new Date(year, month, 0).getDate();
+      const start = `${selectedMonth}-01`;
+      const end = `${selectedMonth}-${String(lastDay).padStart(2, '0')}`;
+      const monthName = new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      return { startDate: start, endDate: end, label: `Monthly Report: ${monthName}` };
+    }
+
+    if (filterMode === 'weekly') {
+      if (!selectedWeekDate) return { startDate: null, endDate: null, label: 'Weekly Report' };
+      const dt = new Date(selectedWeekDate);
+      const day = dt.getDay();
+      const diffToMon = dt.getDate() - day + (day === 0 ? -6 : 1);
+      const mon = new Date(dt.setDate(diffToMon));
+      const sun = new Date(mon);
+      sun.setDate(mon.getDate() + 6);
+
+      const start = mon.toISOString().split('T')[0];
+      const end = sun.toISOString().split('T')[0];
+      const monStr = mon.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const sunStr = sun.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return { startDate: start, endDate: end, label: `Weekly Report (${monStr} – ${sunStr})` };
+    }
+
+    if (filterMode === 'custom') {
+      if (!customStart || !customEnd) return { startDate: null, endDate: null, label: 'Custom Date Range' };
+      const startFmt = new Date(customStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const endFmt = new Date(customEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return { startDate: customStart, endDate: customEnd, label: `Custom Range (${startFmt} – ${endFmt})` };
+    }
+
+    return { startDate: null, endDate: null, label: 'All Time' };
+  }, [filterMode, selectedMonth, selectedWeekDate, customStart, customEnd]);
+
+  const activeBounds = getFilterBounds();
+
+  // Refetch / filter data when bounds change
+  useEffect(() => {
+    if (filterMode === 'all') {
+      setReportScans(data?.scans || {});
+      setReportPrices(data?.prices || []);
+      return;
+    }
+
+    let isMounted = true;
+    setLoading(true);
+
+    const { startDate, endDate } = activeBounds;
+    Promise.all([
+      getAnalyticsScans(startDate, endDate),
+      getAnalyticsPrices(startDate, endDate)
+    ]).then(([scansRes, pricesRes]) => {
+      if (isMounted) {
+        setReportScans(scansRes || {});
+        setReportPrices(pricesRes || []);
+        setLoading(false);
+      }
+    }).catch(err => {
+      console.error("Failed to load filtered analytics:", err);
+      if (isMounted) setLoading(false);
+    });
+
+    return () => { isMounted = false; };
+  }, [filterMode, activeBounds.startDate, activeBounds.endDate, data]);
+
+  const totalScans = reportScans?.total_scans || 0;
+  const detectionSplit = reportScans?.detection_split || [];
   const highConfObj = detectionSplit.find(d => d.name === 'High Confidence');
   const highConfPct = highConfObj ? highConfObj.value : 0;
   
-  const commodityPerf = data?.scans?.commodity_performance || [];
+  const commodityPerf = reportScans?.commodity_performance || [];
   const latestModel = data?.models?.[data.models.length - 1] || {};
-  const pricesData = data?.prices || [];
 
-  // Extract latest prices from price records
+  // Extract latest prices from filtered price records
   const latestPrices = [];
-  if (pricesData.length > 0) {
-    const lastEntry = pricesData[pricesData.length - 1];
+  if (reportPrices.length > 0) {
+    const lastEntry = reportPrices[reportPrices.length - 1];
     Object.keys(lastEntry).forEach(key => {
       if (key !== 'date') {
         latestPrices.push({
@@ -126,8 +214,8 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
           borderRadius: 20,
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           width: '100%',
-          maxWidth: 900,
-          maxHeight: '90vh',
+          maxWidth: 920,
+          maxHeight: '92vh',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -138,7 +226,7 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
         <div
           className="no-print"
           style={{
-            padding: '16px 24px',
+            padding: '14px 24px',
             borderBottom: `1px solid ${C.k100}`,
             display: 'flex',
             alignItems: 'center',
@@ -149,25 +237,26 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
+                width: 34,
+                height: 34,
+                borderRadius: 10,
                 background: C.g50,
                 color: C.g700,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 700,
+                fontSize: 16,
               }}
             >
               📄
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: C.k900 }}>
-                Analytics Report Preview
+                Analytics PDF Report Preview
               </h3>
               <p style={{ margin: 0, fontSize: 12, color: C.k500 }}>
-                Ready to save as PDF or send to printer
+                Customize period date filter & save as PDF
               </p>
             </div>
           </div>
@@ -221,8 +310,135 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
           </div>
         </div>
 
+        {/* Date Filter Toolbar (Hidden on Print) */}
+        <div
+          className="no-print"
+          style={{
+            padding: '12px 24px',
+            borderBottom: `1px solid ${C.k200}`,
+            background: '#f8fafc',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.k800, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>🗓️</span> Report Period:
+            </span>
+
+            <select
+              value={filterMode}
+              onChange={(e) => setFilterMode(e.target.value)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: `1px solid ${C.k200}`,
+                fontSize: 13,
+                fontWeight: 600,
+                color: C.k900,
+                background: C.white,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              <option value="all">🌐 All Time (Full History)</option>
+              <option value="monthly">📅 Monthly Filter</option>
+              <option value="weekly">📆 Weekly Filter</option>
+              <option value="custom">🎯 Custom Date Range</option>
+            </select>
+
+            {/* Monthly Controls */}
+            {filterMode === 'monthly' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: C.k500 }}>Select Month:</span>
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: 8,
+                    border: `1px solid ${C.k200}`,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: C.k900,
+                    outline: 'none',
+                    background: C.white,
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Weekly Controls */}
+            {filterMode === 'weekly' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: C.k500 }}>Week of Date:</span>
+                <input
+                  type="date"
+                  value={selectedWeekDate}
+                  onChange={(e) => setSelectedWeekDate(e.target.value)}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: 8,
+                    border: `1px solid ${C.k200}`,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: C.k900,
+                    outline: 'none',
+                    background: C.white,
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Custom Range Controls */}
+            {filterMode === 'custom' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="date"
+                  value={customStart}
+                  onChange={(e) => setCustomStart(e.target.value)}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: 8,
+                    border: `1px solid ${C.k200}`,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: C.k900,
+                    outline: 'none',
+                    background: C.white,
+                  }}
+                />
+                <span style={{ fontSize: 12, color: C.k500 }}>to</span>
+                <input
+                  type="date"
+                  value={customEnd}
+                  onChange={(e) => setCustomEnd(e.target.value)}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: 8,
+                    border: `1px solid ${C.k200}`,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: C.k900,
+                    outline: 'none',
+                    background: C.white,
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          <div style={{ fontSize: 12, color: C.g800, fontWeight: 700, background: C.g50, padding: '5px 12px', borderRadius: 8, border: `1px solid ${C.g100}` }}>
+            {loading ? '⚡ Updating Report...' : activeBounds.label}
+          </div>
+        </div>
+
         {/* Printable Report Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '36px 40px', background: C.white }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '36px 40px', background: C.white, opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
           
           {/* Header */}
           <div
@@ -259,6 +475,9 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
               <div><strong style={{ color: C.k900 }}>Report ID:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{reportId}</span></div>
               <div><strong>Generated:</strong> {dateStr} at {timeStr}</div>
               <div><strong>Prepared By:</strong> <span style={{ textTransform: 'uppercase', fontWeight: 700, color: C.g800 }}>{user || 'ADMIN'}</span></div>
+              <div style={{ marginTop: 6, display: 'inline-block', background: C.g50, padding: '3px 10px', borderRadius: 6, border: `1px solid ${C.g100}`, fontSize: 11, fontWeight: 800, color: C.g900 }}>
+                PERIOD: {activeBounds.label}
+              </div>
             </div>
           </div>
 
@@ -294,14 +513,14 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
             </div>
           </div>
 
-          {/* Section 2: Latest Commodity Prices */}
+          {/* Section 2: Commodity Price Monitoring */}
           <div style={{ marginBottom: 28 }}>
             <h2 style={{ fontSize: 14, fontWeight: 800, color: C.k900, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 4, height: 16, background: C.g700, borderRadius: 2 }}></span>
-              Commodity Price Monitoring
+              Commodity Price Monitoring ({activeBounds.label})
             </h2>
             {latestPrices.length === 0 ? (
-              <p style={{ fontSize: 12, color: C.k500, fontStyle: 'italic' }}>No price records available.</p>
+              <p style={{ fontSize: 12, color: C.k500, fontStyle: 'italic' }}>No price records available for this selected date range.</p>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textIndent: 0 }}>
                 <thead>
@@ -328,7 +547,7 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
           <div style={{ marginBottom: 28 }}>
             <h2 style={{ fontSize: 14, fontWeight: 800, color: C.k900, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 4, height: 16, background: C.g700, borderRadius: 2 }}></span>
-              Detection Performance Breakdown
+              Detection Performance Breakdown ({activeBounds.label})
             </h2>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>

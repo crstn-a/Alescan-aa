@@ -5,7 +5,7 @@ from services.db import get_supabase
 
 logger = logging.getLogger(__name__)
 
-def get_analytics_prices():
+def get_analytics_prices(start_date: str = None, end_date: str = None):
     try:
         sb = get_supabase()
         # Query price records safely using valid columns
@@ -43,6 +43,11 @@ def get_analytics_prices():
             row.get("week_of") or (row["created_at"][:10] if row.get("created_at") else datetime.now().strftime("%Y-%m-%d"))
             for row in (res.data or [])
         ])))
+
+        if start_date:
+            all_dates = [d for d in all_dates if d >= start_date]
+        if end_date:
+            all_dates = [d for d in all_dates if d <= end_date]
         
         chart_data = []
         for d in all_dates:
@@ -62,21 +67,25 @@ def get_analytics_prices():
         logger.error(f"Error fetching analytics prices: {e}")
         return []
 
-def get_analytics_scans():
+def get_analytics_scans(start_date: str = None, end_date: str = None):
     try:
         sb = get_supabase()
         
-        # Fetch ALL scan events for detection performance (overall totals)
-        all_scans = sb.table("scan_events").select("confidence, scanned_at, products(display_name)").execute()
+        # Fetch scan events with optional date range filter
+        query = sb.table("scan_events").select("confidence, scanned_at, products(display_name, name)")
+        if start_date:
+            query = query.gte("scanned_at", f"{start_date}T00:00:00")
+        if end_date:
+            query = query.lte("scanned_at", f"{end_date}T23:59:59")
+        all_scans = query.execute()
         
         # 1. Detection performance (pie chart) - overall totals
         success = 0
         low_conf = 0
         failed = 0
-        total = len(all_scans.data)
+        total = len(all_scans.data or [])
         
-        # 2. Daily volume (last 7 days only)
-        seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
+        # 2. Daily volume (last 7 days or filtered window)
         daily_volume = defaultdict(int)
         
         # 3. Commodity performance — initialize for ALL active products so every commodity is tracked
@@ -101,9 +110,8 @@ def get_analytics_scans():
             elif is_low_conf: low_conf += 1
             else: failed += 1
             
-            # Daily volume only for recent scans
             scanned_at = row.get("scanned_at")
-            if scanned_at and scanned_at >= seven_days_ago:
+            if scanned_at:
                 date_str = scanned_at[:10]  # YYYY-MM-DD
                 daily_volume[date_str] += 1
             

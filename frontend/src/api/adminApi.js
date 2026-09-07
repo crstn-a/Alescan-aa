@@ -91,8 +91,21 @@ export const getErrorLogs = (limit = 20) => adminFetch(`/admin/api/logs/errors?l
 export const getPriceRecords = () => adminFetch('/prices');
 
 // 🔹 Analytics
-export const getAnalyticsPrices = () => adminFetch('/admin/api/analytics/prices');
-export const getAnalyticsScans = () => adminFetch('/admin/api/analytics/scans');
+export const getAnalyticsPrices = (startDate = null, endDate = null) => {
+  const params = new URLSearchParams();
+  if (startDate) params.set('start_date', startDate);
+  if (endDate) params.set('end_date', endDate);
+  const q = params.toString();
+  return adminFetch(`/admin/api/analytics/prices${q ? `?${q}` : ''}`);
+};
+
+export const getAnalyticsScans = (startDate = null, endDate = null) => {
+  const params = new URLSearchParams();
+  if (startDate) params.set('start_date', startDate);
+  if (endDate) params.set('end_date', endDate);
+  const q = params.toString();
+  return adminFetch(`/admin/api/analytics/scans${q ? `?${q}` : ''}`);
+};
 export const getAnalyticsEvaluations = () => adminFetch('/admin/api/analytics/evaluations');
 export const getDailyVolume = (startDate, endDate) => adminFetch(`/admin/api/analytics/daily-volume?start_date=${startDate}&end_date=${endDate}`);
 

@@ -492,12 +492,18 @@ def update_violation_status(violation_id: int, status: str = Form(...)):
 from services.analytics import get_analytics_prices, get_analytics_scans, get_analytics_evaluations, get_daily_volume
 
 @router.get("/analytics/prices")
-def analytics_prices():
-    return get_analytics_prices()
+def analytics_prices(
+    start_date: str = Query(None, description="Start date YYYY-MM-DD"),
+    end_date: str = Query(None, description="End date YYYY-MM-DD"),
+):
+    return get_analytics_prices(start_date=start_date, end_date=end_date)
 
 @router.get("/analytics/scans")
-def analytics_scans():
-    return get_analytics_scans()
+def analytics_scans(
+    start_date: str = Query(None, description="Start date YYYY-MM-DD"),
+    end_date: str = Query(None, description="End date YYYY-MM-DD"),
+):
+    return get_analytics_scans(start_date=start_date, end_date=end_date)
 
 @router.get("/analytics/evaluations")
 def analytics_evaluations():
