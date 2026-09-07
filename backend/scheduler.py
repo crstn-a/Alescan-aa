@@ -13,7 +13,7 @@ def start_scheduler():
     _scheduler.add_job(
         run_sync,
         trigger=CronTrigger(
-            hour=8,
+            hour=16,
             minute=0
         ),
         id="daily_price_sync",
@@ -25,4 +25,4 @@ def start_scheduler():
 
 def stop_scheduler():
     if _scheduler and _scheduler.running:
-        _scheduler.shutdown()
+        _scheduler.shutdown()

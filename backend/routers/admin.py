@@ -276,24 +276,24 @@ def sync_logs(limit: int = Query(20, ge=1, le=100)):
                     # Try window +/- 15 mins first
                     recs = (
                         sb.table("price_records")
-                        .select("id, product_id, price_per_kg, price_low, price_high, category, created_at, week_of, products(id, display_name, name)")
+                        .select("id, product_id, price_per_kg, created_at, week_of, products(id, display_name, name)")
                         .gte("created_at", t_start)
                         .lte("created_at", t_end)
                         .order("created_at", desc=False)
                         .execute()
                     ).data or []
 
-                    # Fallback to week_of / date match if window returned empty
+                    # Fallback to week_of / date match if window returned empty (e.g. records updated)
                     if not recs:
                         recs = (
                             sb.table("price_records")
-                            .select("id, product_id, price_per_kg, price_low, price_high, category, created_at, week_of, products(id, display_name, name)")
+                            .select("id, product_id, price_per_kg, created_at, week_of, products(id, display_name, name)")
                             .eq("week_of", day_str)
                             .order("created_at", desc=False)
                             .execute()
                         ).data or []
 
-                    # Bulk query previous price for each product_id prior to t_start
+                    # Bulk query previous price for each product_id prior to day_str
                     product_ids = list({r.get("product_id") for r in recs if r.get("product_id")})
                     prev_map = {}
                     if product_ids:
@@ -301,8 +301,8 @@ def sync_logs(limit: int = Query(20, ge=1, le=100)):
                             sb.table("price_records")
                             .select("product_id, price_per_kg, created_at, week_of")
                             .in_("product_id", product_ids)
-                            .lt("created_at", t_start)
-                            .order("created_at", desc=True)
+                            .lt("week_of", day_str)
+                            .order("week_of", desc=True)
                             .execute()
                         ).data or []
                         for pr in prev_recs:
@@ -330,14 +330,14 @@ def sync_logs(limit: int = Query(20, ge=1, le=100)):
                         details.append({
                             "product_id": pid,
                             "product": prod_name,
-                            "category": r.get("category", "General"),
+                            "category": "General",
                             "price_from": price_from,
                             "price_to": prev_val,
                             "price_change": diff,
                             "price_change_pct": pct,
                             "prev_date": prev_date,
-                            "price_low": r.get("price_low"),
-                            "price_high": r.get("price_high"),
+                            "price_low": None,
+                            "price_high": None,
                         })
                     log["details"] = details
                 except Exception as ex:
