@@ -8,8 +8,8 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1QW1KwKXEPSPIKqTss0aD56O6knQTFvbK4hjdP5fqdZI/export?format=csv&gid=0"
-SPREADSHEET_ID = "1QW1KwKXEPSPIKqTss0aD56O6knQTFvbK4hjdP5fqdZI"
+DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1gRn9QDtVOKjHPj-T89VqkrZf1DMeNU-NEViXgAH2hOQ/export?format=csv&gid=0"
+SPREADSHEET_ID = "1gRn9QDtVOKjHPj-T89VqkrZf1DMeNU-NEViXgAH2hOQ"
 
 KNOWN_CATEGORIES = [
     "IMPORTED COMMERCIAL RICE",

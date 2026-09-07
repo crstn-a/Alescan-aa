@@ -130,7 +130,7 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
   const detectionSplit = reportScans?.detection_split || [];
   const highConfObj = detectionSplit.find(d => d.name === 'High Confidence');
   const highConfPct = highConfObj ? highConfObj.value : 0;
-  
+
   const commodityPerf = reportScans?.commodity_performance || [];
   const latestModel = data?.models?.[data.models.length - 1] || {};
 
@@ -344,10 +344,10 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
                 outline: 'none',
               }}
             >
-              <option value="all">🌐 All Time (Full History)</option>
-              <option value="monthly">📅 Monthly Filter</option>
-              <option value="weekly">📆 Weekly Filter</option>
-              <option value="custom">🎯 Custom Date Range</option>
+              <option value="all">All Time (Full History)</option>
+              <option value="monthly">Monthly Filter</option>
+              <option value="weekly">Weekly Filter</option>
+              <option value="custom">Custom Date Range</option>
             </select>
 
             {/* Monthly Controls */}
@@ -439,7 +439,7 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
 
         {/* Printable Report Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '36px 40px', background: C.white, opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
-          
+
           {/* Header */}
           <div
             className="report-header"

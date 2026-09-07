@@ -177,12 +177,12 @@ Create a `.env` file in the `frontend/` directory with the required keys (see [E
 | Variable                       | Description                                                     | Example / Default                                    |
 | ------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------- |
 | `SUPABASE_URL`                 | Your Supabase project URL                                       | `https://xxxx.supabase.co`                           |
-| `SUPABASE_KEY`                 | Supabase **service_role** key                                   | `eyJhbGci...`                                        |
-| `GOOGLE_SHEET_ID`              | DA Bantay Presyo Google Spreadsheet ID                          | `1QW1KwKXEPSPIKqTss0aD56O6knQTFvbK4hjdP5fqdZI`       |
+| `SUPABASE_KEY`                 | Supabase **service_role** key                                   | `...`                                        |
+| `GOOGLE_SHEET_ID`              | DA Bantay Presyo Google Spreadsheet ID                          | `...`       |
 | `GOOGLE_SHEETS_CSV_URL`        | Direct CSV export URL for the Google Sheet                      | `https://docs.google.com/spreadsheets/d/.../gid=0`  |
 | `GOOGLE_SERVICE_ACCOUNT_FILE`  | Path to Google Service Account JSON file                        | `service_account.json`                               |
 | `GOOGLE_SERVICE_ACCOUNT_JSON`  | Inline JSON payload for Google Service Account                  | `{"type": "service_account", ...}`                   |
-| `GOOGLE_SHEETS_API_KEY`        | Optional Google Sheets API v4 key fallback                      | `AIzaSy...`                                          |
+| `GOOGLE_SHEETS_API_KEY`        | Optional Google Sheets API v4 key fallback                      | `...`                                          |
 | `JWT_SECRET`                   | Secret key used to sign admin JWT tokens                        | `your-strong-random-secret`                          |
 | `FRONTEND_URL`                 | Allowed CORS origin (your frontend deployment URL)             | `https://alescan.vercel.app`                         |
 
