@@ -473,13 +473,6 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
           {/* Header & Subtitle */}
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: C.primaryLight, borderRadius: 40,
-              padding: '4px 14px', width: 'fit-content',
-              border: `1px solid ${C.border}`, marginBottom: 12
-            }}>
-            </div>
             <h2 style={{ fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 800, color: C.g900, marginBottom: 12 }}>
               Smart Market Price Verification
             </h2>
@@ -524,13 +517,6 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: '#fef2f2', borderRadius: 40,
-              padding: '4px 14px', width: 'fit-content',
-              border: '1px solid #fee2e2', marginBottom: 12,
-            }}>
-            </div>
             <h2 style={{ fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 800, color: C.g900, marginBottom: 12 }}>
               Report Price Concern
             </h2>
