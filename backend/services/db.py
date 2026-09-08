@@ -157,7 +157,15 @@ def get_latest_price(commodity_name: str) -> dict | None:
         return None
 
 
-def log_scan_event(result: dict, price: dict | None):
+def log_scan_event(
+    result: dict,
+    price: dict | None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+    location_accuracy: float | None = None,
+    client_scanned_at: str | None = None,
+    processing_latency_ms: float | None = None,
+):
     """Write a scan event row regardless of confidence outcome."""
     try:
         sb = get_supabase()
@@ -170,14 +178,29 @@ def log_scan_event(result: dict, price: dict | None):
                 product_id = prod.get("id")
 
         price_shown = price.get("price_prevailing") if price and isinstance(price, dict) else None
+
+        # Validate coordinates & accuracy
+        if latitude is not None and not (-90.0 <= latitude <= 90.0):
+            latitude = None
+        if longitude is not None and not (-180.0 <= longitude <= 180.0):
+            longitude = None
+        if location_accuracy is not None and location_accuracy < 0:
+            location_accuracy = None
+
         payload = {
             "product_id": product_id,
             "confidence": result.get("confidence") if isinstance(result, dict) else None,
             "price_shown": price_shown,
+            "latitude": latitude,
+            "longitude": longitude,
+            "location_accuracy": location_accuracy,
+            "client_scanned_at": client_scanned_at,
+            "processing_latency_ms": processing_latency_ms,
         }
         sb.table("scan_events").insert(payload).execute()
     except Exception as e:
         logger.error(f"Failed to log scan event: {e}")
+
 
 
 def log_error(module: str, message: str):

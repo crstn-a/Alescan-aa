@@ -9,9 +9,24 @@ const API = import.meta.env.VITE_API_URL
  *   { ok: false, type: 'no_price',       message }
  *   { ok: false, type: 'network',        message }
  */
-export async function scanImage(blob) {
+export async function scanImage(blob, locationData = null) {
   const form = new FormData()
   form.append('image', blob, 'scan.jpg')
+
+  if (locationData) {
+    if (locationData.latitude !== undefined && locationData.latitude !== null) {
+      form.append('latitude', locationData.latitude)
+    }
+    if (locationData.longitude !== undefined && locationData.longitude !== null) {
+      form.append('longitude', locationData.longitude)
+    }
+    if (locationData.location_accuracy !== undefined && locationData.location_accuracy !== null) {
+      form.append('location_accuracy', locationData.location_accuracy)
+    }
+    if (locationData.client_scanned_at) {
+      form.append('client_scanned_at', locationData.client_scanned_at)
+    }
+  }
 
   let resp
   try {

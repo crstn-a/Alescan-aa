@@ -173,6 +173,40 @@ export default function Scanner() {
     })
   }, [cameraState])
 
+  const getGeolocation = useCallback(() => {
+    return new Promise((resolve) => {
+      const client_scanned_at = new Date().toISOString()
+      if (!navigator || !navigator.geolocation) {
+        resolve({ latitude: null, longitude: null, location_accuracy: null, client_scanned_at })
+        return
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            location_accuracy: position.coords.accuracy,
+            client_scanned_at,
+          })
+        },
+        (err) => {
+          console.warn('Browser geolocation captured error/denied:', err.message)
+          resolve({
+            latitude: null,
+            longitude: null,
+            location_accuracy: null,
+            client_scanned_at,
+          })
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 4000,
+          maximumAge: 0,
+        }
+      )
+    })
+  }, [])
+
   const handleScan = async () => {
     if (cameraState !== 'ready' || scanning) return
 
@@ -181,14 +215,18 @@ export default function Scanner() {
     setFlash(true)
     setTimeout(() => setFlash(false), 120)
 
-    const blob = await captureFrame()
+    const [blob, locationData] = await Promise.all([
+      captureFrame(),
+      getGeolocation(),
+    ])
+
     if (!blob) {
       setFeedback({ type: 'error', text: 'Could not capture image. Retake photo.' })
       setScanning(false)
       return
     }
 
-    const result = await scanImage(blob)
+    const result = await scanImage(blob, locationData)
 
     if (result.ok) {
       stopCamera()

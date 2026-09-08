@@ -137,7 +137,7 @@ def get_filtered_scan_stats(
         # Query recent scans for the list
         list_query = (
             sb.table("scan_events")
-            .select("id, confidence, price_shown, scanned_at, products(display_name, slug)")
+            .select("id, confidence, price_shown, scanned_at, latitude, longitude, location_accuracy, client_scanned_at, processing_latency_ms, products(display_name, name, slug)")
             .order("scanned_at", desc=True)
         )
         if start_dt and end_dt:
@@ -178,7 +178,7 @@ def scan_logs(limit: int = Query(50, ge=1, le=200)):
         data = (
             get_supabase()
             .table("scan_events")
-            .select("id, confidence, price_shown, scanned_at, session_id, products(display_name, slug)")
+            .select("id, confidence, price_shown, scanned_at, session_id, latitude, longitude, location_accuracy, client_scanned_at, processing_latency_ms, products(display_name, name, slug)")
             .order("scanned_at", desc=True)
             .limit(limit)
             .execute()

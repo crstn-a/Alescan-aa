@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from services.vision import run_inference, CONFIDENCE_THRESHOLD
@@ -9,13 +10,29 @@ router = APIRouter()
 @router.post("/scan")
 async def scan_commodity(
     image: UploadFile = File(...),
+    latitude: Optional[float] = Form(None),
+    longitude: Optional[float] = Form(None),
+    location_accuracy: Optional[float] = Form(None),
+    client_scanned_at: Optional[str] = Form(None),
 ):
     """
     Accepts a photo upload from the camera.
     Runs server-side YOLOv26 custom-trained detection,
     fetches latest monitored market prices (Prevailing, Low, High),
-    logs the scan event, and returns detection results to client.
+    logs the scan event with location & latency telemetry, and returns detection results.
     """
+    # ── Latency telemetry: calculate processing latency ────────────────
+    processing_latency_ms = None
+    if client_scanned_at:
+        try:
+            client_dt = datetime.fromisoformat(client_scanned_at.replace("Z", "+00:00"))
+            server_dt = datetime.now(timezone.utc)
+            delta_ms = (server_dt - client_dt).total_seconds() * 1000.0
+            if delta_ms >= 0:
+                processing_latency_ms = round(delta_ms, 2)
+        except Exception:
+            pass
+
     # ── Step 1: Decode image ──────────────────────────────────────
     try:
         image_bytes = await image.read()
@@ -35,7 +52,15 @@ async def scan_commodity(
 
     # ── Step 3: Confidence gate ───────────────────────────────────
     if not result["commodity_name"] or result["confidence"] < CONFIDENCE_THRESHOLD:
-        log_scan_event(result, None)
+        log_scan_event(
+            result,
+            None,
+            latitude=latitude,
+            longitude=longitude,
+            location_accuracy=location_accuracy,
+            client_scanned_at=client_scanned_at,
+            processing_latency_ms=processing_latency_ms,
+        )
         raise HTTPException(
             status_code=422,
             detail={
@@ -63,7 +88,15 @@ async def scan_commodity(
             result["product_id"] = price_db.get("product_id")
 
     # ── Step 5: Log scan event ────────────────────────────────────
-    log_scan_event(result, result)
+    log_scan_event(
+        result,
+        result,
+        latitude=latitude,
+        longitude=longitude,
+        location_accuracy=location_accuracy,
+        client_scanned_at=client_scanned_at,
+        processing_latency_ms=processing_latency_ms,
+    )
 
     # ── Step 6: Return result payload ─────────────────────────────
     return {

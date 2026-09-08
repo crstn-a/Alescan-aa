@@ -269,3 +269,5 @@ backend/model/valid/*
 backend/model/data.yaml
 backend/model/README.dataset.txt
 backend/model/README.roboflow.txt
+
+backend/check_db.py

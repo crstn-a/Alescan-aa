@@ -20,6 +20,7 @@ import {
 
 import AnalyticsReportModal from '../components/AnalyticsReportModal'
 import SyncDetailsModal from '../components/SyncDetailsModal'
+import LiveMap from '../components/LiveMap'
 
 
 /* ── Icons ──────────────────────────────────────────────────────────── */
@@ -76,7 +77,7 @@ const SIDEBAR_MINI = 68
 
 const NAV = [
   { id: 0, label: 'Overview', icon: 'home' },
-
+  { id: 6, label: 'Live Map', icon: 'map' },
   { id: 5, label: 'Analytics', icon: 'analytics' },
   { id: 8, label: 'Reports', icon: 'report' },
   { id: 7, label: 'Violations', icon: 'violation' },
@@ -1839,7 +1840,10 @@ export default function AdminDashboard() {
             </div>
           )}
 
-
+          {/* LIVE MAP */}
+          {active === 6 && (
+            <LiveMap />
+          )}
 
           {/* VIOLATIONS */}
           {active === 7 && (
