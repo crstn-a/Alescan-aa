@@ -15,16 +15,16 @@ export async function scanImage(blob, locationData = null) {
 
   if (locationData) {
     if (locationData.latitude !== undefined && locationData.latitude !== null) {
-      form.append('latitude', locationData.latitude)
+      form.append('latitude', String(locationData.latitude))
     }
     if (locationData.longitude !== undefined && locationData.longitude !== null) {
-      form.append('longitude', locationData.longitude)
+      form.append('longitude', String(locationData.longitude))
     }
     if (locationData.location_accuracy !== undefined && locationData.location_accuracy !== null) {
-      form.append('location_accuracy', locationData.location_accuracy)
+      form.append('location_accuracy', String(locationData.location_accuracy))
     }
     if (locationData.client_scanned_at) {
-      form.append('client_scanned_at', locationData.client_scanned_at)
+      form.append('client_scanned_at', String(locationData.client_scanned_at))
     }
   }
 

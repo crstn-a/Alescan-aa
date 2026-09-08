@@ -37,6 +37,8 @@ export default function Scanner() {
 
   const [cameraState, setCameraState] = useState('loading')
   const [cameraError, setCameraError] = useState(null)
+  const [locationState, setLocationState] = useState('idle') // 'idle' | 'loading' | 'ready' | 'denied' | 'unsupported' | 'error'
+  const locationRef = useRef(null)
   const [scanning, setScanning] = useState(false)
   const [feedback, setFeedback] = useState(null)
   const [flash, setFlash] = useState(false)
@@ -143,11 +145,47 @@ export default function Scanner() {
     setShowExitConfirm(false)
   }
 
+  const requestLocationPermission = useCallback(() => {
+    if (!navigator || !navigator.geolocation) {
+      setLocationState('unsupported')
+      return
+    }
+
+    setLocationState('loading')
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          location_accuracy: position.coords.accuracy,
+          client_scanned_at: new Date().toISOString(),
+        }
+        locationRef.current = coords
+        setLocationState('ready')
+      },
+      (err) => {
+        console.warn('Location permission error/denied:', err.message)
+        if (err.code === err.PERMISSION_DENIED) {
+          setLocationState('denied')
+        } else {
+          setLocationState('error')
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 15000,
+      }
+    )
+  }, [])
+
   useEffect(() => {
     if (showTermsModal) return
     startCamera()
+    requestLocationPermission()
     return () => stopCamera()
-  }, [showTermsModal, startCamera, stopCamera])
+  }, [showTermsModal, startCamera, stopCamera, requestLocationPermission])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -180,28 +218,34 @@ export default function Scanner() {
         resolve({ latitude: null, longitude: null, location_accuracy: null, client_scanned_at })
         return
       }
+
+      const cached = locationRef.current
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          resolve({
+          const fresh = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             location_accuracy: position.coords.accuracy,
             client_scanned_at,
-          })
+          }
+          locationRef.current = fresh
+          setLocationState('ready')
+          resolve(fresh)
         },
         (err) => {
-          console.warn('Browser geolocation captured error/denied:', err.message)
-          resolve({
-            latitude: null,
-            longitude: null,
-            location_accuracy: null,
-            client_scanned_at,
-          })
+          console.warn('Geolocation capture during scan fallback:', err.message)
+          if (cached && cached.latitude != null) {
+            resolve({ ...cached, client_scanned_at })
+          } else {
+            if (err.code === err.PERMISSION_DENIED) setLocationState('denied')
+            resolve({ latitude: null, longitude: null, location_accuracy: null, client_scanned_at })
+          }
         },
         {
           enableHighAccuracy: true,
-          timeout: 4000,
-          maximumAge: 0,
+          timeout: 10000,
+          maximumAge: 15000,
         }
       )
     })
@@ -324,9 +368,32 @@ export default function Scanner() {
           </div>
         </div>
 
-        {/* Right: Live status indicator */}
+        {/* Right: Live camera & GPS status indicators */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* GPS Location Status Indicator */}
+          <div
+            onClick={requestLocationPermission}
+            title={locationState === 'denied' ? 'Click to grant location permission' : 'GPS Location Status'}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: locationState === 'ready' ? C.primaryLight : locationState === 'denied' ? '#fef2f2' : C.darkBg,
+              borderRadius: 20,
+              padding: '5px 12px',
+              border: `1px solid ${locationState === 'ready' ? 'rgba(34,197,94,.2)' : locationState === 'denied' ? 'rgba(239,68,68,.3)' : C.border}`,
+              cursor: locationState === 'denied' || locationState === 'error' ? 'pointer' : 'default',
+            }}
+          >
+            <div style={{
+              width: 7, height: 7, borderRadius: '50%',
+              background: locationState === 'ready' ? C.primary : locationState === 'denied' ? C.error : C.warning,
+              animation: locationState === 'loading' ? 'pulse-ring 1.8s ease infinite' : 'none',
+            }} />
+            <span style={{ fontSize: 12, color: locationState === 'ready' ? C.primaryDark : locationState === 'denied' ? C.error : C.textSecondary, fontWeight: 500 }}>
+              {locationState === 'ready' ? 'GPS ready' : locationState === 'denied' ? 'GPS denied' : locationState === 'loading' ? 'Locating...' : 'GPS off'}
+            </span>
+          </div>
 
+          {/* Camera Status Indicator */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: C.primaryLight,
