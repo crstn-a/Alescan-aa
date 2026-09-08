@@ -11,7 +11,7 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
   supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 }
 
-export default function LiveMap() {
+export default function LiveMap({ refreshTrigger }) {
   const mapContainerRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markersRef = useRef({})
@@ -70,6 +70,12 @@ export default function LiveMap() {
   useEffect(() => {
     fetchScans()
   }, [fetchScans])
+
+  useEffect(() => {
+    if (refreshTrigger) {
+      fetchScans()
+    }
+  }, [refreshTrigger, fetchScans])
 
   // Initialize Leaflet Map
   useEffect(() => {

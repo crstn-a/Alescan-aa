@@ -768,6 +768,7 @@ export default function AdminDashboard() {
   const [trendFilter, setTrendFilter] = useState('benchmark')
   const [detSearch, setDetSearch] = useState('')
   const [detTab, setDetTab] = useState('all')
+  const [liveMapRefreshKey, setLiveMapRefreshKey] = useState(0)
 
   const loadStats = useCallback(async () => {
     setStatsLoading(true)
@@ -786,7 +787,9 @@ export default function AdminDashboard() {
     if (t === 0) return
     setTabLoading(true); setData([])
     try {
-      if (t === 5) {
+      if (t === 6) {
+        setLiveMapRefreshKey(k => k + 1)
+      } else if (t === 5) {
         const [prices, scans] = await Promise.all([
           getAnalyticsPrices(),
           getAnalyticsScans()
@@ -1842,7 +1845,7 @@ export default function AdminDashboard() {
 
           {/* LIVE MAP */}
           {active === 6 && (
-            <LiveMap />
+            <LiveMap refreshTrigger={liveMapRefreshKey} />
           )}
 
           {/* VIOLATIONS */}

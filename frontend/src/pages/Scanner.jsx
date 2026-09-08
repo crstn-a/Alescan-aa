@@ -39,6 +39,7 @@ export default function Scanner() {
   const [cameraError, setCameraError] = useState(null)
   const [locationState, setLocationState] = useState('idle') // 'idle' | 'loading' | 'ready' | 'denied' | 'unsupported' | 'error'
   const locationRef = useRef(null)
+  const [showLocationModal, setShowLocationModal] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [feedback, setFeedback] = useState(null)
   const [flash, setFlash] = useState(false)
@@ -163,6 +164,7 @@ export default function Scanner() {
         }
         locationRef.current = coords
         setLocationState('ready')
+        setShowLocationModal(false)
       },
       (err) => {
         console.warn('Location permission error/denied:', err.message)
@@ -180,10 +182,18 @@ export default function Scanner() {
     )
   }, [])
 
+  const handleGpsBadgeClick = () => {
+    setShowLocationModal(true)
+    requestLocationPermission()
+  }
+
   useEffect(() => {
     if (showTermsModal) return
     startCamera()
     requestLocationPermission()
+    if (locationState !== 'ready') {
+      setShowLocationModal(true)
+    }
     return () => stopCamera()
   }, [showTermsModal, startCamera, stopCamera, requestLocationPermission])
 
@@ -314,73 +324,49 @@ export default function Scanner() {
         .safe-bottom{padding-bottom:env(safe-area-inset-bottom)}
       `}</style>
 
-      {/* ── Header: Exit (left) | Logo (center) | Live indicator (right) ── */}
+      {/* ── Header: Exit & GPS (left) | Logo image (center) | Camera status (right) ── */}
       <header style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         position: 'relative',
-        padding: 'max(14px, env(safe-area-inset-top)) 20px 14px',
+        padding: 'max(14px, env(safe-area-inset-top)) 16px 14px',
         zIndex: 10,
         flexShrink: 0,
         background: C.surface,
         borderBottom: `1px solid ${C.border}`,
         boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
       }}>
-        {/* Left: Red Exit button */}
-        <button
-          onClick={handleExitClick}
-          style={{
-            background: C.error,
-            border: 'none',
-            color: '#fff',
-            borderRadius: 10,
-            padding: '6px 12px',
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all .15s',
-          }}
-        >
-          Exit
-        </button>
-
-        {/* Center: Logo */}
-        <div style={{
-          position: 'absolute',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-        }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 9,
-            background: `linear-gradient(135deg,${C.primaryDark},${C.primary})`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(34,197,94,.3)',
-          }}>
-            <span style={{ color: '#fff', fontSize: 14, fontWeight: 800 }}>A</span>
-          </div>
-          <div>
-            <p style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: 0 }}>Alescan</p>
-            <p style={{ fontSize: 11, color: C.textSecondary, margin: 0 }}>SRP Scanner</p>
-          </div>
-        </div>
-
-        {/* Right: Live camera & GPS status indicators */}
+        {/* Left: Exit button & GPS Status Badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* GPS Location Status Indicator */}
+          <button
+            onClick={handleExitClick}
+            style={{
+              background: C.error,
+              border: 'none',
+              color: '#fff',
+              borderRadius: 10,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+          >
+            Exit
+          </button>
+
+          {/* GPS Location Status Indicator (Left side) */}
           <div
-            onClick={requestLocationPermission}
-            title={locationState === 'denied' ? 'Click to grant location permission' : 'GPS Location Status'}
+            onClick={handleGpsBadgeClick}
+            title="Click to manage GPS location permission"
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               background: locationState === 'ready' ? C.primaryLight : locationState === 'denied' ? '#fef2f2' : C.darkBg,
               borderRadius: 20,
-              padding: '5px 12px',
+              padding: '5px 10px',
               border: `1px solid ${locationState === 'ready' ? 'rgba(34,197,94,.2)' : locationState === 'denied' ? 'rgba(239,68,68,.3)' : C.border}`,
-              cursor: locationState === 'denied' || locationState === 'error' ? 'pointer' : 'default',
+              cursor: 'pointer',
             }}
           >
             <div style={{
@@ -388,17 +374,35 @@ export default function Scanner() {
               background: locationState === 'ready' ? C.primary : locationState === 'denied' ? C.error : C.warning,
               animation: locationState === 'loading' ? 'pulse-ring 1.8s ease infinite' : 'none',
             }} />
-            <span style={{ fontSize: 12, color: locationState === 'ready' ? C.primaryDark : locationState === 'denied' ? C.error : C.textSecondary, fontWeight: 500 }}>
+            <span style={{ fontSize: 11, color: locationState === 'ready' ? C.primaryDark : locationState === 'denied' ? C.error : C.textSecondary, fontWeight: 600 }}>
               {locationState === 'ready' ? 'GPS ready' : locationState === 'denied' ? 'GPS denied' : locationState === 'loading' ? 'Locating...' : 'GPS off'}
             </span>
           </div>
+        </div>
 
-          {/* Camera Status Indicator */}
+        {/* Center: Alescan Logo image only */}
+        <div style={{
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          alignItems: 'center',
+          pointerEvents: 'none',
+        }}>
+          <img
+            src="/Alescan-Logo.png"
+            alt="Alescan Logo"
+            style={{ height: 38, objectFit: 'contain' }}
+          />
+        </div>
+
+        {/* Right: Camera status indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: C.primaryLight,
             borderRadius: 20,
-            padding: '5px 12px',
+            padding: '5px 10px',
             border: `1px solid rgba(34,197,94,.2)`,
           }}>
             <div style={{
@@ -406,7 +410,7 @@ export default function Scanner() {
               background: isReady ? C.primary : C.textMuted,
               animation: isReady ? 'pulse-ring 1.8s ease infinite' : 'none',
             }} />
-            <span style={{ fontSize: 12, color: isReady ? C.primaryDark : C.textSecondary, fontWeight: 500 }}>
+            <span style={{ fontSize: 11, color: isReady ? C.primaryDark : C.textSecondary, fontWeight: 600 }}>
               {cameraState === 'loading' ? 'Starting...' : isReady ? 'Camera live' : 'Camera off'}
             </span>
           </div>
@@ -690,6 +694,67 @@ export default function Scanner() {
             >
               Okay
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Location Permission Modal Popup */}
+      {showLocationModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 999,
+          background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 20, animation: 'fadeIn .15s ease'
+        }}>
+          <div style={{
+            background: '#ffffff', borderRadius: 20, padding: '28px 24px',
+            maxWidth: 380, width: '100%', textAlign: 'center',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+            animation: 'fadeIn .2s ease',
+          }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%',
+              background: C.primaryLight, border: `1px solid rgba(34,197,94,0.3)`,
+              margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: C.primaryDark, fontSize: 26
+            }}>
+              📍
+            </div>
+
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>
+              Allow Location Access
+            </h3>
+
+            <p style={{ fontSize: 13, color: C.textSecondary, lineHeight: 1.5, margin: '0 0 20px' }}>
+              Alescan uses your device location to associate scanned commodity prices with your exact market location for accurate SRP monitoring.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                onClick={() => {
+                  requestLocationPermission()
+                }}
+                style={{
+                  width: '100%', padding: '12px', borderRadius: 12, border: 'none',
+                  background: `linear-gradient(135deg, ${C.primaryDark}, ${C.primary})`,
+                  color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(34,197,94,0.3)',
+                }}
+              >
+                {locationState === 'loading' ? 'Requesting Access...' : 'Allow Location Access'}
+              </button>
+
+              <button
+                onClick={() => setShowLocationModal(false)}
+                style={{
+                  width: '100%', padding: '10px', borderRadius: 12, border: `1px solid ${C.border}`,
+                  background: 'transparent', color: C.textSecondary, fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Skip for now
+              </button>
+            </div>
           </div>
         </div>
       )}
