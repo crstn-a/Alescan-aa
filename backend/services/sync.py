@@ -64,7 +64,7 @@ def run_sync() -> dict:
 def _upsert_sheet_prices(records: list[dict]):
     """Insert or update products and price_records in Supabase safely.
     Uses upsert on product slug to avoid duplicates, and upsert on
-    product_id+week_of for price_records to prevent daily sync bloat.
+    product_id+sync_date for price_records to prevent daily sync bloat.
     """
     sb = get_supabase()
     today_iso = datetime.now().strftime("%Y-%m-%d")
@@ -114,7 +114,7 @@ def _upsert_sheet_prices(records: list[dict]):
             "product_id": prod_id,
             "price_per_kg": float(price_val),
             "source": rec.get("source", "DA Bantay Presyo (Sheet Sync)"),
-            "week_of": today_iso,
+            "sync_date": today_iso,
         }
 
         try:
@@ -123,7 +123,7 @@ def _upsert_sheet_prices(records: list[dict]):
                 sb.table("price_records")
                 .select("id")
                 .eq("product_id", prod_id)
-                .eq("week_of", today_iso)
+                .eq("sync_date", today_iso)
                 .execute()
             )
             if existing.data:
