@@ -1513,12 +1513,12 @@ export default function AdminDashboard() {
                             }}
                           >
                             <optgroup label="Preset Category Views">
-                              <option value="benchmark">🌟 Core SRP Items</option>
-                              <option value="meat">🥩 Meat (Pork & Beef)</option>
-                              <option value="poultry">🍗 Poultry & Eggs</option>
-                              <option value="fish">🐟 Fish Products</option>
-                              <option value="veg">🥬 Vegetables & Spices</option>
-                              <option value="rice">🌾 Rice Products</option>
+                              <option value="benchmark">Core SRP Items</option>
+                              <option value="meat">Meat (Pork & Beef)</option>
+                              <option value="poultry">Poultry & Eggs</option>
+                              <option value="fish">Fish Products</option>
+                              <option value="veg">Vegetables & Spices</option>
+                              <option value="rice">Rice Products</option>
                             </optgroup>
                             <optgroup label="Single Commodity Lookup">
                               {allKeys.map(k => (
@@ -1912,10 +1912,10 @@ export default function AdminDashboard() {
                     {filtered.map(r => {
                       const isExpanded = expandedReport === r.id;
                       const statusColors = {
-                        pending:   { bg: '#fffbeb', color: '#b45309', border: '#fef3c7' },
+                        pending: { bg: '#fffbeb', color: '#b45309', border: '#fef3c7' },
                         reviewing: { bg: '#eff6ff', color: '#1d4ed8', border: '#dbeafe' },
-                        resolved:  { bg: C.g50,     color: C.g700,   border: C.g100 },
-                        dismissed: { bg: C.k50,     color: C.k500,   border: C.k200 },
+                        resolved: { bg: C.g50, color: C.g700, border: C.g100 },
+                        dismissed: { bg: C.k50, color: C.k500, border: C.k200 },
                       };
                       const sc = statusColors[r.status] || statusColors.pending;
                       return (
@@ -1959,7 +1959,7 @@ export default function AdminDashboard() {
                                 textTransform: 'capitalize',
                               }}>{r.status}</span>
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.k400} strokeWidth="2" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
-                                <path d="M6 9l6 6 6-6"/>
+                                <path d="M6 9l6 6 6-6" />
                               </svg>
                             </div>
                           </div>
@@ -2025,10 +2025,10 @@ export default function AdminDashboard() {
                               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                 {['pending', 'reviewing', 'resolved', 'dismissed'].filter(s => s !== r.status).map(s => {
                                   const btnColors = {
-                                    pending:   { bg: '#fffbeb', color: '#b45309', border: '#fef3c7', hoverBg: '#fef3c7' },
+                                    pending: { bg: '#fffbeb', color: '#b45309', border: '#fef3c7', hoverBg: '#fef3c7' },
                                     reviewing: { bg: '#eff6ff', color: '#1d4ed8', border: '#dbeafe', hoverBg: '#dbeafe' },
-                                    resolved:  { bg: C.g50,     color: C.g700,   border: C.g100,   hoverBg: C.g100 },
-                                    dismissed: { bg: C.k50,     color: C.k500,   border: C.k200,   hoverBg: C.k200 },
+                                    resolved: { bg: C.g50, color: C.g700, border: C.g100, hoverBg: C.g100 },
+                                    dismissed: { bg: C.k50, color: C.k500, border: C.k200, hoverBg: C.k200 },
                                   };
                                   const bc = btnColors[s];
                                   return (
