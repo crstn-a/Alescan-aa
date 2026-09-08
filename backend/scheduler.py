@@ -13,7 +13,7 @@ def start_scheduler():
     _scheduler.add_job(
         run_sync,
         trigger=CronTrigger(
-            hour=16,
+            hour=24,
             minute=0
         ),
         id="daily_price_sync",
