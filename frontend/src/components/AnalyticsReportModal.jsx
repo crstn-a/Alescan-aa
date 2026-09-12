@@ -240,9 +240,23 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
           .report-header {
             border-bottom: 2px solid #065f46 !important;
           }
-          tr, table {
+          thead {
+            display: table-header-group !important;
+          }
+          tbody {
+            display: table-row-group !important;
+          }
+          table {
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+          }
+          tr {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+          }
+          h1, h2, h3 {
+            page-break-after: avoid !important;
+            break-after: avoid !important;
           }
         }
       `}</style>
