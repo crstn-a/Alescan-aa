@@ -1197,7 +1197,7 @@ export default function AdminDashboard() {
             {active === 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.g50, padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.g100}`, color: C.g700 }}>
                 <Svg d={IC.sync.d} size={13} />
-                <span style={{ fontSize: 12, fontWeight: 600 }}>Auto-syncs every Mon 8:00 AM PHT</span>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>Auto-syncs every Mon 7:00 AM PHT</span>
               </div>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
