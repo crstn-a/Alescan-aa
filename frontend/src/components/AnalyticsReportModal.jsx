@@ -174,35 +174,75 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 12mm 15mm;
+            margin: 10mm 12mm;
           }
-          body {
+          html, body {
             background: #ffffff !important;
             color: #111827 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          .no-print {
+          /* Hide everything on the page by default */
+          body * {
+            visibility: hidden !important;
+          }
+          /* Hide controls and non-printable elements */
+          .no-print, .no-print * {
             display: none !important;
+            visibility: hidden !important;
+          }
+          /* Show ONLY the printable report preview area and its contents */
+          .analytics-report-printable,
+          .analytics-report-printable * {
+            visibility: visible !important;
+          }
+          /* Position printable report at top-left of document without overflow constraints */
+          .analytics-report-printable {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            color: #111827 !important;
+            overflow: visible !important;
+            height: auto !important;
           }
           .modal-overlay {
-            position: static !important;
-            background: transparent !important;
+            position: absolute !important;
+            inset: 0 !important;
+            background: #ffffff !important;
             padding: 0 !important;
+            margin: 0 !important;
             overflow: visible !important;
-            inset: auto !important;
+            z-index: 999999 !important;
           }
           .modal-content {
-            box-shadow: none !important;
-            border: none !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+            height: auto !important;
+            max-height: none !important;
+            box-shadow: none !important;
+            border: none !important;
             padding: 0 !important;
             margin: 0 !important;
             border-radius: 0 !important;
+            overflow: visible !important;
+            background: #ffffff !important;
           }
           .report-header {
             border-bottom: 2px solid #065f46 !important;
+          }
+          tr, table {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
         }
       `}</style>
@@ -438,7 +478,7 @@ export default function AnalyticsReportModal({ data, user, onClose }) {
         </div>
 
         {/* Printable Report Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '36px 40px', background: C.white, opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
+        <div className="analytics-report-printable" style={{ flex: 1, overflowY: 'auto', padding: '36px 40px', background: C.white, opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
 
           {/* Header */}
           <div
