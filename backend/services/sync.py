@@ -50,8 +50,15 @@ def run_sync() -> dict:
             "error": str(e)
         }
 
-    # ── Stage 4: Log Success ────────────────────────────────
+    # ── Stage 4: Log Success & Clean Cache ──────────────────
     _write_sync_log(extractor, "success", f"Inserted {len(records)} prices from DA Google Sheet")
+    _cleanup_old_price_records(max_per_product=10)
+    try:
+        from routers.prices import clear_prices_cache
+        clear_prices_cache()
+    except Exception as e:
+        logger.warning(f"Could not clear prices cache: {e}")
+
     logger.info(f"Sync complete — {len(records)} prices via {extractor}")
 
     return {
@@ -138,6 +145,49 @@ def _upsert_sheet_prices(records: list[dict]):
             logger.warning(f"Price record upsert failed for {comm_name}: {e}")
 
 
+def _cleanup_sync_logs(max_keep: int = 10):
+    """Keep only the latest `max_keep` (10 max) sync log entries and delete older ones."""
+    try:
+        sb = get_supabase()
+        logs_res = (
+            sb.table("sync_logs")
+            .select("id, synced_at")
+            .order("synced_at", desc=True)
+            .execute()
+        )
+        logs = logs_res.data or []
+        if len(logs) > max_keep:
+            to_delete_ids = [log["id"] for log in logs[max_keep:]]
+            sb.table("sync_logs").delete().in_("id", to_delete_ids).execute()
+            logger.info(f"Cleaned up {len(to_delete_ids)} old sync logs, keeping latest {max_keep}")
+    except Exception as e:
+        logger.error(f"Failed to cleanup old sync logs: {e}")
+
+
+def _cleanup_old_price_records(max_per_product: int = 10):
+    """Keep at most `max_per_product` price records per product to prevent database bloat."""
+    try:
+        sb = get_supabase()
+        prods = sb.table("products").select("id").execute()
+        for p in (prods.data or []):
+            pid = p.get("id")
+            if not pid:
+                continue
+            recs = (
+                sb.table("price_records")
+                .select("id, created_at")
+                .eq("product_id", pid)
+                .order("created_at", desc=True)
+                .execute()
+            ).data or []
+            if len(recs) > max_per_product:
+                to_del = [r["id"] for r in recs[max_per_product:]]
+                sb.table("price_records").delete().in_("id", to_del).execute()
+                logger.info(f"Pruned {len(to_del)} old price records for product {pid}")
+    except Exception as e:
+        logger.error(f"Failed to cleanup old price records: {e}")
+
+
 def _write_sync_log(extractor: str, status: str, notes: str = None):
     try:
         get_supabase().table("sync_logs").insert({
@@ -146,5 +196,7 @@ def _write_sync_log(extractor: str, status: str, notes: str = None):
             "pdf_url": "https://docs.google.com/spreadsheets/d/1QW1KwKXEPSPIKqTss0aD56O6knQTFvbK4hjdP5fqdZI",
             "notes": notes,
         }).execute()
+        _cleanup_sync_logs(max_keep=10)
     except Exception as e:
         logger.error(f"Failed to write sync log: {e}")
+

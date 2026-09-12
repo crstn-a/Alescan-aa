@@ -84,7 +84,7 @@ export const getFilteredScanStats = (mode = 'all', date = null) => {
 };
 export const triggerSync = () => adminFetch('/admin/api/sync', { method: 'POST' });
 export const getScanLogs = (limit = 50) => adminFetch(`/admin/api/logs/scan?limit=${limit}`);
-export const getSyncLogs = (limit = 20) => adminFetch(`/admin/api/logs/sync?limit=${limit}`);
+export const getSyncLogs = (limit = 10) => adminFetch(`/admin/api/logs/sync?limit=${limit}`);
 export const getErrorLogs = (limit = 20) => adminFetch(`/admin/api/logs/errors?limit=${limit}`);
 
 // 🔹 Prices (use same handler for consistency)

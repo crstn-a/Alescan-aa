@@ -249,7 +249,13 @@ def get_admin_prices(limit: int = Query(100, ge=1, le=500)):
 
 # ── GET /admin/logs/sync ──────────────────────────────────────────────
 @router.get("/logs/sync")
-def sync_logs(limit: int = Query(20, ge=1, le=100)):
+def sync_logs(limit: int = Query(10, ge=1, le=10)):
+    try:
+        from services.sync import _cleanup_sync_logs
+        _cleanup_sync_logs(max_keep=10)
+    except Exception:
+        pass
+
     try:
         sb = get_supabase()
         logs_res = (
