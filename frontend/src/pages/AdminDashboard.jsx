@@ -121,6 +121,67 @@ const fmtDt = (ts) => ts
   ? new Date(ts).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
   : '—'
 
+function formatFriendlyErrorMessage(module, msg) {
+  if (!msg) return `An unknown issue occurred in the ${module || 'system'} module, contact developer`
+
+  const m = String(msg).toLowerCase()
+
+  // 1. Vision / YOLO Model loading or inference errors
+  if (m.includes('best.pt') || m.includes('yolo') || m.includes('model weights') || m.includes('ultralytics') || m.includes('cuda')) {
+    if (m.includes('not found') || m.includes('best.pt') || m.includes('weights')) {
+      return 'Could not load YOLOv26 model from best.pt, contact developer'
+    }
+    return 'AI vision model error encountered during detection, contact developer'
+  }
+
+  if (m.includes('decode image') || m.includes('image read') || m.includes('cannot identify image')) {
+    return 'Could not decode uploaded scan image file, contact developer'
+  }
+
+  // 2. Sync / DA Google Sheet errors
+  if (m.includes('sheet') || m.includes('google sheet') || m.includes('csv') || m.includes('fetch_sheet') || m.includes('parse_sheet')) {
+    return 'Could not fetch or sync commodity prices from DA Google Sheet, contact developer'
+  }
+
+  if (m.includes('upsert failed') || m.includes('upsert error')) {
+    return 'Could not update database price records during sync, contact developer'
+  }
+
+  // 3. Database / Network / Connection errors
+  if (m.includes('postgrest') || m.includes('supabase') || m.includes('connection refused') || m.includes('timeout') || m.includes('500') || m.includes('503')) {
+    return `Database connection issue encountered in ${module || 'system'} module, contact developer`
+  }
+
+  // 4. Admin / Query / Endpoint operation failures
+  if (m.includes('get_stats') || m.includes('scan_logs') || m.includes('sync_logs') || m.includes('error_logs')) {
+    return `Failed to load administrative logs or statistics in ${module || 'system'} module, contact developer`
+  }
+
+  if (m.includes('user_register') || m.includes('submit_report') || m.includes('my_reports')) {
+    return `Vendor report processing issue in ${module || 'system'} module, contact developer`
+  }
+
+  if (m.includes('violation')) {
+    return `Consumer violation complaint handling issue in ${module || 'system'} module, contact developer`
+  }
+
+  // Fallback cleanup
+  let cleaned = String(msg)
+  if (cleaned.includes(':') && ['RuntimeError', 'ValueError', 'Exception', 'KeyError', 'TypeError', 'AttributeError', 'HTTPException'].some(p => cleaned.startsWith(p))) {
+    cleaned = cleaned.split(':').slice(1).join(':').trim()
+  }
+
+  cleaned = cleaned.replace(/[A-Za-z]:\\[^:\n]+/g, '').replace(/\/[^\s:\n]+/g, '').trim()
+
+  if (!cleaned) cleaned = `An issue occurred in the ${module || 'system'} module`
+  if (!cleaned.toLowerCase().includes('contact developer') && !cleaned.toLowerCase().includes('contact admin')) {
+    cleaned = `${cleaned}, contact developer`
+  }
+
+  return cleaned
+}
+
+
 /* ── Stat Card ──────────────────────────────────────────────────────── */
 function StatCard({ label, value, sub, trend, icon, accent, isErrorCard, loading }) {
   const isErr = isErrorCard || icon === 'alert'
@@ -943,16 +1004,18 @@ export default function AdminDashboard() {
       },
       {
         key: 'message', label: 'Error Trace / Message',
-        render: v => (
-          <span style={{
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-            fontSize: 12.5, color: C.k900, background: C.k50, borderLeft: `3px solid ${C.errorRed}`,
-            padding: '6px 12px', borderRadius: '0 8px 8px 0', display: 'block', maxWidth: 460,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-          }}>
-            {v}
-          </span>
-        )
+        render: (v, row) => {
+          const friendly = formatFriendlyErrorMessage(row.module, v)
+          return (
+            <span style={{
+              fontSize: 13, fontWeight: 600, color: C.k900, background: C.errorRedBg,
+              borderLeft: `3px solid ${C.errorRed}`, padding: '7px 12px', borderRadius: '0 8px 8px 0',
+              display: 'block', maxWidth: 540, lineHeight: 1.4
+            }}>
+              {friendly}
+            </span>
+          )
+        }
       },
       {
         key: 'occurred_at', label: 'Timestamp',

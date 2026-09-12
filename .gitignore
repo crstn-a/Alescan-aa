@@ -271,3 +271,4 @@ backend/model/README.dataset.txt
 backend/model/README.roboflow.txt
 
 backend/check_db.py
+backend/test_friendly_errors.py

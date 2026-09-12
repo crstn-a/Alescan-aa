@@ -203,12 +203,74 @@ def log_scan_event(
 
 
 
+def format_friendly_error(module: str, message: str) -> str:
+    """
+    Translates raw technical error messages and exception stack traces
+    into clear, non-technical descriptions for administration error logging.
+    Example: 'Could not load YOLOv26 model from best.pt, contact developer'
+    """
+    if not message:
+        return f"An unknown issue occurred in the {module or 'system'} module, contact developer"
+
+    msg_lower = message.lower()
+
+    # 1. Vision / YOLO Model loading or inference errors
+    if any(k in msg_lower for k in ["best.pt", "yolo", "model weights", "ultralytics", "cuda", "pytorch"]):
+        if "not found" in msg_lower or "best.pt" in msg_lower or "weights" in msg_lower:
+            return "Could not load YOLOv26 model from best.pt, contact developer"
+        return "AI vision model error encountered during detection, contact developer"
+
+    if "decode image" in msg_lower or "image read" in msg_lower or "cannot identify image" in msg_lower:
+        return "Could not decode uploaded scan image file, contact developer"
+
+    # 2. Sync / DA Google Sheet errors
+    if any(k in msg_lower for k in ["sheet", "google sheet", "csv", "fetch_sheet", "parse_sheet"]):
+        return "Could not fetch or sync commodity prices from DA Google Sheet, contact developer"
+
+    if "upsert failed" in msg_lower or "upsert error" in msg_lower:
+        return "Could not update database price records during sync, contact developer"
+
+    # 3. Database / Supabase / Network connection errors
+    if any(k in msg_lower for k in ["postgrest", "supabase", "connection refused", "timeout", "socket", "500", "503", "jwt"]):
+        return f"Database connection issue encountered in {module or 'system'} module, contact developer"
+
+    # 4. Admin / Query / Endpoint operation failures
+    if "get_stats" in msg_lower or "scan_logs" in msg_lower or "sync_logs" in msg_lower or "error_logs" in msg_lower:
+        return f"Failed to load administrative logs or statistics in {module or 'system'} module, contact developer"
+
+    if "user_register" in msg_lower or "submit_report" in msg_lower or "my_reports" in msg_lower:
+        return f"Vendor report processing issue in {module or 'system'} module, contact developer"
+
+    if "violation" in msg_lower:
+        return f"Consumer violation complaint handling issue in {module or 'system'} module, contact developer"
+
+    # 5. Clean fallback: Strip Python exception headers & stack traces if present
+    cleaned = message
+    if ":" in cleaned and any(cleaned.startswith(p) for p in ["RuntimeError", "ValueError", "Exception", "KeyError", "TypeError", "AttributeError", "HTTPException"]):
+        cleaned = cleaned.split(":", 1)[1].strip()
+
+    import re
+    cleaned = re.sub(r'[A-Za-z]:\\[^:\n]+', '', cleaned)
+    cleaned = re.sub(r'/[^\s:\n]+', '', cleaned)
+    cleaned = cleaned.strip(" .:")
+
+    if not cleaned:
+        cleaned = f"An issue occurred in the {module or 'system'} module"
+
+    if "contact developer" not in cleaned.lower() and "contact admin" not in cleaned.lower():
+        cleaned = f"{cleaned}, contact developer"
+
+    return cleaned
+
+
 def log_error(module: str, message: str):
-    """Write to error_logs from any module."""
+    """Write to error_logs from any module with non-tech friendly description."""
+    friendly_message = format_friendly_error(module, message)
     try:
         get_supabase().table("error_logs").insert({
             "module": module,
-            "message": message
+            "message": friendly_message
         }).execute()
     except Exception as e:
-        logger.error(f"[{module}] Failed to record log to Supabase ({e}): {message}")
+        logger.error(f"[{module}] Failed to record log to Supabase ({e}): {friendly_message}")
+
