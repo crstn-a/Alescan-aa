@@ -181,6 +181,27 @@ function formatFriendlyErrorMessage(module, msg) {
   return cleaned
 }
 
+const MODULE_COLORS = {
+  vision:  { bg: '#f3e8ff', color: '#6b21a8', bd: '#e9d5ff', dot: '#9333ea' }, // Purple (AI Vision)
+  sync:    { bg: '#e0f2fe', color: '#075985', bd: '#bae6fd', dot: '#0284c7' }, // Blue / Sky (Sheet Sync)
+  scan:    { bg: '#dcfce7', color: '#166534', bd: '#bbf7d0', dot: '#16a34a' }, // Emerald (Scans)
+  admin:   { bg: '#fef3c7', color: '#92400e', bd: '#fde68a', dot: '#d97706' }, // Amber (Admin)
+  reports: { bg: '#ccfbf1', color: '#115e59', bd: '#99f6e4', dot: '#0d9488' }, // Teal (Reports)
+  prices:  { bg: '#ffe4e6', color: '#9f1239', bd: '#fecdd3', dot: '#e11d48' }, // Rose (Prices)
+  db:      { bg: '#f1f5f9', color: '#334155', bd: '#e2e8f0', dot: '#64748b' }, // Slate (Database)
+}
+
+function getModuleColor(mod) {
+  const key = String(mod || '').toLowerCase().trim()
+  return MODULE_COLORS[key] || {
+    bg: C.errorRedBg,
+    color: C.errorRedDark,
+    bd: C.errorRedBorder,
+    dot: C.errorRed
+  }
+}
+
+
 
 /* ── Stat Card ──────────────────────────────────────────────────────── */
 function StatCard({ label, value, sub, trend, icon, accent, isErrorCard, loading }) {
@@ -991,16 +1012,20 @@ export default function AdminDashboard() {
     4: [
       {
         key: 'module', label: 'Module',
-        render: v => (
-          <span style={{
-            fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
-            background: C.errorRedBg, color: C.errorRedDark, border: `1px solid ${C.errorRedBorder}`,
-            padding: '4px 10px', borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 6
-          }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.errorRed }} />
-            {v}
-          </span>
-        )
+        render: v => {
+          const style = getModuleColor(v)
+          return (
+            <span style={{
+              fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
+              background: style.bg, color: style.color, border: `1px solid ${style.bd}`,
+              padding: '4px 10px', borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 6,
+              textTransform: 'uppercase', letterSpacing: '.04em'
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: style.dot }} />
+              {v || 'system'}
+            </span>
+          )
+        }
       },
       {
         key: 'message', label: 'Error Trace / Message',
@@ -2157,7 +2182,8 @@ export default function AdminDashboard() {
               }}>
                 <div style={{
                   padding: '16px 22px', borderBottom: `1px solid ${C.errorRedBorder}`,
-                  background: C.errorRedBg, display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                  background: C.errorRedBg, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  flexWrap: 'wrap', gap: 12
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ width: 34, height: 34, borderRadius: 9, background: C.white, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.errorRed, border: `1px solid ${C.errorRedBorder}` }}>
@@ -2169,6 +2195,21 @@ export default function AdminDashboard() {
                         {tabLoading ? 'Loading exception records...' : `${Array.isArray(data) ? data.length : 0} error event${Array.isArray(data) && data.length !== 1 ? 's' : ''} captured`}
                       </p>
                     </div>
+                  </div>
+
+                  {/* Module Categories Color Legend */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    {Object.entries(MODULE_COLORS).map(([mod, s]) => (
+                      <span key={mod} style={{
+                        fontFamily: 'monospace', fontSize: 10, fontWeight: 700,
+                        background: s.bg, color: s.color, border: `1px solid ${s.bd}`,
+                        padding: '2px 7px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4,
+                        textTransform: 'uppercase', letterSpacing: '.03em'
+                      }}>
+                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: s.dot }} />
+                        {mod}
+                      </span>
+                    ))}
                   </div>
                 </div>
                 <DataTable columns={COLS[4] || []} rows={Array.isArray(data) ? data : []} loading={tabLoading} />
