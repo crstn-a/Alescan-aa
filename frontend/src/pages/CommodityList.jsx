@@ -681,8 +681,6 @@ export default function CommodityList() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                <span>🔒</span>
-                <span>Sneak Peek Mode • {displayedPrices.length} Items</span>
               </div>
             ) : (
               <div
