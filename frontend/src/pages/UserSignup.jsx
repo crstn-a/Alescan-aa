@@ -23,7 +23,7 @@ const C = {
 export default function UserSignup() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirectUrl = searchParams.get('redirect') || '/scanner'
+  const redirectUrl = searchParams.get('redirect') || '/commodities'
   const { register, loading, error } = useUserAuth()
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', phone: '', password: '', confirmPassword: '',

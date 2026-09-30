@@ -35,7 +35,7 @@ const Icons = {
 export default function UserLogin() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirectUrl = searchParams.get('redirect') || '/scanner'
+  const redirectUrl = searchParams.get('redirect') || '/commodities'
   const { login, loading, error } = useUserAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

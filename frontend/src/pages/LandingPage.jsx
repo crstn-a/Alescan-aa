@@ -194,7 +194,7 @@ export default function LandingPage() {
 
               {authed ? (
                 <Link
-                  to="/report"
+                  to="/commodities"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -209,7 +209,7 @@ export default function LandingPage() {
                     textDecoration: 'none',
                   }}
                 >
-                  👤 {user?.first_name || 'Member'}
+                  👤 {user?.first_name || 'Member'} (Dashboard)
                 </Link>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -365,7 +365,7 @@ export default function LandingPage() {
                     </div>
                   ) : (
                     <Link
-                      to="/report"
+                      to="/commodities"
                       onClick={closeMobileMenu}
                       style={{
                         display: 'flex',
@@ -383,7 +383,7 @@ export default function LandingPage() {
                         marginTop: 8,
                       }}
                     >
-                      👤 {user?.first_name || 'Member'}
+                      👤 {user?.first_name || 'Member'} (Dashboard)
                     </Link>
                   )}
                 </div>
