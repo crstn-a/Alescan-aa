@@ -490,8 +490,6 @@ export default function CommodityList() {
                   gap: 6,
                 }}
               >
-                <span>🔒</span>
-                Sneak Peek: Showing {displayedPrices.length} of {prices.length} commodities
               </div>
             ) : (
               <div
