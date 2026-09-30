@@ -917,9 +917,9 @@ For each parsed commodity record:
 ### Admin Authentication
 
 - **Login:** `POST /admin/api/login` -> credentials checked against `admin_users` (bcrypt verify)
-- **Token:** HS256 JWT, payload `{ sub: username, type: "admin", exp: +8h }`
+- **Token:** HS256 JWT, payload `{ sub: username, type: "admin", role: "admin", exp: +8h }`
 - **Secret Key:** `JWT_SECRET` environment variable
-- **Guard:** `AdminAuthMiddleware` checks `Authorization: Bearer <token>` on all `/admin/api/*` routes except `/admin/api/login`
+- **Guard:** `AdminAuthMiddleware` validates `Authorization: Bearer <token>`, verifies the `admin` role claim, and authorizes against current account status in `admin_users` table on each request. Attachments are saved to `request.state.admin_user`. Exempts only public routes and `/admin/api/login`.
 
 ### User (Consumer) Authentication
 

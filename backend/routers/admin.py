@@ -24,12 +24,14 @@ def admin_login(body: LoginRequest):
     user = authenticate_admin(body.username, body.password)
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
-    token = create_access_token(user["username"])
+    role = user.get("role", "admin")
+    token = create_access_token(user["username"], role=role)
     logger.info(f"Admin login successful: {user['username']}")
     return {
         "access_token": token,
         "token_type":   "bearer",
         "username":     user["username"],
+        "role":         role,
     }
 
 
