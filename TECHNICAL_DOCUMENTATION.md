@@ -651,7 +651,7 @@ Scan analytics including detection performance split, daily volume, and commodit
   ],
   "daily_volume": [{ "date": "2026-09-01", "scans": 34 }],
   "commodity_performance": [
-    { "name": "Bangus", "total": 120, "Success": 98, "Medium Confidence": 15, "Low Confidence": 15, "Failed": 7 }
+    { "name": "Bangus", "total": 120, "Success": 98, "Medium Confidence": 15, "Failed": 7 }
   ]
 }
 ```

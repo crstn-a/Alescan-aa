@@ -81,7 +81,7 @@ def get_analytics_scans(start_date: str = None, end_date: str = None):
         
         # 1. Detection performance (pie chart) - overall totals
         success = 0
-        low_conf = 0
+        medium_conf = 0
         failed = 0
         total = len(all_scans.data or [])
         
@@ -89,7 +89,7 @@ def get_analytics_scans(start_date: str = None, end_date: str = None):
         daily_volume = defaultdict(int)
         
         # 3. Commodity performance — initialize for ALL active products so every commodity is tracked
-        commodity_perf = defaultdict(lambda: {"total": 0, "failed": 0, "low_conf": 0, "success": 0})
+        commodity_perf = defaultdict(lambda: {"total": 0, "failed": 0, "medium_conf": 0, "success": 0})
         
         try:
             db_prods = sb.table("products").select("display_name, name").execute()
@@ -103,11 +103,11 @@ def get_analytics_scans(start_date: str = None, end_date: str = None):
         for row in (all_scans.data or []):
             conf = row.get("confidence") or 0
             is_success = conf >= 0.70
-            is_low_conf = 0.50 <= conf < 0.70
+            is_medium_conf = 0.50 <= conf < 0.70
             is_failed = conf < 0.50 or not row.get("products")
             
             if is_success: success += 1
-            elif is_low_conf: low_conf += 1
+            elif is_medium_conf: medium_conf += 1
             else: failed += 1
             
             scanned_at = row.get("scanned_at")
@@ -120,8 +120,8 @@ def get_analytics_scans(start_date: str = None, end_date: str = None):
             commodity_perf[prod_name]["total"] += 1
             if is_failed:
                 commodity_perf[prod_name]["failed"] += 1
-            elif is_low_conf:
-                commodity_perf[prod_name]["low_conf"] += 1
+            elif is_medium_conf:
+                commodity_perf[prod_name]["medium_conf"] += 1
             else:
                 commodity_perf[prod_name]["success"] += 1
 
@@ -131,8 +131,7 @@ def get_analytics_scans(start_date: str = None, end_date: str = None):
                 "name": k,
                 "total": v["total"],
                 "Success": v["success"],
-                "Medium Confidence": v["low_conf"],
-                "Low Confidence": v["low_conf"],
+                "Medium Confidence": v["medium_conf"],
                 "Failed": v["failed"]
             }
             for k, v in sorted(commodity_perf.items(), key=lambda item: (-item[1]["total"], item[0]))
@@ -142,7 +141,7 @@ def get_analytics_scans(start_date: str = None, end_date: str = None):
         if total > 0:
             detection_split = [
                 {"name": "High Confidence", "value": round((success / total) * 100, 1)},
-                {"name": "Medium Confidence", "value": round((low_conf / total) * 100, 1)},
+                {"name": "Medium Confidence", "value": round((medium_conf / total) * 100, 1)},
                 {"name": "Low Confidence / Failed", "value": round((failed / total) * 100, 1)}
             ]
         else:
