@@ -492,11 +492,6 @@ export default function LandingPage() {
                   </button>
                 </div>
 
-                {/* Free trial note */}
-                <p style={{ fontSize: 13, color: C.textMuted, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ color: C.primaryDark, fontWeight: 700 }}>⚡ 5 Free Guest Scans</span> • Sign up as a user to unlock more tries, reporting & price search
-                </p>
-
                 {/* Stats row (responsive) */}
                 <div className="stats-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginTop: 48 }}>
                   {[
@@ -634,44 +629,6 @@ export default function LandingPage() {
               Spotted a vendor selling above the suggested retail price? Help keep market prices fair by filing a report.
               Your submission becomes a task ticket for our Market Officers.
             </p>
-          </div>
-
-          {/* Member Benefits Grid */}
-          <div style={{
-            background: C.bg,
-            borderRadius: 18,
-            padding: '24px',
-            border: `1px solid ${C.border}`,
-            marginBottom: 36,
-          }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: C.primaryDark, letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 14, textAlign: 'center' }}>
-              ⭐ Sign Up as an Actual User & Unlock 3 Core Benefits
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-              <div style={{ background: '#fff', padding: '16px', borderRadius: 12, border: `1px solid ${C.border}` }}>
-                <span style={{ fontSize: 24, display: 'block', marginBottom: 6 }}>🎯</span>
-                <h4 style={{ fontSize: 15, fontWeight: 700, color: C.g900, marginBottom: 4 }}>More Scanning Tries</h4>
-                <p style={{ fontSize: 13, color: C.textSecondary, margin: 0, lineHeight: 1.4 }}>
-                  Guests get 5 free trial scans. Registered users enjoy extended scans to verify market prices without spam locks.
-                </p>
-              </div>
-
-              <div style={{ background: '#fff', padding: '16px', borderRadius: 12, border: `1px solid ${C.border}` }}>
-                <span style={{ fontSize: 24, display: 'block', marginBottom: 6 }}>📢</span>
-                <h4 style={{ fontSize: 15, fontWeight: 700, color: C.g900, marginBottom: 4 }}>Report Price Concerns</h4>
-                <p style={{ fontSize: 13, color: C.textSecondary, margin: 0, lineHeight: 1.4 }}>
-                  Spot an overpriced stall? File tickets directly for Market Officers to inspect and maintain fair pricing.
-                </p>
-              </div>
-
-              <div style={{ background: '#fff', padding: '16px', borderRadius: 12, border: `1px solid ${C.border}` }}>
-                <span style={{ fontSize: 24, display: 'block', marginBottom: 6 }}>🔍</span>
-                <h4 style={{ fontSize: 15, fontWeight: 700, color: C.g900, marginBottom: 4 }}>Search All Commodities</h4>
-                <p style={{ fontSize: 13, color: C.textSecondary, margin: 0, lineHeight: 1.4 }}>
-                  Search the complete directory of commodities and check DA Bantay Presyo prevailing prices anytime.
-                </p>
-              </div>
-            </div>
           </div>
 
           {/* 3-Step Visual Guide */}

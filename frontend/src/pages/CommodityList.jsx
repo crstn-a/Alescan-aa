@@ -4,6 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { getAllPrices } from '../api/scanApi';
 import { useUserAuth } from '../hooks/useUserAuth';
 
+const SNEAK_PEEK_LIMIT = 22;
+
 const C = {
   primary: '#22c55e',
   primaryDark: '#16a34a',
@@ -46,6 +48,7 @@ export default function CommodityList() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('name-asc'); // 'name-asc' | 'price-asc' | 'price-desc'
+  const [showAuthGateModal, setShowAuthGateModal] = useState(false);
 
   useEffect(() => {
     async function loadPrices() {
@@ -72,7 +75,7 @@ export default function CommodityList() {
     return ['All', ...Array.from(set).sort()];
   }, [prices]);
 
-  // Filter and sort items
+  // Full filter and sort items (for authenticated users)
   const filteredPrices = useMemo(() => {
     let result = [...prices];
 
@@ -107,6 +110,16 @@ export default function CommodityList() {
     return result;
   }, [prices, selectedCategory, search, sortBy]);
 
+  // If unauthenticated, only show sneak peek of top 4 items
+  const displayedPrices = useMemo(() => {
+    if (!authed) {
+      return prices.slice(0, SNEAK_PEEK_LIMIT);
+    }
+    return filteredPrices;
+  }, [authed, prices, filteredPrices]);
+
+  const lockedCount = Math.max(0, prices.length - SNEAK_PEEK_LIMIT);
+
   const handleReportItem = (item) => {
     if (!authed) {
       navigate('/user/login?redirect=' + encodeURIComponent('/commodities'));
@@ -119,6 +132,12 @@ export default function CommodityList() {
         price_seen: item.price_prevailing || '',
       },
     });
+  };
+
+  const handleSearchBoxClick = () => {
+    if (!authed) {
+      setShowAuthGateModal(true);
+    }
   };
 
   return (
@@ -135,6 +154,8 @@ export default function CommodityList() {
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+        @keyframes spin{to{transform:rotate(360deg)}}
         .comm-card{transition:all .18s ease}
         .comm-card:hover{transform:translateY(-2px);box-shadow:0 12px 24px -6px rgba(0,0,0,.08)}
         .cat-chip{transition:all .15s}
@@ -302,13 +323,13 @@ export default function CommodityList() {
           >
             <div style={{ maxWidth: 680 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.18)', borderRadius: 20, padding: '3px 10px', marginBottom: 8, fontSize: 11, fontWeight: 700 }}>
-                ⭐ Member Benefit
+                🔒 Guest Sneak Peek
               </div>
               <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px' }}>
-                Full Search & Overall Commodity Prices
+                Full Search is Exclusive to Registered Users
               </h2>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.5 }}>
-                Registered users enjoy complete search access across all monitored agricultural commodities, more camera scan tries, and direct price reporting to Market Officers.
+                You are currently viewing a sneak peek of {SNEAK_PEEK_LIMIT} commodities. Create an account to unlock complete keyword search, filter all categories, and view all {prices.length} monitored market items.
               </p>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -326,7 +347,7 @@ export default function CommodityList() {
                   boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
                 }}
               >
-                Sign Up for Free
+                Sign Up to Unlock Search
               </button>
               <button
                 onClick={() => navigate('/user/login?redirect=/commodities')}
@@ -357,12 +378,44 @@ export default function CommodityList() {
               Synchronized from Department of Agriculture (DA) Bantay Presyo • Olongapo City Public Market
             </p>
           </div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: C.textSecondary, background: C.surface, padding: '6px 14px', borderRadius: 12, border: `1px solid ${C.border}` }}>
-            Showing <strong style={{ color: C.g800 }}>{filteredPrices.length}</strong> commodities
+          <div>
+            {!authed ? (
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#b45309',
+                  background: '#fffbeb',
+                  border: '1px solid #fef3c7',
+                  padding: '6px 12px',
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <span>🔒</span>
+                Sneak Peek: Showing {displayedPrices.length} of {prices.length} commodities
+              </div>
+            ) : (
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: C.textSecondary,
+                  background: C.surface,
+                  padding: '6px 14px',
+                  borderRadius: 12,
+                  border: `1px solid ${C.border}`,
+                }}
+              >
+                Showing <strong style={{ color: C.g800 }}>{filteredPrices.length}</strong> of {prices.length} commodities
+              </div>
+            )}
           </div>
         </div>
 
-        {/* ── Search & Filter Controls ──────────────────────────── */}
+        {/* ── Search & Filter Controls (Gated for guests) ────────── */}
         <div
           style={{
             background: C.surface,
@@ -374,61 +427,120 @@ export default function CommodityList() {
             flexDirection: 'column',
             gap: 14,
             boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            position: 'relative',
           }}
         >
           {/* Search bar & Sort row */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
+            <div
+              style={{
+                flex: 1,
+                minWidth: 240,
+                position: 'relative',
+                cursor: !authed ? 'pointer' : 'default',
+              }}
+              onClick={handleSearchBoxClick}
+            >
               <svg
                 width="18"
                 height="18"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke={C.textMuted}
+                stroke={!authed ? '#9ca3af' : C.textMuted}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}
               >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                {!authed ? (
+                  <>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </>
+                ) : (
+                  <>
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </>
+                )}
               </svg>
               <input
                 className="search-input"
                 type="text"
-                placeholder="Search commodities by name, category, or specification..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                placeholder={
+                  !authed
+                    ? '🔒 Full search is for registered members only — Tap to unlock'
+                    : 'Search commodities by name, category, or specification...'
+                }
+                value={authed ? search : ''}
+                readOnly={!authed}
+                onChange={(e) => {
+                  if (authed) setSearch(e.target.value);
+                }}
                 style={{
                   width: '100%',
                   height: 44,
-                  padding: '0 14px 0 42px',
+                  padding: !authed ? '0 120px 0 42px' : '0 14px 0 42px',
                   borderRadius: 10,
-                  border: `1.5px solid ${C.border}`,
+                  border: `1.5px solid ${!authed ? 'rgba(245,158,11,0.4)' : C.border}`,
                   fontSize: 14,
-                  background: C.bg,
+                  background: !authed ? '#fffdf7' : C.bg,
                   color: C.text,
+                  cursor: !authed ? 'pointer' : 'text',
                   transition: 'all .15s',
                 }}
               />
-              {search && (
+              {!authed ? (
                 <button
-                  onClick={() => setSearch('')}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAuthGateModal(true);
+                  }}
                   style={{
                     position: 'absolute',
-                    right: 12,
+                    right: 8,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    background: 'none',
+                    background: C.primaryDark,
+                    color: '#fff',
                     border: 'none',
-                    color: C.textMuted,
+                    borderRadius: 8,
+                    padding: '6px 12px',
+                    fontSize: 11,
+                    fontWeight: 700,
                     cursor: 'pointer',
-                    fontSize: 16,
-                    padding: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
                   }}
                 >
-                  ✕
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  Unlock Search
                 </button>
+              ) : (
+                search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    style={{
+                      position: 'absolute',
+                      right: 12,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: C.textMuted,
+                      cursor: 'pointer',
+                      fontSize: 16,
+                      padding: 4,
+                    }}
+                  >
+                    ✕
+                  </button>
+                )
               )}
             </div>
 
@@ -437,7 +549,11 @@ export default function CommodityList() {
               <span style={{ fontSize: 13, color: C.textSecondary, fontWeight: 600 }}>Sort by:</span>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                disabled={!authed}
+                onChange={(e) => {
+                  if (authed) setSortBy(e.target.value);
+                  else setShowAuthGateModal(true);
+                }}
                 style={{
                   height: 44,
                   padding: '0 12px',
@@ -445,9 +561,9 @@ export default function CommodityList() {
                   border: `1.5px solid ${C.border}`,
                   fontSize: 13,
                   fontWeight: 600,
-                  background: C.bg,
-                  color: C.text,
-                  cursor: 'pointer',
+                  background: !authed ? '#f3f4f6' : C.bg,
+                  color: !authed ? C.textMuted : C.text,
+                  cursor: !authed ? 'not-allowed' : 'pointer',
                   outline: 'none',
                 }}
               >
@@ -461,24 +577,34 @@ export default function CommodityList() {
           {/* Category Chips */}
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
             {categories.map((cat) => {
-              const active = selectedCategory === cat;
+              const active = authed && selectedCategory === cat;
               return (
                 <button
                   key={cat}
                   className="cat-chip"
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => {
+                    if (!authed) {
+                      setShowAuthGateModal(true);
+                    } else {
+                      setSelectedCategory(cat);
+                    }
+                  }}
                   style={{
                     padding: '6px 14px',
                     borderRadius: 20,
                     fontSize: 13,
                     fontWeight: active ? 700 : 500,
                     background: active ? C.g800 : C.surface,
-                    color: active ? '#fff' : C.textSecondary,
+                    color: active ? '#fff' : !authed ? C.textMuted : C.textSecondary,
                     border: `1px solid ${active ? C.g800 : C.border}`,
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
                   }}
                 >
+                  {!authed && cat !== 'All' && <span style={{ fontSize: 11 }}>🔒</span>}
                   {cat}
                 </button>
               );
@@ -535,7 +661,7 @@ export default function CommodityList() {
           </div>
         )}
 
-        {!loading && !error && filteredPrices.length === 0 && (
+        {authed && !loading && !error && filteredPrices.length === 0 && (
           <div
             style={{
               background: C.surface,
@@ -573,8 +699,8 @@ export default function CommodityList() {
           </div>
         )}
 
-        {/* ── Commodity Grid ──────────────────────────────────────── */}
-        {!loading && !error && filteredPrices.length > 0 && (
+        {/* ── Commodity Grid (Full list if authed, Sneak Peek if guest) ── */}
+        {!loading && !error && displayedPrices.length > 0 && (
           <div
             style={{
               display: 'grid',
@@ -582,7 +708,7 @@ export default function CommodityList() {
               gap: 16,
             }}
           >
-            {filteredPrices.map((item, idx) => {
+            {displayedPrices.map((item, idx) => {
               const name = item.commodity_name || item.product || 'Commodity';
               const pricePrevailing = Number(item.price_prevailing ?? item.price_average ?? 0);
               const priceLow = Number(item.price_low ?? pricePrevailing);
@@ -725,7 +851,221 @@ export default function CommodityList() {
             })}
           </div>
         )}
+
+        {/* ── Sneak Peek Lock Banner & Teaser below cards ─────────── */}
+        {!authed && !loading && !error && lockedCount > 0 && (
+          <div
+            style={{
+              marginTop: 28,
+              background: `linear-gradient(135deg, ${C.g800} 0%, ${C.primaryDark} 100%)`,
+              borderRadius: 20,
+              padding: '32px 24px',
+              color: '#fff',
+              textAlign: 'center',
+              boxShadow: '0 12px 30px rgba(22, 101, 52, 0.2)',
+              position: 'relative',
+              overflow: 'hidden',
+              animation: 'fadeUp .3s ease',
+            }}
+          >
+            <div
+              style={{
+                width: 54,
+                height: 54,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                fontSize: 26,
+              }}
+            >
+              🔒
+            </div>
+
+            <h3 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 8px', color: '#fff' }}>
+              +{lockedCount} More Commodities Locked
+            </h3>
+
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.88)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.55 }}>
+              You are currently viewing a sneak peek of {SNEAK_PEEK_LIMIT} commodities. Full search and access to all {prices.length} monitored commodities are exclusive to registered actual users.
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => navigate('/user/signup?redirect=/commodities')}
+                style={{
+                  background: '#fff',
+                  color: C.g800,
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '12px 24px',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+                }}
+              >
+                Sign Up to Unlock Full Search
+              </button>
+
+              <button
+                onClick={() => navigate('/user/login?redirect=/commodities')}
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  color: '#fff',
+                  border: '1.5px solid rgba(255,255,255,0.35)',
+                  borderRadius: 12,
+                  padding: '12px 20px',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Sign In
+              </button>
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* ── Auth Gate Modal for Search & Filtering ───────────────── */}
+      {showAuthGateModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+            animation: 'fadeIn .2s ease',
+          }}
+          onClick={() => setShowAuthGateModal(false)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 20,
+              maxWidth: 440,
+              width: '100%',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              animation: 'fadeUp .25s ease',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header banner */}
+            <div
+              style={{
+                background: `linear-gradient(135deg, ${C.g800} 0%, ${C.primaryDark} 100%)`,
+                padding: '24px 24px 20px',
+                color: '#fff',
+              }}
+            >
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, marginBottom: 10 }}>
+                🔒 Members Only Feature
+              </div>
+              <h3 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px', color: '#fff', lineHeight: 1.25 }}>
+                Full Commodity Search
+              </h3>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.5 }}>
+                Unauthenticated guests can view a sneak peek of the commodity list. Sign up as an actual user to unlock full search and filtering.
+              </p>
+            </div>
+
+            {/* Benefits list */}
+            <div style={{ padding: '20px 24px' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>
+                Benefits for Registered Users:
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C.bg, padding: '10px 12px', borderRadius: 10, border: `1px solid ${C.border}` }}>
+                  <span style={{ fontSize: 18 }}>🔍</span>
+                  <div>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: 0 }}>Full Search Across All Commodities</h4>
+                    <p style={{ fontSize: 11, color: C.textSecondary, margin: 0 }}>Search by keyword, category, and specifications.</p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C.bg, padding: '10px 12px', borderRadius: 10, border: `1px solid ${C.border}` }}>
+                  <span style={{ fontSize: 18 }}>🎯</span>
+                  <div>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: 0 }}>More Scanning Tries</h4>
+                    <p style={{ fontSize: 11, color: C.textSecondary, margin: 0 }}>Extended camera scans without the 5-scan trial lock.</p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C.bg, padding: '10px 12px', borderRadius: 10, border: `1px solid ${C.border}` }}>
+                  <span style={{ fontSize: 18 }}>📢</span>
+                  <div>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: 0 }}>Report Overpriced Vendors</h4>
+                    <p style={{ fontSize: 11, color: C.textSecondary, margin: 0 }}>File price concern tickets directly to Market Officers.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button
+                  onClick={() => navigate('/user/signup?redirect=/commodities')}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: 12,
+                    border: 'none',
+                    background: C.primaryDark,
+                    color: '#fff',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(22,163,74,0.3)',
+                  }}
+                >
+                  Sign Up for Free
+                </button>
+
+                <button
+                  onClick={() => navigate('/user/login?redirect=/commodities')}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: 12,
+                    border: `1.5px solid ${C.border}`,
+                    background: '#fff',
+                    color: C.text,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Sign In to Existing Account
+                </button>
+
+                <button
+                  onClick={() => setShowAuthGateModal(false)}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: C.textMuted,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Continue Browsing Sneak Peek
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
