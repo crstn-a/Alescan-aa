@@ -281,74 +281,41 @@ export default function LiveMap({ refreshTrigger }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* ── Top Info & Latency Telemetry Header ── */}
+      {/* ── Realtime Status Card (Overall Top) ── */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: 16,
+        background: '#ffffff',
+        borderRadius: 14,
+        padding: '16px 20px',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
       }}>
-        {/* Realtime Status Card */}
+        <div>
+          <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', margin: '0 0 4px 0' }}>
+            Supabase Realtime Stream
+          </p>
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: 0 }}>
+            {validScansCount} Active Markers
+          </p>
+        </div>
         <div style={{
-          background: '#ffffff',
-          borderRadius: 14,
-          padding: '16px 20px',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          gap: 8,
+          padding: '6px 12px',
+          borderRadius: 20,
+          background: realtimeStatus === 'connected' ? '#f0fdf4' : '#fef2f2',
+          border: `1px solid ${realtimeStatus === 'connected' ? '#dcfce7' : '#fee2e2'}`,
         }}>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', margin: '0 0 4px 0' }}>
-              Supabase Realtime Stream
-            </p>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: 0 }}>
-              {validScansCount} Active Markers
-            </p>
-          </div>
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '6px 12px',
-            borderRadius: 20,
-            background: realtimeStatus === 'connected' ? '#f0fdf4' : '#fef2f2',
-            border: `1px solid ${realtimeStatus === 'connected' ? '#dcfce7' : '#fee2e2'}`,
-          }}>
-            <div style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: realtimeStatus === 'connected' ? '#22c55e' : '#ef4444',
-            }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: realtimeStatus === 'connected' ? '#166534' : '#991b1b' }}>
-              {realtimeStatus === 'connected' ? 'Live Connected' : 'Connecting...'}
-            </span>
-          </div>
-        </div>
-
-        {/* Latency Instrumentation Card */}
-        <div style={{
-          background: '#ffffff',
-          borderRadius: 14,
-          padding: '16px 20px',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-        }}>
-          <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', margin: '0 0 6px 0' }}>
-            Pipeline Latency Instrumentation
-          </p>
-          {latestLatency ? (
-            <div style={{ fontSize: 12, color: '#374151', display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <div><strong>Processing Latency:</strong> <span style={{ color: '#16a34a', fontWeight: 700 }}>{latestLatency.processing_latency_ms}</span></div>
-              <div><strong>Realtime Delivery Latency:</strong> <span style={{ color: '#2563eb', fontWeight: 700 }}>{latestLatency.realtime_latency_ms}</span></div>
-              <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>
-                *Timestamps account for client/server clock variations.
-              </div>
-            </div>
-          ) : (
-            <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
-              Waiting for live scan event... (showing past scans)
-            </p>
-          )}
+            width: 8, height: 8, borderRadius: '50%',
+            background: realtimeStatus === 'connected' ? '#22c55e' : '#ef4444',
+          }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: realtimeStatus === 'connected' ? '#166534' : '#991b1b' }}>
+            {realtimeStatus === 'connected' ? 'Live Connected' : 'Connecting...'}
+          </span>
         </div>
       </div>
 
