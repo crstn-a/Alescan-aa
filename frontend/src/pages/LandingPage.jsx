@@ -53,6 +53,14 @@ export default function LandingPage() {
     return () => window.removeEventListener('resize', checkIfMobile)
   }, [])
 
+  // If user is logged in, their home is the commodity dashboard.
+  // To view the landing page, they need to log out.
+  useEffect(() => {
+    if (authed) {
+      navigate('/commodities', { replace: true })
+    }
+  }, [authed, navigate])
+
   // Close mobile menu when clicking a link or resizing to desktop
   const closeMobileMenu = () => setMobileMenuOpen(false)
 

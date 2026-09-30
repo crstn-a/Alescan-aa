@@ -54,6 +54,19 @@ export default function CommodityList() {
   const handleLogout = () => {
     logout();
     setShowLogoutModal(false);
+    navigate('/');
+  };
+
+  const handleLogoClick = (e) => {
+    e.preventDefault();
+    if (authed) {
+      setSearch('');
+      setSelectedCategory('All');
+      setSortBy('name-asc');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate('/');
+    }
   };
 
   useEffect(() => {
@@ -192,15 +205,16 @@ export default function CommodityList() {
           }}
         >
           {/* Logo & title */}
-          <Link
-            to="/"
+          <div
+            onClick={handleLogoClick}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 10,
-              textDecoration: 'none',
-              color: 'inherit',
+              cursor: 'pointer',
+              userSelect: 'none',
             }}
+            title={authed ? "Refresh Commodity Dashboard" : "Go to Alescan Home"}
           >
             <img src="/Alescan-Logo.png" alt="Alescan" style={{ width: 36, height: 36, objectFit: 'contain' }} />
             <div>
@@ -211,7 +225,7 @@ export default function CommodityList() {
                 Home Dashboard • Commodity Directory
               </span>
             </div>
-          </Link>
+          </div>
 
           {/* Quick nav links */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

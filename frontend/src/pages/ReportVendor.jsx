@@ -208,10 +208,10 @@ export default function ReportVendor() {
           alignItems: 'center',
           justifyContent: 'space-between',
         }}>
-          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+          <Link to="/commodities" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }} title="Back to Commodity Dashboard">
             <img src="/Alescan-Logo.png" alt="Alescan" style={{ width: 36, height: 36, objectFit: 'contain' }} />
             <span style={{ fontSize: 18, fontWeight: 800, color: C.g900, letterSpacing: '.02em' }}>ALESCAN</span>
-          </a>
+          </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Link
               to="/scanner"
