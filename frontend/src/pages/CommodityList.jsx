@@ -483,13 +483,15 @@ export default function CommodityList() {
                   color: '#b45309',
                   background: '#fffbeb',
                   border: '1px solid #fef3c7',
-                  padding: '6px 12px',
+                  padding: '6px 14px',
                   borderRadius: 12,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
                 }}
               >
+                <span>🔒</span>
+                Sneak Peek: Showing {displayedPrices.length} of {prices.length} commodities
               </div>
             ) : (
               <div
@@ -563,7 +565,7 @@ export default function CommodityList() {
                 type="text"
                 placeholder={
                   !authed
-                    ? 'Full search is for registered members only, Tap to unlock'
+                    ? 'Full search is for registered members only — Tap to unlock'
                     : 'Search commodities by name, category, or specification...'
                 }
                 value={authed ? search : ''}
@@ -574,7 +576,7 @@ export default function CommodityList() {
                 style={{
                   width: '100%',
                   height: 44,
-                  padding: !authed ? '0 120px 0 42px' : '0 14px 0 42px',
+                  padding: !authed ? '0 135px 0 42px' : '0 14px 0 42px',
                   borderRadius: 10,
                   border: `1.5px solid ${!authed ? 'rgba(245,158,11,0.4)' : C.border}`,
                   fontSize: 14,
@@ -584,27 +586,59 @@ export default function CommodityList() {
                   transition: 'all .15s',
                 }}
               />
-              : (
-              search && (
-              <button
-                onClick={() => setSearch('')}
-                style={{
-                  position: 'absolute',
-                  right: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: C.textMuted,
-                  cursor: 'pointer',
-                  fontSize: 16,
-                  padding: 4,
-                }}
-              >
-                ✕
-              </button>
-              )
-              )
+              {!authed ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAuthGateModal(true);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: C.primaryDark,
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '6px 12px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    boxShadow: '0 2px 6px rgba(22, 163, 74, 0.25)',
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  Unlock Search
+                </button>
+              ) : (
+                search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    style={{
+                      position: 'absolute',
+                      right: 12,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: C.textMuted,
+                      cursor: 'pointer',
+                      fontSize: 16,
+                      padding: 4,
+                    }}
+                  >
+                    ✕
+                  </button>
+                )
+              )}
             </div>
 
             {/* Sort Dropdown */}
