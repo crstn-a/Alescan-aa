@@ -675,7 +675,7 @@ export default function Scanner() {
             : !authed && guestRemaining === 0
               ? 'Free limit reached — tap to sign up'
               : isReady
-                ? (!authed ? `Tap to scan photo (${guestRemaining} of ${GUEST_MAX_SCANS} free tries left)` : 'Tap to scan photo')
+                ? (!authed ? 'Tap to scan photo' : 'Tap to scan photo')
                 : 'Starting camera...'}
         </p>
       </div>
