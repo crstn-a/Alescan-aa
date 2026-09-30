@@ -14,7 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-SECRET_KEY  = os.getenv("JWT_SECRET", "change-this-in-production-env")
+SECRET_KEY  = os.getenv("JWT_SECRET")
 ALGORITHM   = "HS256"
 USER_EXPIRE_MINS = 1440   # 24 hours for public users
 

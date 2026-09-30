@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from services.db import get_supabase
 
-SECRET_KEY  = os.getenv("JWT_SECRET", "change-this-in-production-env")
+SECRET_KEY  = os.getenv("JWT_SECRET")
 ALGORITHM   = "HS256"
 EXPIRE_MINS = 480   # 8 hours
 
