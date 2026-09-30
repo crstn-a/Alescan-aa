@@ -1,5 +1,5 @@
 // frontend/src/pages/CommodityList.jsx
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getAllPrices } from '../api/scanApi';
 import { useUserAuth } from '../hooks/useUserAuth';
@@ -50,6 +50,20 @@ export default function CommodityList() {
   const [sortBy, setSortBy] = useState('name-asc'); // 'name-asc' | 'price-asc' | 'price-desc'
   const [showAuthGateModal, setShowAuthGateModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -257,8 +271,9 @@ export default function CommodityList() {
                 <Link
                   to="/report"
                   style={{
-                    background: C.primaryDark,
-                    color: '#fff',
+                    background: C.g50,
+                    border: `1px solid ${C.g100}`,
+                    color: C.primaryDark,
                     borderRadius: 10,
                     padding: '8px 14px',
                     fontSize: 13,
@@ -267,6 +282,7 @@ export default function CommodityList() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
+                    transition: 'all .15s ease',
                   }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -275,35 +291,119 @@ export default function CommodityList() {
                   </svg>
                   Report Concern
                 </Link>
-                <div
-                  style={{
-                    background: C.g100,
-                    borderRadius: 20,
-                    padding: '4px 10px',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: C.g800,
-                  }}
-                >
-                  👤 {user?.first_name || 'Member'}
+
+                {/* Main Profile CTA Button with Dropdown Popdown */}
+                <div style={{ position: 'relative' }} ref={profileMenuRef}>
+                  <button
+                    onClick={() => setProfileMenuOpen((prev) => !prev)}
+                    style={{
+                      background: C.primaryDark,
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '8px 14px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      boxShadow: '0 4px 12px rgba(22, 163, 74, 0.28)',
+                      transition: 'all .15s ease',
+                    }}
+                    title="Account menu"
+                    aria-expanded={profileMenuOpen}
+                    aria-haspopup="true"
+                  >
+                    <span>👤</span>
+                    <span>{user?.first_name ? `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}` : 'My Account'}</span>
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{
+                        transform: profileMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform .2s ease',
+                      }}
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+
+                  {/* Popdown dropdown */}
+                  {profileMenuOpen && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 8px)',
+                        right: 0,
+                        background: '#fff',
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 12,
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08)',
+                        minWidth: 210,
+                        zIndex: 1000,
+                        padding: '6px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 4,
+                      }}
+                    >
+                      <div style={{ padding: '8px 10px' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
+                          {user?.first_name} {user?.last_name || ''}
+                        </div>
+                        {user?.email && (
+                          <div style={{ fontSize: 11, color: C.textSecondary, marginTop: 2, wordBreak: 'break-all' }}>
+                            {user.email}
+                          </div>
+                        )}
+                        <div style={{ display: 'inline-block', marginTop: 6, fontSize: 10, fontWeight: 700, color: C.primaryDark, background: C.g50, border: `1px solid ${C.g100}`, padding: '2px 6px', borderRadius: 4 }}>
+                          Consumer Account
+                        </div>
+                      </div>
+
+                      <div style={{ height: 1, background: C.border, margin: '2px 0' }} />
+
+                      <button
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          setShowLogoutModal(true);
+                        }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '9px 10px',
+                          border: 'none',
+                          borderRadius: 8,
+                          background: 'transparent',
+                          color: '#dc2626',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'background .15s',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                          <polyline points="16 17 21 12 16 7" />
+                          <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={() => setShowLogoutModal(true)}
-                  style={{
-                    padding: '7px 12px',
-                    borderRadius: 8,
-                    border: `1.5px solid ${C.border}`,
-                    background: C.surface,
-                    color: C.textSecondary,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all .15s',
-                  }}
-                  title="Sign out of your account"
-                >
-                  Sign Out
-                </button>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -351,134 +451,15 @@ export default function CommodityList() {
               color: '#fff',
               marginBottom: 24,
               boxShadow: '0 8px 24px rgba(5, 46, 22, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 16,
             }}
           >
-            <div style={{ maxWidth: 640 }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.18)', borderRadius: 20, padding: '3px 10px', marginBottom: 8, fontSize: 11, fontWeight: 700 }}>
-                ⭐ Consumer Home Dashboard
-              </div>
+            <div>
               <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 6px', color: '#fff' }}>
                 Welcome back, {user?.first_name || 'Consumer'}! 👋
               </h2>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.88)', margin: 0, lineHeight: 1.55 }}>
-                Your centralized price verification center. Browse official DA Bantay Presyo market rates below, or launch the camera scanner and price report tools.
+                Your centralized price verification center. Browse official DA Bantay Presyo market rates below.
               </p>
-            </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => navigate('/scanner')}
-                    style={{
-                      background: C.primary,
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 10,
-                      padding: '10px 16px',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      boxShadow: '0 4px 12px rgba(34,197,94,0.3)',
-                    }}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                      <circle cx="12" cy="13" r="4" />
-                    </svg>
-                    Open Scanner
-                  </button>
-                  <button
-                    onClick={() => navigate('/report')}
-                    style={{
-                      background: 'rgba(255,255,255,0.15)',
-                      color: '#fff',
-                      border: '1px solid rgba(255,255,255,0.3)',
-                      borderRadius: 10,
-                      padding: '10px 16px',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                    </svg>
-                    Report Concern
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Banner if guest */}
-            {!authed && (
-          <div
-            style={{
-              background: `linear-gradient(135deg, ${C.g800} 0%, ${C.primaryDark} 100%)`,
-              borderRadius: 18,
-              padding: '24px 28px',
-              color: '#fff',
-              marginBottom: 24,
-              boxShadow: '0 8px 24px rgba(22, 101, 52, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 16,
-            }}
-          >
-            <div style={{ maxWidth: 680 }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.18)', borderRadius: 20, padding: '3px 10px', marginBottom: 8, fontSize: 11, fontWeight: 700 }}>
-                🔒 Guest Sneak Peek
-              </div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px' }}>
-                Full Search is Exclusive to Registered Users
-              </h2>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.5 }}>
-                You are currently viewing a sneak peek of {SNEAK_PEEK_LIMIT} commodities. Create an account to unlock complete keyword search, filter all categories, and view all {prices.length} monitored market items.
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={() => navigate('/user/signup?redirect=/commodities')}
-                style={{
-                  background: '#fff',
-                  color: C.g800,
-                  border: 'none',
-                  borderRadius: 10,
-                  padding: '10px 18px',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-                }}
-              >
-                Sign Up to Unlock Search
-              </button>
-              <button
-                onClick={() => navigate('/user/login?redirect=/commodities')}
-                style={{
-                  background: 'rgba(255,255,255,0.15)',
-                  color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: 10,
-                  padding: '10px 16px',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Sign In
-              </button>
             </div>
           </div>
         )}
@@ -509,8 +490,6 @@ export default function CommodityList() {
                   gap: 6,
                 }}
               >
-                <span>🔒</span>
-                Sneak Peek: Showing {displayedPrices.length} of {prices.length} commodities
               </div>
             ) : (
               <div
@@ -584,7 +563,7 @@ export default function CommodityList() {
                 type="text"
                 placeholder={
                   !authed
-                    ? '🔒 Full search is for registered members only — Tap to unlock'
+                    ? 'Full search is for registered members only, Tap to unlock'
                     : 'Search commodities by name, category, or specification...'
                 }
                 value={authed ? search : ''}
@@ -605,58 +584,27 @@ export default function CommodityList() {
                   transition: 'all .15s',
                 }}
               />
-              {!authed ? (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowAuthGateModal(true);
-                  }}
-                  style={{
-                    position: 'absolute',
-                    right: 8,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: C.primaryDark,
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '6px 12px',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  Unlock Search
-                </button>
-              ) : (
-                search && (
-                  <button
-                    onClick={() => setSearch('')}
-                    style={{
-                      position: 'absolute',
-                      right: 12,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      color: C.textMuted,
-                      cursor: 'pointer',
-                      fontSize: 16,
-                      padding: 4,
-                    }}
-                  >
-                    ✕
-                  </button>
-                )
-              )}
+              : (
+              search && (
+              <button
+                onClick={() => setSearch('')}
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: C.textMuted,
+                  cursor: 'pointer',
+                  fontSize: 16,
+                  padding: 4,
+                }}
+              >
+                ✕
+              </button>
+              )
+              )
             </div>
 
             {/* Sort Dropdown */}
