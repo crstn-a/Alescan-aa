@@ -3,8 +3,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getAllPrices } from '../api/scanApi';
 import { useUserAuth } from '../hooks/useUserAuth';
-import { getMyReports } from '../api/reportApi';
-import { getGuestScansRemaining, GUEST_MAX_SCANS } from '../utils/scanQuota';
 
 const SNEAK_PEEK_LIMIT = 22;
 
@@ -52,28 +50,6 @@ export default function CommodityList() {
   const [sortBy, setSortBy] = useState('name-asc'); // 'name-asc' | 'price-asc' | 'price-desc'
   const [showAuthGateModal, setShowAuthGateModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [myReports, setMyReports] = useState([]);
-  const [guestRemaining, setGuestRemaining] = useState(() => getGuestScansRemaining());
-
-  useEffect(() => {
-    if (!authed) {
-      setGuestRemaining(getGuestScansRemaining());
-    }
-  }, [authed]);
-
-  useEffect(() => {
-    if (authed) {
-      getMyReports()
-        .then((data) => {
-          if (Array.isArray(data)) setMyReports(data);
-        })
-        .catch((err) => {
-          console.warn('Failed to fetch user reports:', err);
-        });
-    } else {
-      setMyReports([]);
-    }
-  }, [authed]);
 
   const handleLogout = () => {
     logout();
@@ -191,114 +167,6 @@ export default function CommodityList() {
         .cat-chip{transition:all .15s}
         .cat-chip:hover{border-color:${C.primaryDark}!important}
         .search-input:focus{border-color:${C.primaryDark}!important;box-shadow:0 0 0 3px rgba(34,197,94,.15)!important;outline:none}
-
-        /* ── Side Funnel & Dashboard Layout ── */
-        .dashboard-layout {
-          display: flex;
-          flex-direction: row;
-          gap: 28px;
-          align-items: flex-start;
-        }
-        .dashboard-main {
-          flex: 1 1 0%;
-          min-width: 0;
-        }
-        .side-funnel {
-          width: 360px;
-          flex-shrink: 0;
-          position: sticky;
-          top: 88px;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          max-height: calc(100vh - 104px);
-          overflow-y: auto;
-          padding-right: 4px;
-          padding-bottom: 24px;
-        }
-        .side-funnel::-webkit-scrollbar {
-          width: 6px;
-        }
-        .side-funnel::-webkit-scrollbar-thumb {
-          background: #e5e7eb;
-          border-radius: 4px;
-        }
-        .funnel-card {
-          background: #ffffff;
-          border-radius: 18px;
-          border: 1px solid #e5e7eb;
-          padding: 20px;
-          transition: all 0.2s ease;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        }
-        .funnel-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 24px -4px rgba(0,0,0,0.08);
-        }
-        .funnel-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          width: 100%;
-          padding: 12px 16px;
-          border-radius: 12px;
-          font-size: 14px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.15s ease;
-          border: none;
-          text-decoration: none;
-          font-family: inherit;
-        }
-        .funnel-btn-primary {
-          background: #16a34a;
-          color: #ffffff;
-          box-shadow: 0 4px 14px rgba(22,163,74,0.3);
-        }
-        .funnel-btn-primary:hover {
-          background: #15803d;
-          box-shadow: 0 6px 18px rgba(22,163,74,0.4);
-        }
-        .funnel-btn-secondary {
-          background: #dc2626;
-          color: #ffffff;
-          box-shadow: 0 4px 14px rgba(220,38,38,0.25);
-        }
-        .funnel-btn-secondary:hover {
-          background: #b91c1c;
-          box-shadow: 0 6px 18px rgba(220,38,38,0.35);
-        }
-        .funnel-btn-outline {
-          background: #f9fafb;
-          color: #374151;
-          border: 1.5px solid #e5e7eb;
-        }
-        .funnel-btn-outline:hover {
-          background: #f3f4f6;
-          color: #111827;
-        }
-
-        @media (max-width: 1023px) {
-          .dashboard-layout {
-            flex-direction: column !important;
-            gap: 24px !important;
-          }
-          .side-funnel {
-            width: 100% !important;
-            position: static !important;
-            max-height: none !important;
-            overflow-y: visible !important;
-            display: grid !important;
-            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)) !important;
-            gap: 16px !important;
-            padding-right: 0 !important;
-            padding-bottom: 0 !important;
-          }
-          .side-funnel-header-span {
-            grid-column: 1 / -1;
-          }
-        }
       `}</style>
 
       {/* ── Top Header ────────────────────────────────────────── */}
@@ -314,7 +182,7 @@ export default function CommodityList() {
       >
         <div
           style={{
-            maxWidth: 1360,
+            maxWidth: 1240,
             margin: '0 auto',
             height: 68,
             display: 'flex',
@@ -458,38 +326,35 @@ export default function CommodityList() {
       </header>
 
       {/* ── Main Content Area ───────────────────────────────────── */}
-      <main style={{ flex: 1, maxWidth: 1360, width: '100%', margin: '0 auto', padding: '24px 20px 48px' }}>
-        <div className="dashboard-layout">
-          {/* ── Left/Center: Monitored Commodity Directory ── */}
-          <div className="dashboard-main">
-            {/* Banner if logged in */}
-            {authed && (
-              <div
-                style={{
-                  background: `linear-gradient(135deg, ${C.g900} 0%, ${C.g800} 100%)`,
-                  borderRadius: 18,
-                  padding: '24px 28px',
-                  color: '#fff',
-                  marginBottom: 24,
-                  boxShadow: '0 8px 24px rgba(5, 46, 22, 0.25)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: 16,
-                }}
-              >
-                <div style={{ maxWidth: 640 }}>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.18)', borderRadius: 20, padding: '3px 10px', marginBottom: 8, fontSize: 11, fontWeight: 700 }}>
-                    ⭐ Consumer Home Dashboard
-                  </div>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 6px', color: '#fff' }}>
-                    Welcome back, {user?.first_name || 'Consumer'}! 👋
-                  </h2>
-                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.88)', margin: 0, lineHeight: 1.55 }}>
-                    Your centralized price verification center. Browse official DA Bantay Presyo market rates below, or choose between the Camera Scanner and Price Reporting features at the right side.
-                  </p>
-                </div>
+      <main style={{ flex: 1, maxWidth: 1240, width: '100%', margin: '0 auto', padding: '24px 20px 48px' }}>
+        {/* Banner if logged in */}
+        {authed && (
+          <div
+            style={{
+              background: `linear-gradient(135deg, ${C.g900} 0%, ${C.g800} 100%)`,
+              borderRadius: 18,
+              padding: '24px 28px',
+              color: '#fff',
+              marginBottom: 24,
+              boxShadow: '0 8px 24px rgba(5, 46, 22, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 16,
+            }}
+          >
+            <div style={{ maxWidth: 640 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.18)', borderRadius: 20, padding: '3px 10px', marginBottom: 8, fontSize: 11, fontWeight: 700 }}>
+                ⭐ Consumer Home Dashboard
+              </div>
+              <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 6px', color: '#fff' }}>
+                Welcome back, {user?.first_name || 'Consumer'}! 👋
+              </h2>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.88)', margin: 0, lineHeight: 1.55 }}>
+                Your centralized price verification center. Browse official DA Bantay Presyo market rates below, or launch the camera scanner and price report tools.
+              </p>
+            </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <button
                     onClick={() => navigate('/scanner')}
@@ -1164,293 +1029,6 @@ export default function CommodityList() {
             </div>
           </div>
         )}
-      </div>
-
-          {/* ── RIGHT SIDE FUNNEL (Features: AI Scanner & Report Vendor) ── */}
-          <aside className="side-funnel" aria-label="Quick Feature Funnel">
-            {/* Funnel Section Title */}
-            <div className="side-funnel-header-span" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px', marginBottom: 2 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 18 }}>⚡</span>
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: C.g900, margin: 0, letterSpacing: '-0.01em' }}>
-                  Quick Feature Funnel
-                </h3>
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.g700, background: C.g100, padding: '3px 8px', borderRadius: 20 }}>
-                Consumer Tools
-              </span>
-            </div>
-
-            {/* ── User Account & Perks Card ── */}
-            {authed ? (
-              <div className="funnel-card" style={{ background: `linear-gradient(135deg, ${C.g900} 0%, ${C.g800} 100%)`, color: '#fff', border: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: '50%',
-                    background: C.primary, color: '#fff',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 18, fontWeight: 800, flexShrink: 0
-                  }}>
-                    {user?.first_name ? user.first_name[0].toUpperCase() : 'U'}
-                  </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <p style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {user?.first_name} {user?.last_name}
-                    </p>
-                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {user?.email}
-                    </p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.18)', color: '#fff', padding: '3px 8px', borderRadius: 12 }}>
-                    ⭐ Verified Consumer
-                  </span>
-                  <span style={{ fontSize: 11, fontWeight: 700, background: 'rgba(34,197,94,0.25)', color: '#86efac', padding: '3px 8px', borderRadius: 12 }}>
-                    ⚡ Unlimited Scans
-                  </span>
-                  <span style={{ fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.18)', color: '#fff', padding: '3px 8px', borderRadius: 12 }}>
-                    📢 Direct Reporting
-                  </span>
-                </div>
-                <button
-                  onClick={() => setShowLogoutModal(true)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: 8,
-                    background: 'rgba(255,255,255,0.12)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    color: '#fff',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <div className="funnel-card" style={{ background: '#fffdf5', borderColor: '#fef3c7' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <span style={{ fontSize: 18 }}>🔒</span>
-                  <div>
-                    <h4 style={{ fontSize: 14, fontWeight: 800, color: '#92400e', margin: 0 }}>Guest Mode</h4>
-                    <p style={{ fontSize: 11, color: '#b45309', margin: 0 }}>Showing 22 sneak-peek commodities</p>
-                  </div>
-                </div>
-                <p style={{ fontSize: 12, color: '#78350f', margin: '0 0 12px', lineHeight: 1.45 }}>
-                  Sign in or create a free account to unlock full keyword search, category filters, and file price violation reports.
-                </p>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    onClick={() => navigate('/user/login?redirect=/commodities')}
-                    className="funnel-btn funnel-btn-outline"
-                    style={{ padding: '8px 12px', fontSize: 12 }}
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    onClick={() => navigate('/user/signup?redirect=/commodities')}
-                    className="funnel-btn funnel-btn-primary"
-                    style={{ padding: '8px 12px', fontSize: 12 }}
-                  >
-                    Sign Up
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ── Feature 1: AI Camera Scanner Card ── */}
-            <div className="funnel-card" style={{ borderLeft: `4px solid ${C.primaryDark}` }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 12,
-                    background: C.g50, border: `1px solid ${C.g100}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: C.primaryDark, flexShrink: 0
-                  }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                      <circle cx="12" cy="13" r="4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: 15, fontWeight: 800, color: C.g900, margin: 0 }}>
-                      AI Camera Scanner
-                    </h4>
-                    <p style={{ fontSize: 11, color: C.textSecondary, margin: 0 }}>
-                      Real-time visual detection
-                    </p>
-                  </div>
-                </div>
-                <span style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '3px 8px',
-                  borderRadius: 20,
-                  background: authed ? C.g100 : guestRemaining === 0 ? '#fee2e2' : '#fef3c7',
-                  color: authed ? C.g800 : guestRemaining === 0 ? '#991b1b' : '#b45309',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {authed ? '⚡ Unlimited Scans' : guestRemaining === 0 ? '🔒 Limit Reached' : `🎯 ${guestRemaining}/${GUEST_MAX_SCANS} Left`}
-                </span>
-              </div>
-
-              <p style={{ fontSize: 12, color: C.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
-                Point your camera at meat, poultry, fish, or produce in the market. Our vision AI identifies the item and matches it to official DA Bantay Presyo rates.
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSecondary }}>
-                  <span style={{ color: C.primaryDark, fontWeight: 700 }}>✓</span>
-                  <span>YOLOv11 Computer Vision recognition</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSecondary }}>
-                  <span style={{ color: C.primaryDark, fontWeight: 700 }}>✓</span>
-                  <span>Olongapo Public Market GPS sync</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSecondary }}>
-                  <span style={{ color: C.primaryDark, fontWeight: 700 }}>✓</span>
-                  <span>Instant prevailing rate & price range</span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => navigate('/scanner')}
-                className="funnel-btn funnel-btn-primary"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-                Launch Camera Scanner
-              </button>
-            </div>
-
-            {/* ── Feature 2: Report Vendor / Price Concern Card ── */}
-            <div className="funnel-card" style={{ borderLeft: '4px solid #dc2626' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 12,
-                    background: '#fef2f2', border: '1px solid #fee2e2',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#dc2626', flexShrink: 0
-                  }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                      <line x1="12" y1="9" x2="12" y2="13" />
-                      <line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: 15, fontWeight: 800, color: C.g900, margin: 0 }}>
-                      Report Vendor Concern
-                    </h4>
-                    <p style={{ fontSize: 11, color: C.textSecondary, margin: 0 }}>
-                      Price gouging & violations
-                    </p>
-                  </div>
-                </div>
-                <span style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '3px 8px',
-                  borderRadius: 20,
-                  background: '#fee2e2',
-                  color: '#991b1b',
-                  whiteSpace: 'nowrap'
-                }}>
-                  Market Officers Link
-                </span>
-              </div>
-
-              <p style={{ fontSize: 12, color: C.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
-                Spotted an overpriced stall, missing price tags, or irregular scales in Olongapo Public Market? File an official ticket for Market Administrators.
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSecondary }}>
-                  <span style={{ color: '#dc2626', fontWeight: 700 }}>✓</span>
-                  <span>Direct notice to Olongapo Market Officers</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSecondary }}>
-                  <span style={{ color: '#dc2626', fontWeight: 700 }}>✓</span>
-                  <span>Attach photo evidence & store number</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSecondary }}>
-                  <span style={{ color: '#dc2626', fontWeight: 700 }}>✓</span>
-                  <span>Fair Trade & Price Act enforcement</span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  if (!authed) {
-                    navigate('/user/login?redirect=' + encodeURIComponent('/report'));
-                  } else {
-                    navigate('/report');
-                  }
-                }}
-                className="funnel-btn funnel-btn-secondary"
-                style={{ marginBottom: authed && myReports.length > 0 ? 8 : 0 }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                </svg>
-                File Price Report
-              </button>
-
-              {authed && myReports.length > 0 && (
-                <button
-                  onClick={() => navigate('/report', { state: { initialTab: 'history' } })}
-                  className="funnel-btn funnel-btn-outline"
-                  style={{ fontSize: 12, padding: '9px 12px' }}
-                >
-                  <span>📋 View My Filed Reports ({myReports.length})</span>
-                </button>
-              )}
-            </div>
-
-            {/* ── Market Status & Compliance Hub ── */}
-            <div className="funnel-card" style={{ background: C.bg, padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 16 }}>🏛️</span>
-                <h4 style={{ fontSize: 13, fontWeight: 700, color: C.g900, margin: 0 }}>
-                  Olongapo Public Market
-                </h4>
-              </div>
-              <p style={{ fontSize: 11, color: C.textSecondary, margin: '0 0 8px', lineHeight: 1.45 }}>
-                Synchronized with Department of Agriculture (DA) Bantay Presyo Monthly Monitoring Sheet.
-              </p>
-              <div style={{ fontSize: 11, color: C.textMuted, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Database Status:</span>
-                  <strong style={{ color: C.primaryDark }}>Active & Synced</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Monitored Goods:</span>
-                  <strong style={{ color: C.text }}>{prices.length} commodities</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Price Law:</span>
-                  <span>RA 7581 (Price Act)</span>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </div>
       </main>
 
       {/* ── Logout Confirmation Modal ── */}
