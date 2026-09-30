@@ -338,8 +338,8 @@ export default function LiveMap({ refreshTrigger }) {
           </p>
           {latestLatency ? (
             <div style={{ fontSize: 12, color: '#374151', display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <div><strong>Processing Latency:</strong> <span style="color:#16a34a; font-weight:700">{latestLatency.processing_latency_ms}</span></div>
-              <div><strong>Realtime Delivery Latency:</strong> <span style="color:#2563eb; font-weight:700">{latestLatency.realtime_latency_ms}</span></div>
+              <div><strong>Processing Latency:</strong> <span style={{ color: '#16a34a', fontWeight: 700 }}>{latestLatency.processing_latency_ms}</span></div>
+              <div><strong>Realtime Delivery Latency:</strong> <span style={{ color: '#2563eb', fontWeight: 700 }}>{latestLatency.realtime_latency_ms}</span></div>
               <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>
                 *Timestamps account for client/server clock variations.
               </div>
