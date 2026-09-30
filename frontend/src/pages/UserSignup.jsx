@@ -3,21 +3,21 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useUserAuth } from '../hooks/useUserAuth'
 
 const C = {
-  primary:      '#22c55e',
-  primaryDark:  '#16a34a',
-  g900:         '#052e16',
-  g800:         '#14532d',
-  g700:         '#166534',
-  bg:           '#f9fafb',
-  surface:      '#ffffff',
-  border:       '#f3f4f6',
-  text:         '#111827',
-  textSecondary:'#6b7280',
-  textMuted:    '#9ca3af',
-  error:        '#ef4444',
-  errorBg:      '#fef2f2',
-  errorBorder:  '#fee2e2',
-  errorDark:    '#991b1b',
+  primary: '#22c55e',
+  primaryDark: '#16a34a',
+  g900: '#052e16',
+  g800: '#14532d',
+  g700: '#166534',
+  bg: '#f9fafb',
+  surface: '#ffffff',
+  border: '#f3f4f6',
+  text: '#111827',
+  textSecondary: '#6b7280',
+  textMuted: '#9ca3af',
+  error: '#ef4444',
+  errorBg: '#fef2f2',
+  errorBorder: '#fee2e2',
+  errorDark: '#991b1b',
 }
 
 export default function UserSignup() {
@@ -133,49 +133,43 @@ export default function UserSignup() {
           pointerEvents: 'none',
         }} />
 
-        <div style={{ position:'relative', zIndex:2, display:'flex', flexDirection:'column', height:'100%' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-            <img src="/Alescan-Logo.png" alt="Alescan" style={{ width:52, height:52, objectFit:'contain', filter:'brightness(0) invert(1)' }} />
-            <span style={{ fontSize:26, fontWeight:800, color:'#fff', letterSpacing:'.04em' }}>ALESCAN</span>
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <img src="/Alescan-Logo.png" alt="Alescan" style={{ width: 52, height: 52, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+            <span style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '.04em' }}>ALESCAN</span>
           </div>
-          <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center' }}>
-            <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.15)', borderRadius:20, padding:'4px 12px', width:'fit-content', marginBottom:12 }}>
-              <span style={{ fontSize:12, fontWeight:700, color:'#fff' }}>⭐ Member Benefits</span>
-            </div>
-            <h1 style={{ fontSize:'clamp(30px,2.8vw,44px)', fontWeight:800, color:'#fff', lineHeight:1.2, margin:'0 0 16px', maxWidth:800 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <h1 style={{ fontSize: 'clamp(30px,2.8vw,44px)', fontWeight: 800, color: '#fff', lineHeight: 1.2, margin: '0 0 16px', maxWidth: 800 }}>
               Unlock Full Market Scanner Features
             </h1>
-            <p style={{ fontSize:'clamp(15px,1.2vw,17px)', color:'rgba(255,255,255,.82)', lineHeight:1.6, maxWidth:480, margin:'0 0 24px' }}>
+            <p style={{ fontSize: 'clamp(15px,1.2vw,17px)', color: 'rgba(255,255,255,.82)', lineHeight: 1.6, maxWidth: 480, margin: '0 0 24px' }}>
               Sign up as an actual user to enjoy full access to our price monitoring tools:
             </p>
 
-            <div style={{ display:'flex', flexDirection:'column', gap:14, maxWidth:480 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.1)', padding:'10px 14px', borderRadius:12 }}>
-                <span style={{ fontSize:20 }}>🎯</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 480 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.1)', padding: '10px 14px', borderRadius: 12 }}>
                 <div>
-                  <p style={{ fontSize:14, fontWeight:700, color:'#fff', margin:0 }}>More Scanning Tries</p>
-                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.75)', margin:0 }}>Extended scanning quota beyond the 5-scan guest limit.</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>More Scanning Tries</p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', margin: 0 }}>Extended scanning quota beyond the 5-scan guest limit.</p>
                 </div>
               </div>
 
-              <div style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.1)', padding:'10px 14px', borderRadius:12 }}>
-                <span style={{ fontSize:20 }}>📢</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.1)', padding: '10px 14px', borderRadius: 12 }}>
                 <div>
-                  <p style={{ fontSize:14, fontWeight:700, color:'#fff', margin:0 }}>Report Price Concerns</p>
-                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.75)', margin:0 }}>Directly notify Market Officers about overpriced vendors.</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>Report Price Concerns</p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', margin: 0 }}>Directly notify Market Officers about overpriced vendors.</p>
                 </div>
               </div>
 
-              <div style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.1)', padding:'10px 14px', borderRadius:12 }}>
-                <span style={{ fontSize:20 }}>🔍</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.1)', padding: '10px 14px', borderRadius: 12 }}>
                 <div>
-                  <p style={{ fontSize:14, fontWeight:700, color:'#fff', margin:0 }}>Search Overall Commodity Prices</p>
-                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.75)', margin:0 }}>Browse and search the entire DA Bantay Presyo list.</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>Search Overall Commodity Prices</p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', margin: 0 }}>Browse and search the entire DA Bantay Presyo list.</p>
                 </div>
               </div>
             </div>
           </div>
-          <p style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,.48)', letterSpacing:'.06em', textTransform:'uppercase', marginTop:16 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.48)', letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 16 }}>
             Olongapo City Public Market Place
           </p>
         </div>
@@ -192,70 +186,70 @@ export default function UserSignup() {
         overflowY: 'auto',
         padding: 'clamp(24px,4vw,48px) clamp(24px,4vw,48px)',
       }}>
-        <div style={{ maxWidth:420, margin:'0 auto', width:'100%', animation:'fadeUp .3s ease' }}>
+        <div style={{ maxWidth: 420, margin: '0 auto', width: '100%', animation: 'fadeUp .3s ease' }}>
 
-          <div style={{ marginBottom:28 }}>
-            <h2 style={{ fontSize:28, fontWeight:800, color:C.text, marginBottom:8, letterSpacing:'-.01em' }}>
+          <div style={{ marginBottom: 28 }}>
+            <h2 style={{ fontSize: 28, fontWeight: 800, color: C.text, marginBottom: 8, letterSpacing: '-.01em' }}>
               Create Account
             </h2>
-            <p style={{ fontSize:15, color:C.textSecondary, margin:0 }}>
+            <p style={{ fontSize: 15, color: C.textSecondary, margin: 0 }}>
               Sign up to unlock more scans, price reporting, and full price search
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* First & Last Name — side by side */}
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, color:C.text, marginBottom:6 }}>First Name</label>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 6 }}>First Name</label>
                 <input className="signup-input" type="text" value={form.first_name} onChange={update('first_name')} placeholder="Juan" required />
               </div>
               <div>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, color:C.text, marginBottom:6 }}>Last Name</label>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 6 }}>Last Name</label>
                 <input className="signup-input" type="text" value={form.last_name} onChange={update('last_name')} placeholder="Dela Cruz" required />
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label style={{ display:'block', fontSize:13, fontWeight:600, color:C.text, marginBottom:6 }}>Email</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 6 }}>Email</label>
               <input className="signup-input" type="email" value={form.email} onChange={update('email')} placeholder="juan@example.com" required />
             </div>
 
             {/* Phone */}
             <div>
-              <label style={{ display:'block', fontSize:13, fontWeight:600, color:C.text, marginBottom:6 }}>
-                Phone No. <span style={{ color:C.textMuted, fontWeight:400 }}>(optional)</span>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 6 }}>
+                Phone No. <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional)</span>
               </label>
               <input className="signup-input" type="tel" value={form.phone} onChange={update('phone')} placeholder="09XX XXX XXXX" />
             </div>
 
             {/* Password & Confirm — side by side */}
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, color:C.text, marginBottom:6 }}>Password</label>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 6 }}>Password</label>
                 <input className="signup-input" type="password" value={form.password} onChange={update('password')} placeholder="••••••••" required autoComplete="new-password" />
               </div>
               <div>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, color:C.text, marginBottom:6 }}>Confirm Password</label>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 6 }}>Confirm Password</label>
                 <input className="signup-input" type="password" value={form.confirmPassword} onChange={update('confirmPassword')} placeholder="••••••••" required autoComplete="new-password" />
               </div>
             </div>
 
             {/* Error */}
             {displayError && (
-              <div style={{ padding:'12px 16px', borderRadius:12, background:C.errorBg, border:`1px solid ${C.errorBorder}`, display:'flex', alignItems:'center', gap:10 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.error} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <p style={{ fontSize:14, color:C.errorDark, margin:0, fontWeight:600 }}>{displayError}</p>
+              <div style={{ padding: '12px 16px', borderRadius: 12, background: C.errorBg, border: `1px solid ${C.errorBorder}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.error} strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                <p style={{ fontSize: 14, color: C.errorDark, margin: 0, fontWeight: 600 }}>{displayError}</p>
               </div>
             )}
 
             {/* Submit */}
-            <button type="submit" className="signup-btn" disabled={loading || !form.first_name || !form.last_name || !form.email || !form.password || !form.confirmPassword} style={{ marginTop:4 }}>
+            <button type="submit" className="signup-btn" disabled={loading || !form.first_name || !form.last_name || !form.email || !form.password || !form.confirmPassword} style={{ marginTop: 4 }}>
               {loading ? (
-                <span style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-                  <span style={{ width:18, height:18, border:'2px solid rgba(255,255,255,.3)', borderTopColor:'#fff', borderRadius:'50%', display:'inline-block', animation:'spin .7s linear infinite' }} />
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <span style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin .7s linear infinite' }} />
                   Creating account...
                 </span>
               ) : 'Sign Up'}
@@ -263,13 +257,13 @@ export default function UserSignup() {
           </form>
 
           {/* Links */}
-          <div style={{ marginTop:24, textAlign:'center' }}>
-            <p style={{ fontSize:14, color:C.textSecondary, margin:'0 0 16px' }}>
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <p style={{ fontSize: 14, color: C.textSecondary, margin: '0 0 16px' }}>
               Already have an account?{' '}
               <Link to={`/user/login?redirect=${encodeURIComponent(redirectUrl)}`} className="auth-link">Sign In</Link>
             </p>
             <a href="/" className="back-link">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
               Back to Alescan home
             </a>
           </div>

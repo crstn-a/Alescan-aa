@@ -3,21 +3,21 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useUserAuth } from '../hooks/useUserAuth'
 
 const C = {
-  primary:      '#22c55e',
-  primaryDark:  '#16a34a',
-  g900:         '#052e16',
-  g800:         '#14532d',
-  g700:         '#166534',
-  bg:           '#f9fafb',
-  surface:      '#ffffff',
-  border:       '#f3f4f6',
-  text:         '#111827',
-  textSecondary:'#6b7280',
-  textMuted:    '#9ca3af',
-  error:        '#ef4444',
-  errorBg:      '#fef2f2',
-  errorBorder:  '#fee2e2',
-  errorDark:    '#991b1b',
+  primary: '#22c55e',
+  primaryDark: '#16a34a',
+  g900: '#052e16',
+  g800: '#14532d',
+  g700: '#166534',
+  bg: '#f9fafb',
+  surface: '#ffffff',
+  border: '#f3f4f6',
+  text: '#111827',
+  textSecondary: '#6b7280',
+  textMuted: '#9ca3af',
+  error: '#ef4444',
+  errorBg: '#fef2f2',
+  errorBorder: '#fee2e2',
+  errorDark: '#991b1b',
 }
 
 const Icon = ({ d, size = 20 }) => (
@@ -28,7 +28,7 @@ const Icon = ({ d, size = 20 }) => (
 )
 
 const Icons = {
-  eye:    "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  eye: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
   eyeOff: "M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94 M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19 M1 1l22 22",
 }
 
@@ -129,37 +129,22 @@ export default function UserLogin() {
           pointerEvents: 'none',
         }} />
 
-        <div style={{ position:'relative', zIndex:2, display:'flex', flexDirection:'column', height:'100%' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-            <img src="/Alescan-Logo.png" alt="Alescan" style={{ width:52, height:52, objectFit:'contain', filter:'brightness(0) invert(1)' }} />
-            <span style={{ fontSize:26, fontWeight:800, color:'#fff', letterSpacing:'.04em' }}>ALESCAN</span>
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <img src="/Alescan-Logo.png" alt="Alescan" style={{ width: 52, height: 52, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+            <span style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '.04em' }}>ALESCAN</span>
           </div>
-          <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center' }}>
-            <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.15)', borderRadius:20, padding:'4px 12px', width:'fit-content', marginBottom:12 }}>
-              <span style={{ fontSize:12, fontWeight:700, color:'#fff' }}>⭐ Member Access</span>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: '4px 12px', width: 'fit-content', marginBottom: 12 }}>
             </div>
-            <h1 style={{ fontSize:'clamp(30px,2.8vw,44px)', fontWeight:800, color:'#fff', lineHeight:1.2, margin:'0 0 16px', maxWidth:800 }}>
+            <h1 style={{ fontSize: 'clamp(30px,2.8vw,44px)', fontWeight: 800, color: '#fff', lineHeight: 1.2, margin: '0 0 16px', maxWidth: 800 }}>
               Access All Public Market Tools
             </h1>
-            <p style={{ fontSize:'clamp(15px,1.2vw,17px)', color:'rgba(255,255,255,.82)', lineHeight:1.6, maxWidth:460, margin:'0 0 20px' }}>
-              Sign in to your Alescan account to access:
+            <p style={{ fontSize: 'clamp(15px,1.2vw,17px)', color: 'rgba(255,255,255,.82)', lineHeight: 1.6, maxWidth: 460, margin: '0 0 20px' }}>
+              Sign in to your Alescan account to access scans without trial limit, Report price concerns to Market Officers, and Search the full Department of Agriculture Commodity Lists:
             </p>
-            <div style={{ display:'flex', flexDirection:'column', gap:10, maxWidth:420 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10, color:'#fff', fontSize:14 }}>
-                <span>🎯</span>
-                <span style={{ fontWeight:600 }}>More camera scans without trial limit</span>
-              </div>
-              <div style={{ display:'flex', alignItems:'center', gap:10, color:'#fff', fontSize:14 }}>
-                <span>📢</span>
-                <span style={{ fontWeight:600 }}>Report price concerns to Market Officers</span>
-              </div>
-              <div style={{ display:'flex', alignItems:'center', gap:10, color:'#fff', fontSize:14 }}>
-                <span>🔍</span>
-                <span style={{ fontWeight:600 }}>Search the full DA Bantay Presyo database</span>
-              </div>
-            </div>
           </div>
-          <p style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,.48)', letterSpacing:'.06em', textTransform:'uppercase' }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.48)', letterSpacing: '.06em', textTransform: 'uppercase' }}>
             Olongapo City Public Market Place
           </p>
         </div>
@@ -176,22 +161,22 @@ export default function UserLogin() {
         overflowY: 'auto',
         padding: 'clamp(32px,6vw,64px) clamp(28px,5vw,52px)',
       }}>
-        <div style={{ maxWidth:380, margin:'0 auto', width:'100%', animation:'fadeUp .3s ease' }}>
+        <div style={{ maxWidth: 380, margin: '0 auto', width: '100%', animation: 'fadeUp .3s ease' }}>
 
-          <div style={{ marginBottom:36 }}>
-            <h2 style={{ fontSize:30, fontWeight:800, color:C.text, marginBottom:8, letterSpacing:'-.01em' }}>
+          <div style={{ marginBottom: 36 }}>
+            <h2 style={{ fontSize: 30, fontWeight: 800, color: C.text, marginBottom: 8, letterSpacing: '-.01em' }}>
               Sign In
             </h2>
-            <p style={{ fontSize:15, color:C.textSecondary, margin:0 }}>
+            <p style={{ fontSize: 15, color: C.textSecondary, margin: 0 }}>
               Enter your email and password to continue
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:20 }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             {/* Email */}
             <div>
-              <label style={{ display:'block', fontSize:14, fontWeight:600, color:C.text, marginBottom:8 }}>Email</label>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 8 }}>Email</label>
               <input
                 className="login-input"
                 type="email"
@@ -206,8 +191,8 @@ export default function UserLogin() {
 
             {/* Password */}
             <div>
-              <label style={{ display:'block', fontSize:14, fontWeight:600, color:C.text, marginBottom:8 }}>Password</label>
-              <div style={{ position:'relative' }}>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 8 }}>Password</label>
+              <div style={{ position: 'relative' }}>
                 <input
                   className="login-input"
                   type={showPass ? 'text' : 'password'}
@@ -216,7 +201,7 @@ export default function UserLogin() {
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
-                  style={{ paddingRight:48 }}
+                  style={{ paddingRight: 48 }}
                 />
                 <button type="button" className="pw-toggle" onClick={() => setShowPass(p => !p)}>
                   <Icon d={showPass ? Icons.eyeOff : Icons.eye} size={18} />
@@ -226,17 +211,17 @@ export default function UserLogin() {
 
             {/* Error */}
             {error && (
-              <div style={{ padding:'12px 16px', borderRadius:12, background:C.errorBg, border:`1px solid ${C.errorBorder}`, display:'flex', alignItems:'center', gap:10 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <p style={{ fontSize:14, color:C.errorDark, margin:0, fontWeight:600 }}>{error}</p>
+              <div style={{ padding: '12px 16px', borderRadius: 12, background: C.errorBg, border: `1px solid ${C.errorBorder}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                <p style={{ fontSize: 14, color: C.errorDark, margin: 0, fontWeight: 600 }}>{error}</p>
               </div>
             )}
 
             {/* Submit */}
-            <button type="submit" className="login-btn" disabled={loading || !email || !password} style={{ marginTop:8 }}>
+            <button type="submit" className="login-btn" disabled={loading || !email || !password} style={{ marginTop: 8 }}>
               {loading ? (
-                <span style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-                  <span style={{ width:18, height:18, border:'2px solid rgba(255,255,255,.3)', borderTopColor:'#fff', borderRadius:'50%', display:'inline-block', animation:'spin .7s linear infinite' }} />
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <span style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin .7s linear infinite' }} />
                   Signing in...
                 </span>
               ) : 'Sign In'}
@@ -244,13 +229,13 @@ export default function UserLogin() {
           </form>
 
           {/* Links */}
-          <div style={{ marginTop:28, textAlign:'center' }}>
-            <p style={{ fontSize:14, color:C.textSecondary, margin:'0 0 16px' }}>
+          <div style={{ marginTop: 28, textAlign: 'center' }}>
+            <p style={{ fontSize: 14, color: C.textSecondary, margin: '0 0 16px' }}>
               Don't have an account?{' '}
               <Link to={`/user/signup?redirect=${encodeURIComponent(redirectUrl)}`} className="auth-link">Sign Up</Link>
             </p>
             <a href="/" className="back-link">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
               Back to Alescan home
             </a>
           </div>
