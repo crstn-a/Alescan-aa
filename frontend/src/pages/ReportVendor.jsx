@@ -1,6 +1,5 @@
-// frontend/src/pages/ReportVendor.jsx
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useUserAuth } from '../hooks/useUserAuth'
 import { submitReport, getMyReports } from '../api/reportApi'
 
@@ -60,16 +59,21 @@ const fmtDt = (ts) => ts
 
 export default function ReportVendor() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { authed, user, logout } = useUserAuth()
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!authed) navigate('/user/login')
+    if (!authed) navigate('/user/login?redirect=' + encodeURIComponent('/report'))
   }, [authed, navigate])
 
-  const [form, setForm] = useState({
-    vendor_name: '', store_number: '', commodity_name: '', price_seen: '', complaint_description: '',
-  })
+  const [form, setForm] = useState(() => ({
+    vendor_name: '',
+    store_number: '',
+    commodity_name: location.state?.commodity_name || '',
+    price_seen: location.state?.price_seen || '',
+    complaint_description: '',
+  }))
   const [image, setImage] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -208,7 +212,41 @@ export default function ReportVendor() {
             <img src="/Alescan-Logo.png" alt="Alescan" style={{ width: 36, height: 36, objectFit: 'contain' }} />
             <span style={{ fontSize: 18, fontWeight: 800, color: C.g900, letterSpacing: '.02em' }}>ALESCAN</span>
           </a>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Link
+              to="/scanner"
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: C.textSecondary,
+                textDecoration: 'none',
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              📷 Scanner
+            </Link>
+            <Link
+              to="/commodities"
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: C.textSecondary,
+                textDecoration: 'none',
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              🔍 Prices
+            </Link>
             <div style={{ textAlign: 'right' }}>
               <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: 0 }}>
                 {user?.first_name} {user?.last_name}

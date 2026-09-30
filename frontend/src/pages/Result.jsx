@@ -1,5 +1,7 @@
 // frontend/src/pages/Result.jsx
-import { useLocation, useNavigate, Navigate } from 'react-router-dom'
+import { useLocation, useNavigate, Navigate, Link } from 'react-router-dom'
+import { useUserAuth } from '../hooks/useUserAuth'
+import { getGuestScansRemaining, GUEST_MAX_SCANS } from '../utils/scanQuota'
 
 const C = {
   g900:'#052e16', g800:'#14532d', g700:'#166534', g600:'#16a34a',
@@ -59,6 +61,9 @@ export default function Result() {
     price_prevailing, price_low, price_high, price_average,
     period_month, period_year, source
   } = state
+
+  const { authed } = useUserAuth()
+  const guestRemaining = state?.remaining_guest_scans !== undefined ? state.remaining_guest_scans : getGuestScansRemaining()
 
   const commTitle = commodity_name || product || 'Commodity'
   const prevailingPrice = price_prevailing ?? price_average ?? price_low ?? 0
@@ -221,12 +226,163 @@ export default function Result() {
           </div>
         </div>
 
+        {/* Guest Quota Notice or Exhausted Alert */}
+        {!authed && (
+          <div
+            style={{
+              padding: '16px 18px',
+              borderRadius: 16,
+              background: guestRemaining === 0 ? '#fef2f2' : '#f0fdf4',
+              border: `1px solid ${guestRemaining === 0 ? '#fee2e2' : '#bbf7d0'}`,
+              animation: 'fadeUp .35s .24s ease both',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: guestRemaining === 0 ? '#991b1b' : C.g700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                {guestRemaining === 0 ? '🔒 Free Trial Limit Reached' : `🎯 Free Trial: ${guestRemaining} of ${GUEST_MAX_SCANS} Scans Left`}
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  background: guestRemaining === 0 ? '#fee2e2' : '#dcfce7',
+                  color: guestRemaining === 0 ? '#991b1b' : C.g700,
+                  padding: '2px 8px',
+                  borderRadius: 12,
+                }}
+              >
+                Guest Mode
+              </span>
+            </div>
+
+            <p style={{ fontSize: 13, color: guestRemaining === 0 ? '#7f1d1d' : '#166534', margin: '0 0 12px', lineHeight: 1.45 }}>
+              {guestRemaining === 0
+                ? "You've used all 5 free trial scans. Create an account to get more scanning tries, report price concerns, and search the overall commodity price list."
+                : 'Sign up as an actual user to enjoy more scanning tries, report overpriced vendors, and search all commodity prices.'}
+            </p>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => navigate('/user/signup?redirect=/scanner')}
+                style={{
+                  background: guestRemaining === 0 ? '#dc2626' : C.g600,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '8px 14px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Sign Up for Free
+              </button>
+              <button
+                onClick={() => navigate('/user/login?redirect=/scanner')}
+                style={{
+                  background: '#fff',
+                  color: C.k700,
+                  border: `1px solid ${C.k200}`,
+                  borderRadius: 10,
+                  padding: '8px 14px',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Sign In
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Member Action Cards (Report Concern & Search Overall Commodities) */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 12,
+            animation: 'fadeUp .35s .28s ease both',
+          }}
+        >
+          {/* Card 1: Search Overall List */}
+          <Link
+            to="/commodities"
+            style={{
+              background: C.white,
+              borderRadius: 14,
+              border: `1px solid ${C.k100}`,
+              padding: '14px 16px',
+              textDecoration: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              boxShadow: '0 2px 8px rgba(0,0,0,.03)',
+            }}
+          >
+            <div>
+              <span style={{ fontSize: 22, display: 'block', marginBottom: 6 }}>🔍</span>
+              <p style={{ fontSize: 13, fontWeight: 700, color: C.k900, margin: '0 0 2px' }}>Search Price List</p>
+              <p style={{ fontSize: 11, color: C.k500, margin: 0, lineHeight: 1.3 }}>Browse all monitored commodities & rates</p>
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 700, color: C.g600, marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              Open Directory →
+            </span>
+          </Link>
+
+          {/* Card 2: Report Price Concern */}
+          <button
+            onClick={() => {
+              if (!authed) {
+                navigate('/user/login?redirect=' + encodeURIComponent('/report'))
+              } else {
+                navigate('/report', {
+                  state: {
+                    commodity_name: commTitle,
+                    price_seen: prevailingPrice,
+                  }
+                })
+              }
+            }}
+            style={{
+              background: C.white,
+              borderRadius: 14,
+              border: `1px solid ${C.k100}`,
+              padding: '14px 16px',
+              textAlign: 'left',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              boxShadow: '0 2px 8px rgba(0,0,0,.03)',
+            }}
+          >
+            <div>
+              <span style={{ fontSize: 22, display: 'block', marginBottom: 6 }}>📢</span>
+              <p style={{ fontSize: 13, fontWeight: 700, color: C.k900, margin: '0 0 2px' }}>Report Concern</p>
+              <p style={{ fontSize: 11, color: C.k500, margin: 0, lineHeight: 1.3 }}>Spotted an overpriced vendor stall?</p>
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              File Report →
+            </span>
+          </button>
+        </div>
+
         {/* Updated Disclaimer */}
         <div style={{
           display:'flex', gap:10, padding:'12px 16px',
           background:C.k50, borderRadius:12,
           border:`1px solid ${C.k100}`,
-          animation:'fadeUp .35s .26s ease both',
+          animation:'fadeUp .35s .3s ease both',
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.k400} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0, marginTop:1 }}>
             <circle cx="12" cy="12" r="10"/>
@@ -246,20 +402,39 @@ export default function Result() {
         flexShrink:0, padding:'16px 20px 32px',
         background:C.white, borderTop:`1px solid ${C.k100}`,
         boxShadow:'0 -4px 16px rgba(0,0,0,.04)',
+        display:'flex', flexDirection:'column', gap:10,
       }}>
-        <button className="scan-again-btn" onClick={() => navigate('/scanner')} style={{
-          width:'100%', padding:'14px', borderRadius:12,
-          border:'none', background:C.g600, color:'#fff',
-          fontSize:15, fontWeight:700, cursor:'pointer',
-          display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-          boxShadow:'0 4px 16px rgba(22,163,74,.35)',
-        }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="9"/>
-            <circle cx="12" cy="12" r="3.5" fill="#fff" stroke="none"/>
-          </svg>
-          Scan another commodity
-        </button>
+        {!authed && guestRemaining === 0 ? (
+          <button className="scan-again-btn" onClick={() => navigate('/user/signup?redirect=/scanner')} style={{
+            width:'100%', padding:'14px', borderRadius:12,
+            border:'none', background:C.g600, color:'#fff',
+            fontSize:15, fontWeight:700, cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+            boxShadow:'0 4px 16px rgba(22,163,74,.35)',
+          }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="8.5" cy="7" r="4" />
+              <line x1="20" y1="8" x2="20" y2="14" />
+              <line x1="23" y1="11" x2="17" y2="11" />
+            </svg>
+            Sign up to scan more commodities
+          </button>
+        ) : (
+          <button className="scan-again-btn" onClick={() => navigate('/scanner')} style={{
+            width:'100%', padding:'14px', borderRadius:12,
+            border:'none', background:C.g600, color:'#fff',
+            fontSize:15, fontWeight:700, cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+            boxShadow:'0 4px 16px rgba(22,163,74,.35)',
+          }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="9"/>
+              <circle cx="12" cy="12" r="3.5" fill="#fff" stroke="none"/>
+            </svg>
+            Scan another commodity {!authed && `(${guestRemaining} left)`}
+          </button>
+        )}
       </div>
     </div>
   )

@@ -1,6 +1,5 @@
-// frontend/src/pages/UserLogin.jsx
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useUserAuth } from '../hooks/useUserAuth'
 
 const C = {
@@ -35,6 +34,8 @@ const Icons = {
 
 export default function UserLogin() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectUrl = searchParams.get('redirect') || '/scanner'
   const { login, loading, error } = useUserAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -43,7 +44,7 @@ export default function UserLogin() {
   async function handleSubmit(e) {
     e.preventDefault()
     const ok = await login(email, password)
-    if (ok) navigate('/report')
+    if (ok) navigate(redirectUrl)
   }
 
   return (
@@ -134,12 +135,29 @@ export default function UserLogin() {
             <span style={{ fontSize:26, fontWeight:800, color:'#fff', letterSpacing:'.04em' }}>ALESCAN</span>
           </div>
           <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center' }}>
-            <h1 style={{ fontSize:'clamp(36px,3.2vw,52px)', fontWeight:800, color:'#fff', lineHeight:1.2, margin:'0 0 20px', maxWidth:800 }}>
-              Report Overpriced Vendors
+            <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.15)', borderRadius:20, padding:'4px 12px', width:'fit-content', marginBottom:12 }}>
+              <span style={{ fontSize:12, fontWeight:700, color:'#fff' }}>⭐ Member Access</span>
+            </div>
+            <h1 style={{ fontSize:'clamp(30px,2.8vw,44px)', fontWeight:800, color:'#fff', lineHeight:1.2, margin:'0 0 16px', maxWidth:800 }}>
+              Access All Public Market Tools
             </h1>
-            <p style={{ fontSize:'clamp(16px,1.4vw,18px)', color:'rgba(255,255,255,.70)', lineHeight:1.75, maxWidth:460, margin:0 }}>
-              Sign in to your account to submit and track your vendor price reports. Help keep market prices fair.
+            <p style={{ fontSize:'clamp(15px,1.2vw,17px)', color:'rgba(255,255,255,.82)', lineHeight:1.6, maxWidth:460, margin:'0 0 20px' }}>
+              Sign in to your Alescan account to access:
             </p>
+            <div style={{ display:'flex', flexDirection:'column', gap:10, maxWidth:420 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, color:'#fff', fontSize:14 }}>
+                <span>🎯</span>
+                <span style={{ fontWeight:600 }}>More camera scans without trial limit</span>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:10, color:'#fff', fontSize:14 }}>
+                <span>📢</span>
+                <span style={{ fontWeight:600 }}>Report price concerns to Market Officers</span>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:10, color:'#fff', fontSize:14 }}>
+                <span>🔍</span>
+                <span style={{ fontWeight:600 }}>Search the full DA Bantay Presyo database</span>
+              </div>
+            </div>
           </div>
           <p style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,.48)', letterSpacing:'.06em', textTransform:'uppercase' }}>
             Olongapo City Public Market Place
@@ -229,7 +247,7 @@ export default function UserLogin() {
           <div style={{ marginTop:28, textAlign:'center' }}>
             <p style={{ fontSize:14, color:C.textSecondary, margin:'0 0 16px' }}>
               Don't have an account?{' '}
-              <Link to="/user/signup" className="auth-link">Sign Up</Link>
+              <Link to={`/user/signup?redirect=${encodeURIComponent(redirectUrl)}`} className="auth-link">Sign Up</Link>
             </p>
             <a href="/" className="back-link">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>

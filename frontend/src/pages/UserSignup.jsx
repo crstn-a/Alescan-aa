@@ -1,6 +1,5 @@
-// frontend/src/pages/UserSignup.jsx
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useUserAuth } from '../hooks/useUserAuth'
 
 const C = {
@@ -23,6 +22,8 @@ const C = {
 
 export default function UserSignup() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectUrl = searchParams.get('redirect') || '/scanner'
   const { register, loading, error } = useUserAuth()
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', phone: '', password: '', confirmPassword: '',
@@ -51,7 +52,7 @@ export default function UserSignup() {
       password: form.password,
       phone: form.phone || null,
     })
-    if (ok) navigate('/report')
+    if (ok) navigate(redirectUrl)
   }
 
   const displayError = localError || error
@@ -138,14 +139,43 @@ export default function UserSignup() {
             <span style={{ fontSize:26, fontWeight:800, color:'#fff', letterSpacing:'.04em' }}>ALESCAN</span>
           </div>
           <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center' }}>
-            <h1 style={{ fontSize:'clamp(36px,3.2vw,52px)', fontWeight:800, color:'#fff', lineHeight:1.2, margin:'0 0 20px', maxWidth:800 }}>
-              Report Overpriced Vendors
+            <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.15)', borderRadius:20, padding:'4px 12px', width:'fit-content', marginBottom:12 }}>
+              <span style={{ fontSize:12, fontWeight:700, color:'#fff' }}>⭐ Member Benefits</span>
+            </div>
+            <h1 style={{ fontSize:'clamp(30px,2.8vw,44px)', fontWeight:800, color:'#fff', lineHeight:1.2, margin:'0 0 16px', maxWidth:800 }}>
+              Unlock Full Market Scanner Features
             </h1>
-            <p style={{ fontSize:'clamp(16px,1.4vw,18px)', color:'rgba(255,255,255,.70)', lineHeight:1.75, maxWidth:460, margin:0 }}>
-              Create an account to report vendors selling above the suggested retail price. Help keep market prices fair for everyone.
+            <p style={{ fontSize:'clamp(15px,1.2vw,17px)', color:'rgba(255,255,255,.82)', lineHeight:1.6, maxWidth:480, margin:'0 0 24px' }}>
+              Sign up as an actual user to enjoy full access to our price monitoring tools:
             </p>
+
+            <div style={{ display:'flex', flexDirection:'column', gap:14, maxWidth:480 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.1)', padding:'10px 14px', borderRadius:12 }}>
+                <span style={{ fontSize:20 }}>🎯</span>
+                <div>
+                  <p style={{ fontSize:14, fontWeight:700, color:'#fff', margin:0 }}>More Scanning Tries</p>
+                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.75)', margin:0 }}>Extended scanning quota beyond the 5-scan guest limit.</p>
+                </div>
+              </div>
+
+              <div style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.1)', padding:'10px 14px', borderRadius:12 }}>
+                <span style={{ fontSize:20 }}>📢</span>
+                <div>
+                  <p style={{ fontSize:14, fontWeight:700, color:'#fff', margin:0 }}>Report Price Concerns</p>
+                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.75)', margin:0 }}>Directly notify Market Officers about overpriced vendors.</p>
+                </div>
+              </div>
+
+              <div style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.1)', padding:'10px 14px', borderRadius:12 }}>
+                <span style={{ fontSize:20 }}>🔍</span>
+                <div>
+                  <p style={{ fontSize:14, fontWeight:700, color:'#fff', margin:0 }}>Search Overall Commodity Prices</p>
+                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.75)', margin:0 }}>Browse and search the entire DA Bantay Presyo list.</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <p style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,.48)', letterSpacing:'.06em', textTransform:'uppercase' }}>
+          <p style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,.48)', letterSpacing:'.06em', textTransform:'uppercase', marginTop:16 }}>
             Olongapo City Public Market Place
           </p>
         </div>
@@ -169,7 +199,7 @@ export default function UserSignup() {
               Create Account
             </h2>
             <p style={{ fontSize:15, color:C.textSecondary, margin:0 }}>
-              Sign up to start reporting overpriced vendors
+              Sign up to unlock more scans, price reporting, and full price search
             </p>
           </div>
 
@@ -236,7 +266,7 @@ export default function UserSignup() {
           <div style={{ marginTop:24, textAlign:'center' }}>
             <p style={{ fontSize:14, color:C.textSecondary, margin:'0 0 16px' }}>
               Already have an account?{' '}
-              <Link to="/user/login" className="auth-link">Sign In</Link>
+              <Link to={`/user/login?redirect=${encodeURIComponent(redirectUrl)}`} className="auth-link">Sign In</Link>
             </p>
             <a href="/" className="back-link">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>

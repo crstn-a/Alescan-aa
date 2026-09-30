@@ -8,6 +8,8 @@ import UserSignup from './pages/UserSignup'
 import UserLogin from './pages/UserLogin'
 import ReportVendor from './pages/ReportVendor'
 
+import CommodityList from './pages/CommodityList'
+
 export default function App() {
   return (
     <div className="app-shell">
@@ -18,6 +20,8 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/scanner" element={<Scanner />} />
           <Route path="/result" element={<Result />} />
+          <Route path="/commodities" element={<CommodityList />} />
+          <Route path="/prices" element={<Navigate to="/commodities" replace />} />
 
           {/* User auth & report */}
           <Route path="/user/signup" element={<UserSignup />} />

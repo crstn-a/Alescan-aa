@@ -2,6 +2,14 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { scanImage } from '../api/scanApi'
 import TermsModal from '../components/TermsModal'
+import TrialLimitModal from '../components/TrialLimitModal'
+import { useUserAuth } from '../hooks/useUserAuth'
+import {
+  getGuestScansRemaining,
+  consumeGuestScan,
+  hasExceededGuestLimit,
+  GUEST_MAX_SCANS,
+} from '../utils/scanQuota'
 
 // ── Colour Palette (White & Green) ────────────────────────────────────
 const C = {
@@ -43,6 +51,9 @@ export default function Scanner() {
   const [scanning, setScanning] = useState(false)
   const [feedback, setFeedback] = useState(null)
   const [flash, setFlash] = useState(false)
+  const { authed, user } = useUserAuth()
+  const [guestRemaining, setGuestRemaining] = useState(() => getGuestScansRemaining())
+  const [showTrialModal, setShowTrialModal] = useState(false)
   const [showExitConfirm, setShowExitConfirm] = useState(false)   // new state
   const [activeCommodity, setActiveCommodity] = useState(null)
   const [showUnrecognizedPopup, setShowUnrecognizedPopup] = useState(false)
@@ -53,6 +64,13 @@ export default function Scanner() {
       return true
     }
   })
+
+  // Sync remaining guest scans
+  useEffect(() => {
+    if (!authed) {
+      setGuestRemaining(getGuestScansRemaining())
+    }
+  }, [authed])
 
 
   const handleAgreeTerms = () => {
@@ -264,10 +282,24 @@ export default function Scanner() {
   const handleScan = async () => {
     if (cameraState !== 'ready' || scanning) return
 
+    // ── Check guest scan limit (5 tries) ──────────────────────────
+    if (!authed && hasExceededGuestLimit()) {
+      setShowTrialModal(true)
+      return
+    }
+
     setScanning(true)
     setFeedback(null)
     setFlash(true)
     setTimeout(() => setFlash(false), 120)
+
+    // Consume 1 guest scan attempt if guest
+    let currentRemaining = guestRemaining
+    if (!authed) {
+      consumeGuestScan()
+      currentRemaining = getGuestScansRemaining()
+      setGuestRemaining(currentRemaining)
+    }
 
     const [blob, locationData] = await Promise.all([
       captureFrame(),
@@ -284,7 +316,13 @@ export default function Scanner() {
 
     if (result.ok) {
       stopCamera()
-      navigate('/result', { state: result.data })
+      navigate('/result', {
+        state: {
+          ...result.data,
+          is_guest: !authed,
+          remaining_guest_scans: currentRemaining,
+        },
+      })
       return
     }
 
@@ -396,8 +434,51 @@ export default function Scanner() {
           />
         </div>
 
-        {/* Right: Camera status indicator */}
+        {/* Right: Camera status indicator & Member/Quota status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {authed ? (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                background: C.primaryLight,
+                borderRadius: 20,
+                padding: '5px 10px',
+                border: '1px solid rgba(34,197,94,.25)',
+              }}
+            >
+              <span style={{ fontSize: 11, color: C.primaryDark, fontWeight: 700 }}>
+                👤 {user?.first_name || 'Member'}
+              </span>
+            </div>
+          ) : (
+            <div
+              onClick={() => setShowTrialModal(true)}
+              title="Guest free scan limit — tap to view member benefits"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                background: guestRemaining === 0 ? '#fef2f2' : guestRemaining <= 2 ? '#fffbeb' : C.primaryLight,
+                borderRadius: 20,
+                padding: '5px 10px',
+                border: `1px solid ${guestRemaining === 0 ? 'rgba(239,68,68,.3)' : guestRemaining <= 2 ? 'rgba(245,158,11,.3)' : 'rgba(34,197,94,.2)'}`,
+                cursor: 'pointer',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 11,
+                  color: guestRemaining === 0 ? C.error : guestRemaining <= 2 ? '#b45309' : C.primaryDark,
+                  fontWeight: 700,
+                }}
+              >
+                {guestRemaining === 0 ? '🔒 0/5 Free Scans' : `🎯 ${guestRemaining}/${GUEST_MAX_SCANS} Left`}
+              </span>
+            </div>
+          )}
+
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: C.primaryLight,
@@ -514,13 +595,60 @@ export default function Scanner() {
           </div>
         )}
 
+        {/* Free trial exhausted warning banner */}
+        {!authed && guestRemaining === 0 && (
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 360,
+              padding: '10px 14px',
+              borderRadius: 12,
+              background: '#fef2f2',
+              border: '1px solid #fee2e2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+              animation: 'fadeIn .2s ease',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 16 }}>🔒</span>
+              <div>
+                <p style={{ fontSize: 13, color: '#991b1b', margin: 0, fontWeight: 700 }}>
+                  5 Free Tries Used
+                </p>
+                <p style={{ fontSize: 11, color: '#b91c1c', margin: 0 }}>
+                  Sign up to unlock more scanning & price features
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowTrialModal(true)}
+              style={{
+                background: C.primaryDark,
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '6px 12px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Sign Up
+            </button>
+          </div>
+        )}
+
         <div className="scan-btn-wrap" style={{ position: 'relative', cursor: isReady && !scanning ? 'pointer' : 'default' }} onClick={handleScan}>
           {isReady && !scanning && (
             <div style={{ position: 'absolute', inset: -10, borderRadius: '50%', border: `2px solid ${C.primary}`, animation: 'pulse-ring 2s ease-out infinite' }} />
           )}
           <div className="scan-btn-inner" style={{
             width: 72, height: 72, borderRadius: '50%',
-            background: scanning ? C.primaryDark : C.primary,
+            background: (!authed && guestRemaining === 0) ? '#dc2626' : scanning ? C.primaryDark : C.primary,
             border: '3px solid rgba(255,255,255,.35)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: scanning ? 'none' : '0 0 32px rgba(34,197,94,.45)',
@@ -528,6 +656,11 @@ export default function Scanner() {
           }}>
             {scanning ? (
               <div style={{ width: 24, height: 24, border: '2.5px solid rgba(255,255,255,.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin .75s linear infinite' }} />
+            ) : !authed && guestRemaining === 0 ? (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
             ) : (
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.5" fill="#fff" stroke="none" />
@@ -537,7 +670,13 @@ export default function Scanner() {
         </div>
 
         <p style={{ fontSize: 12, color: isReady && !scanning ? C.primaryDark : C.textMuted, margin: 0, fontWeight: isReady && !scanning ? 700 : 500, transition: 'color 0.3s' }}>
-          {scanning ? 'Identifying commodity...' : isReady ? 'Tap to scan photo' : 'Starting camera...'}
+          {scanning
+            ? 'Identifying commodity...'
+            : !authed && guestRemaining === 0
+              ? 'Free limit reached — tap to sign up'
+              : isReady
+                ? (!authed ? `Tap to scan photo (${guestRemaining} of ${GUEST_MAX_SCANS} free tries left)` : 'Tap to scan photo')
+                : 'Starting camera...'}
         </p>
       </div>
 
@@ -764,6 +903,15 @@ export default function Scanner() {
         isOpen={showTermsModal}
         onAgree={handleAgreeTerms}
         onCancel={handleCancelTerms}
+      />
+
+      {/* Guest Scan Limit Reached Modal */}
+      <TrialLimitModal
+        isOpen={showTrialModal}
+        onClose={() => setShowTrialModal(false)}
+        usedCount={GUEST_MAX_SCANS - guestRemaining}
+        maxCount={GUEST_MAX_SCANS}
+        redirectUrl="/scanner"
       />
     </div>
   )
