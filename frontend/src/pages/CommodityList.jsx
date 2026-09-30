@@ -243,12 +243,87 @@ export default function CommodityList() {
             padding: 0 10px !important;
           }
           .comm-header-inner {
-            height: 56px !important;
+            height: 54px !important;
             gap: 6px !important;
           }
           .comm-logo-sub {
             display: none !important;
           }
+        }
+
+        /* Aligned Section Tabs for Authenticated User */
+        .comm-desktop-nav {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          background: ${C.bg};
+          padding: 4px;
+          border-radius: 12px;
+          border: 1px solid ${C.border};
+        }
+        .comm-section-tab {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 7px 14px;
+          border-radius: 9px;
+          font-size: 13px;
+          font-weight: 600;
+          text-decoration: none;
+          color: ${C.textSecondary};
+          transition: all .15s ease;
+          white-space: nowrap;
+          cursor: pointer;
+        }
+        .comm-section-tab:hover {
+          color: ${C.text};
+          background: rgba(0,0,0,0.03);
+        }
+        .comm-section-tab.active {
+          background: ${C.g800};
+          color: #ffffff !important;
+          font-weight: 700;
+          box-shadow: 0 2px 6px rgba(5, 46, 22, 0.22);
+        }
+
+        /* Mobile Aligned 3-tab Bar */
+        .comm-mobile-nav-wrap {
+          display: none;
+          padding: 0 0 8px 0;
+          width: 100%;
+        }
+        .comm-mobile-nav {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 5px;
+          background: ${C.bg};
+          padding: 4px;
+          border-radius: 10px;
+          border: 1px solid ${C.border};
+          width: 100%;
+        }
+        .comm-mobile-nav .comm-section-tab {
+          justify-content: center;
+          padding: 7px 2px;
+          font-size: 12px;
+          border-radius: 8px;
+          gap: 4px;
+        }
+        .tab-label-full { display: inline; }
+        .tab-label-compact { display: none; }
+
+        @media (max-width: 768px) {
+          .comm-desktop-nav {
+            display: none !important;
+          }
+          .comm-mobile-nav-wrap {
+            display: block !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .tab-label-full { display: none !important; }
+          .tab-label-compact { display: inline !important; }
         }
 
         /* Nav Actions */
@@ -586,63 +661,58 @@ export default function CommodityList() {
             </div>
           </div>
 
-          {/* Quick nav links */}
+          {/* Desktop Nav for Authenticated User (Aligned Center Tabs) */}
+          {authed && (
+            <nav className="comm-desktop-nav">
+              <Link
+                to="/commodities"
+                className="comm-section-tab active"
+                onClick={handleLogoClick}
+                title="Monitored Commodity Prices"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+                <span>Commodity List</span>
+              </Link>
+
+              <Link
+                to="/report"
+                className="comm-section-tab"
+                title="Report Overpriced Vendors"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+                <span>Price Report</span>
+              </Link>
+
+              <Link
+                to="/scanner"
+                className="comm-section-tab"
+                title="Scan Items with Camera"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                <span>Scanner</span>
+              </Link>
+            </nav>
+          )}
+
+          {/* Quick nav links / Account */}
           <div className="comm-nav-actions">
-            <button
-              onClick={() => navigate('/scanner')}
-              className="comm-nav-btn"
-              style={{
-                background: C.g50,
-                border: `1px solid ${C.g100}`,
-                color: C.primaryDark,
-                borderRadius: 10,
-                padding: '8px 14px',
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-              <span className="comm-mobile-hide">Scanner</span>
-              <span className="comm-mobile-only">Scan</span>
-            </button>
-
             {authed ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 5 : 8 }}>
-                <Link
-                  to="/report"
-                  className="comm-nav-btn"
-                  style={{
-                    background: C.g50,
-                    border: `1px solid ${C.g100}`,
-                    color: C.primaryDark,
-                    borderRadius: 10,
-                    padding: '8px 14px',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    whiteSpace: 'nowrap',
-                    transition: 'all .15s ease',
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                  </svg>
-                  <span className="comm-mobile-hide">Report Concern</span>
-                  <span className="comm-mobile-only comm-compact-hide">Report</span>
-                </Link>
-
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 {/* Main Profile CTA Button with Dropdown Popdown */}
                 <div style={{ position: 'relative' }} ref={profileMenuRef}>
                   <button
@@ -766,6 +836,31 @@ export default function CommodityList() {
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 8 }}>
+                <button
+                  onClick={() => navigate('/scanner')}
+                  className="comm-nav-btn"
+                  style={{
+                    background: C.g50,
+                    border: `1px solid ${C.g100}`,
+                    color: C.primaryDark,
+                    borderRadius: 10,
+                    padding: '8px 12px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                  <span className="comm-mobile-hide">Scanner</span>
+                  <span className="comm-mobile-only">Scan</span>
+                </button>
                 <Link
                   to="/user/login?redirect=/commodities"
                   className="comm-nav-btn"
@@ -800,6 +895,56 @@ export default function CommodityList() {
             )}
           </div>
         </div>
+
+        {/* Mobile Section Nav Bar for Authenticated User (3-tab segmented bar) */}
+        {authed && (
+          <div className="comm-mobile-nav-wrap">
+            <nav className="comm-mobile-nav">
+              <Link
+                to="/commodities"
+                className="comm-section-tab active"
+                onClick={handleLogoClick}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+                <span className="tab-label-full">Commodity List</span>
+                <span className="tab-label-compact">Commodities</span>
+              </Link>
+
+              <Link
+                to="/report"
+                className="comm-section-tab"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+                <span className="tab-label-full">Price Report</span>
+                <span className="tab-label-compact">Report</span>
+              </Link>
+
+              <Link
+                to="/scanner"
+                className="comm-section-tab"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                <span className="tab-label-full">Scanner</span>
+                <span className="tab-label-compact">Scan</span>
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* ── Main Content Area ───────────────────────────────────── */}
