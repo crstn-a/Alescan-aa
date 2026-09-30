@@ -102,7 +102,7 @@ export default function LandingPage() {
         .hover-lift:hover{transform:translateY(-2px);box-shadow:0 12px 24px -8px rgba(0,0,0,.12)}
         .nav-link{transition:color .15s}
         .nav-link:hover{color:${C.primaryDark}!important}
-        .use-scanner-btn:hover{background:${C.g800}!important}
+        .signup-btn:hover{background:${C.g800}!important}
         .start-scanning-btn:hover{background:${C.g800}!important}
         .step-card{transition:all .15s}
         .step-card:hover{transform:translateY(-2px);box-shadow:0 12px 24px -8px rgba(0,0,0,.1)}
@@ -212,9 +212,10 @@ export default function LandingPage() {
                   👤 {user?.first_name || 'Member'}
                 </Link>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <Link
                     to="/user/login"
+                    className="nav-link"
                     style={{
                       fontSize: 14,
                       fontWeight: 600,
@@ -226,37 +227,24 @@ export default function LandingPage() {
                   </Link>
                   <Link
                     to="/user/signup"
+                    className="signup-btn"
                     style={{
-                      border: `1.5px solid ${C.primaryDark}`,
-                      color: C.primaryDark,
+                      background: C.primaryDark,
+                      border: 'none',
                       borderRadius: 8,
-                      padding: '7px 14px',
-                      fontSize: 13,
-                      fontWeight: 700,
+                      padding: '10px 20px',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: '#fff',
                       textDecoration: 'none',
+                      transition: 'all 0.15s',
+                      display: 'inline-block',
                     }}
                   >
                     Sign Up
                   </Link>
                 </div>
               )}
-
-              <button
-                className="use-scanner-btn"
-                onClick={handleStartScanning}
-                style={{
-                  background: C.primaryDark,
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '10px 20px',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: '#fff',
-                  transition: 'all 0.15s',
-                }}
-              >
-                Use Scanner
-              </button>
             </nav>
           ) : (
             // Mobile Navigation: Hamburger button + collapsible menu
@@ -335,43 +323,69 @@ export default function LandingPage() {
                     Report
                   </a>
 
-                  {!authed && (
-                    <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                      <Link
-                        to="/user/login"
-                        onClick={closeMobileMenu}
-                        style={{ flex: 1, textAlign: 'center', padding: '10px', borderRadius: 8, border: `1px solid ${C.border}`, color: C.text, textDecoration: 'none', fontWeight: 600, fontSize: 14 }}
-                      >
-                        Sign In
-                      </Link>
+                  {!authed ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
                       <Link
                         to="/user/signup"
                         onClick={closeMobileMenu}
-                        style={{ flex: 1, textAlign: 'center', padding: '10px', borderRadius: 8, background: C.primaryLight, color: C.primaryDark, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}
+                        className="signup-btn"
+                        style={{
+                          textAlign: 'center',
+                          padding: '12px 20px',
+                          borderRadius: 10,
+                          background: C.primaryDark,
+                          color: '#fff',
+                          textDecoration: 'none',
+                          fontWeight: 600,
+                          fontSize: 16,
+                          transition: 'all 0.15s',
+                          width: '100%',
+                          display: 'block',
+                        }}
                       >
                         Sign Up
                       </Link>
+                      <Link
+                        to="/user/login"
+                        onClick={closeMobileMenu}
+                        style={{
+                          textAlign: 'center',
+                          padding: '10px',
+                          borderRadius: 8,
+                          border: `1px solid ${C.border}`,
+                          color: C.text,
+                          textDecoration: 'none',
+                          fontWeight: 600,
+                          fontSize: 14,
+                          display: 'block',
+                        }}
+                      >
+                        Sign In
+                      </Link>
                     </div>
+                  ) : (
+                    <Link
+                      to="/report"
+                      onClick={closeMobileMenu}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        background: C.primaryLight,
+                        border: `1px solid rgba(34,197,94,.25)`,
+                        borderRadius: 10,
+                        padding: '12px 20px',
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: C.primaryDark,
+                        textDecoration: 'none',
+                        marginTop: 8,
+                      }}
+                    >
+                      👤 {user?.first_name || 'Member'}
+                    </Link>
                   )}
-
-                  <button
-                    className="use-scanner-btn"
-                    onClick={handleStartScanning}
-                    style={{
-                      background: C.primaryDark,
-                      border: 'none',
-                      borderRadius: 10,
-                      padding: '12px 20px',
-                      fontSize: 16,
-                      fontWeight: 600,
-                      color: '#fff',
-                      transition: 'all 0.15s',
-                      marginTop: 8,
-                      width: '100%',
-                    }}
-                  >
-                    Use Scanner
-                  </button>
                 </div>
               )}
             </>
