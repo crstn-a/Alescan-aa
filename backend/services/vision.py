@@ -93,9 +93,42 @@ def run_inference(image_bytes: bytes) -> dict:
             "confidence_level": "Low",
         }
 
-    # Pick detection box with highest confidence
-    best_box = max(results.boxes, key=lambda b: b.conf.item())
-    class_id = int(best_box.cls.item())
+    # ── E3: Confidence gap filter ────────────────────────────────────
+    # Sort all boxes by confidence (highest first).
+    # If the top-1 and top-2 scores are within MIN_CONF_GAP of each other
+    # the model is effectively guessing between two similar commodities
+    # (e.g. Red Onion vs White Onion, Corn White vs Corn Yellow).
+    # In that case we reject early so the user can reframe and try again.
+    MIN_CONF_GAP = 0.15  # winner must lead runner-up by ≥ 15 percentage points
+
+    sorted_boxes = sorted(results.boxes, key=lambda b: b.conf.item(), reverse=True)
+    best_box = sorted_boxes[0]
+
+    if len(sorted_boxes) >= 2:
+        runner_up = sorted_boxes[1]
+        gap = best_box.conf.item() - runner_up.conf.item()
+        if gap < MIN_CONF_GAP:
+            best_name    = CLASS_NAMES[int(best_box.cls.item())]  if CLASS_NAMES else f"Commodity_{int(best_box.cls.item())}"
+            runner_name  = CLASS_NAMES[int(runner_up.cls.item())] if CLASS_NAMES else f"Commodity_{int(runner_up.cls.item())}"
+            logger.info(
+                f"Ambiguous detection: '{best_name}' ({best_box.conf.item():.2%}) vs "
+                f"'{runner_name}' ({runner_up.conf.item():.2%}) — "
+                f"gap {gap:.2%} < {MIN_CONF_GAP:.0%} threshold → rejecting"
+            )
+            return {
+                "commodity_name":   None,
+                "category":         None,
+                "specification":    None,
+                "unit":             "kg",
+                "price_prevailing": None,
+                "price_low":        None,
+                "price_high":       None,
+                "price_average":    None,
+                "confidence":       float(best_box.conf.item()),
+                "confidence_level": "Low",
+            }
+
+    class_id   = int(best_box.cls.item())
     confidence = float(best_box.conf.item())
 
     # Map class index to name from data.yaml
