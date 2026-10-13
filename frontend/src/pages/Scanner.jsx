@@ -229,13 +229,35 @@ export default function Scanner() {
   const captureFrame = useCallback(() => {
     if (!videoRef.current || cameraState !== 'ready') return null
     const video = videoRef.current
+    const vw = video.videoWidth
+    const vh = video.videoHeight
+
+    // ── E2: Crop to scanner-box reticle ─────────────────────────────
+    // The UI reticle is min(75vw, 75vh, 280px) square, centred on screen.
+    // We reproduce that same proportion in video-pixel space so we send
+    // exactly what the user framed — nothing more.
+    const screenShort = Math.min(window.innerWidth, window.innerHeight)
+    const reticlePx   = Math.min(screenShort * 0.75, 280)          // CSS px
+    const scaleX = vw / window.innerWidth
+    const scaleY = vh / window.innerHeight
+    const cropW  = reticlePx * scaleX
+    const cropH  = reticlePx * scaleY
+    const sx     = (vw - cropW) / 2
+    const sy     = (vh - cropH) / 2
+
+    // Output canvas is 640×640 — YOLO's native training input size.
+    // Letterbox-grey fill (114, 114, 114) handles any residual aspect mismatch.
+    const TARGET = 640
     const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+    canvas.width  = TARGET
+    canvas.height = TARGET
     const ctx = canvas.getContext('2d')
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = 'rgb(114,114,114)'
+    ctx.fillRect(0, 0, TARGET, TARGET)
+    ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, TARGET, TARGET)
+
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.9)
+      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.92)
     })
   }, [cameraState])
 
