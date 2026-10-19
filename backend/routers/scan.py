@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
@@ -17,9 +18,9 @@ async def scan_commodity(
 ):
     """
     Accepts a photo upload from the camera.
-    Runs server-side YOLOv26 custom-trained detection,
-    fetches latest monitored market prices (Prevailing, Low, High),
-    logs the scan event with location & latency telemetry, and returns detection results.
+    Runs server-side YOLOv26 custom-trained detection in a threadpool,
+    fetches latest monitored market prices (Prevailing, Low, High) via memory cache,
+    logs the scan event asynchronously, and returns detection results with minimal latency.
     """
     # ── Latency telemetry: calculate processing latency ────────────────
     processing_latency_ms = None
@@ -40,9 +41,9 @@ async def scan_commodity(
         log_error("scan", f"Image read failed: {e}")
         raise HTTPException(status_code=400, detail="Could not read uploaded image")
 
-    # ── Step 2: Run YOLOv26 inference ─────────────────────────────
+    # ── Step 2: Run YOLOv26 inference in worker thread ────────────
     try:
-        result = run_inference(image_bytes)
+        result = await asyncio.to_thread(run_inference, image_bytes)
     except ValueError as e:
         log_error("vision", str(e))
         raise HTTPException(status_code=400, detail="Invalid image — please retake the photo")
@@ -52,14 +53,18 @@ async def scan_commodity(
 
     # ── Step 3: Confidence gate ───────────────────────────────────
     if not result["commodity_name"] or result["confidence"] < CONFIDENCE_THRESHOLD:
-        log_scan_event(
-            result,
-            None,
-            latitude=latitude,
-            longitude=longitude,
-            location_accuracy=location_accuracy,
-            client_scanned_at=client_scanned_at,
-            processing_latency_ms=processing_latency_ms,
+        # Log low confidence scan event in background without blocking response
+        asyncio.create_task(
+            asyncio.to_thread(
+                log_scan_event,
+                result,
+                None,
+                latitude=latitude,
+                longitude=longitude,
+                location_accuracy=location_accuracy,
+                client_scanned_at=client_scanned_at,
+                processing_latency_ms=processing_latency_ms,
+            )
         )
         raise HTTPException(
             status_code=422,
@@ -87,15 +92,18 @@ async def scan_commodity(
         if price_db.get("product_id"):
             result["product_id"] = price_db.get("product_id")
 
-    # ── Step 5: Log scan event ────────────────────────────────────
-    log_scan_event(
-        result,
-        result,
-        latitude=latitude,
-        longitude=longitude,
-        location_accuracy=location_accuracy,
-        client_scanned_at=client_scanned_at,
-        processing_latency_ms=processing_latency_ms,
+    # ── Step 5: Log scan event asynchronously (non-blocking) ──────
+    asyncio.create_task(
+        asyncio.to_thread(
+            log_scan_event,
+            result,
+            result,
+            latitude=latitude,
+            longitude=longitude,
+            location_accuracy=location_accuracy,
+            client_scanned_at=client_scanned_at,
+            processing_latency_ms=processing_latency_ms,
+        )
     )
 
     # ── Step 6: Return result payload ─────────────────────────────

@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 # Resolve model path relative to the backend root (parent of services/)
 _BACKEND_ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = _BACKEND_ROOT / "model"
-MODEL_PATH = MODEL_DIR / "best.pt"
+ONNX_MODEL_PATH = MODEL_DIR / "best.onnx"
+MODEL_PATH = ONNX_MODEL_PATH if ONNX_MODEL_PATH.exists() else (MODEL_DIR / "best.pt")
 DATA_YAML_PATH = MODEL_DIR / "data.yaml"
 
 CONFIDENCE_THRESHOLD = 0.40
@@ -77,7 +78,7 @@ def run_inference(image_bytes: bytes) -> dict:
         raise ValueError(f"Could not decode image: {e}")
 
     model = get_model()
-    results = model(img, verbose=False)[0]
+    results = model(img, verbose=False, imgsz=640)[0]
 
     if not results.boxes or len(results.boxes) == 0:
         logger.info("Inference: no commodity boxes detected")

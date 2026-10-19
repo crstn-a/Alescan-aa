@@ -44,13 +44,32 @@ def get_all_active_commodities() -> list[str]:
         return []
 
 
+# ── In-Memory Caches for fast 0ms scan lookups ───────────────────────
+_PRODUCT_CACHE: dict[str, dict | None] = {}
+_PRICE_CACHE: dict[str, dict | None] = {}
+
+
+def clear_db_cache():
+    """Clear in-memory caches for products and prices (e.g. after DA Sheet sync)."""
+    global _PRODUCT_CACHE, _PRICE_CACHE
+    _PRODUCT_CACHE.clear()
+    _PRICE_CACHE.clear()
+    logger.info("Cleared in-memory product and price caches")
+
+
 def get_product_by_name(commodity_name: str) -> dict | None:
     """
     Fetch product record from 'products' table by slug, exact name, or fuzzy match.
     Returns dict containing product 'id', 'name', 'display_name', 'slug', or None.
+    Uses in-memory cache to eliminate repeated Supabase queries.
     """
     if not commodity_name:
         return None
+
+    cache_key = commodity_name.strip().lower()
+    if cache_key in _PRODUCT_CACHE:
+        return _PRODUCT_CACHE[cache_key]
+
     sb = get_supabase()
     try:
         import re
@@ -70,7 +89,9 @@ def get_product_by_name(commodity_name: str) -> dict | None:
             .execute()
         )
         if prod_res_by_slug.data:
-            return prod_res_by_slug.data[0]
+            found = prod_res_by_slug.data[0]
+            _PRODUCT_CACHE[cache_key] = found
+            return found
 
         # Step 2: Exact name match
         try:
@@ -81,7 +102,9 @@ def get_product_by_name(commodity_name: str) -> dict | None:
                 .execute()
             )
             if prod_res_by_name.data:
-                return prod_res_by_name.data[0]
+                found = prod_res_by_name.data[0]
+                _PRODUCT_CACHE[cache_key] = found
+                return found
         except Exception:
             pass
 
@@ -106,6 +129,7 @@ def get_product_by_name(commodity_name: str) -> dict | None:
                         best_score = jaccard
                         best_prod = p
 
+        _PRODUCT_CACHE[cache_key] = best_prod
         return best_prod
     except Exception as e:
         logger.error(f"get_product_by_name failed for {commodity_name}: {e}")
@@ -117,9 +141,15 @@ def get_latest_price(commodity_name: str) -> dict | None:
     Fetch the most recent monitored price for a commodity name.
     Tries exact match by product name/slug first, then a conservative
     fuzzy match (requires full root word match, not just substring).
+    Uses in-memory cache to return results with 0ms database latency.
     """
     if not commodity_name:
         return None
+
+    cache_key = commodity_name.strip().lower()
+    if cache_key in _PRICE_CACHE:
+        return _PRICE_CACHE[cache_key]
+
     sb = get_supabase()
     try:
         prod = get_product_by_name(commodity_name)
@@ -138,7 +168,7 @@ def get_latest_price(commodity_name: str) -> dict | None:
             if price_res.data:
                 rec = price_res.data[0]
                 price_val = float(rec.get("price_prevailing") or rec.get("price_per_kg") or 0.0)
-                return {
+                price_data = {
                     "id": rec.get("id"),
                     "product_id": prod_id,
                     "commodity_name": rec.get("commodity_name") or matched_name,
@@ -155,6 +185,10 @@ def get_latest_price(commodity_name: str) -> dict | None:
                     "period_year": rec.get("period_year"),
                     "created_at": rec.get("created_at"),
                 }
+                _PRICE_CACHE[cache_key] = price_data
+                if matched_name and matched_name.strip().lower() != cache_key:
+                    _PRICE_CACHE[matched_name.strip().lower()] = price_data
+                return price_data
 
         logger.warning(f"No price record found for commodity: {commodity_name}")
         return None

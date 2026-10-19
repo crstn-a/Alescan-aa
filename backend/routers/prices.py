@@ -16,6 +16,11 @@ def clear_prices_cache():
     global _PRICES_CACHE, _PRICES_CACHE_TIME
     _PRICES_CACHE = None
     _PRICES_CACHE_TIME = 0.0
+    try:
+        from services.db import clear_db_cache
+        clear_db_cache()
+    except Exception:
+        pass
 
 
 def fetch_all_latest_prices_batch() -> List[Dict[str, Any]]:

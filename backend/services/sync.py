@@ -56,8 +56,10 @@ def run_sync() -> dict:
     try:
         from routers.prices import clear_prices_cache
         clear_prices_cache()
+        from services.db import clear_db_cache
+        clear_db_cache()
     except Exception as e:
-        logger.warning(f"Could not clear prices cache: {e}")
+        logger.warning(f"Could not clear prices/db cache: {e}")
 
     logger.info(f"Sync complete — {len(records)} prices via {extractor}")
 

@@ -47,6 +47,7 @@ export default function Scanner() {
   const [cameraError, setCameraError] = useState(null)
   const [locationState, setLocationState] = useState('idle') // 'idle' | 'loading' | 'ready' | 'denied' | 'unsupported' | 'error'
   const locationRef = useRef(null)
+  const watchIdRef = useRef(null)
   const [showLocationModal, setShowLocationModal] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [feedback, setFeedback] = useState(null)
@@ -179,32 +180,49 @@ export default function Scanner() {
 
     setLocationState('loading')
 
+    const onPosSuccess = (position) => {
+      const coords = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        location_accuracy: position.coords.accuracy,
+        client_scanned_at: new Date().toISOString(),
+      }
+      locationRef.current = coords
+      setLocationState('ready')
+      setShowLocationModal(false)
+    }
+
+    const onPosError = (err) => {
+      console.warn('Location permission error/denied:', err.message)
+      if (err.code === err.PERMISSION_DENIED) {
+        setLocationState('denied')
+      } else {
+        setLocationState('error')
+      }
+    }
+
+    // Immediate initial lock
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          location_accuracy: position.coords.accuracy,
-          client_scanned_at: new Date().toISOString(),
-        }
-        locationRef.current = coords
-        setLocationState('ready')
-        setShowLocationModal(false)
-      },
-      (err) => {
-        console.warn('Location permission error/denied:', err.message)
-        if (err.code === err.PERMISSION_DENIED) {
-          setLocationState('denied')
-        } else {
-          setLocationState('error')
-        }
-      },
+      onPosSuccess,
+      onPosError,
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 15000,
+        timeout: 8000,
+        maximumAge: 30000,
       }
     )
+
+    // Background watcher keeps location fresh without blocking scan taps
+    try {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current)
+      }
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        onPosSuccess,
+        () => {},
+        { enableHighAccuracy: false, maximumAge: 30000, timeout: 15000 }
+      )
+    } catch {}
   }, [])
 
   const handleGpsBadgeClick = () => {
@@ -219,7 +237,13 @@ export default function Scanner() {
     if (locationState !== 'ready') {
       setShowLocationModal(true)
     }
-    return () => stopCamera()
+    return () => {
+      stopCamera()
+      if (watchIdRef.current !== null && navigator?.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current)
+        watchIdRef.current = null
+      }
+    }
   }, [showTermsModal, startCamera, stopCamera, requestLocationPermission])
 
   useEffect(() => {
@@ -233,58 +257,32 @@ export default function Scanner() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [startCamera, stopCamera])
 
+  // Center-crop to the square viewfinder reticle and downscale to 640x640 (YOLO optimal size)
   const captureFrame = useCallback(() => {
     if (!videoRef.current || cameraState !== 'ready') return null
     const video = videoRef.current
+    const vw = video.videoWidth
+    const vh = video.videoHeight
+    if (!vw || !vh) return null
+
+    const TARGET_SIZE = 640
     const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+    canvas.width = TARGET_SIZE
+    canvas.height = TARGET_SIZE
     const ctx = canvas.getContext('2d')
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+    // Center crop square to match the centered square viewfinder overlay
+    const cropSize = Math.min(vw, vh)
+    const sx = (vw - cropSize) / 2
+    const sy = (vh - cropSize) / 2
+
+    ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, TARGET_SIZE, TARGET_SIZE)
+
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.9)
+      // 0.8 JPEG quality produces a crisp ~50-80KB payload (vs 2-4MB raw 1080p)
+      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8)
     })
   }, [cameraState])
-
-  const getGeolocation = useCallback(() => {
-    return new Promise((resolve) => {
-      const client_scanned_at = new Date().toISOString()
-      if (!navigator || !navigator.geolocation) {
-        resolve({ latitude: null, longitude: null, location_accuracy: null, client_scanned_at })
-        return
-      }
-
-      const cached = locationRef.current
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const fresh = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            location_accuracy: position.coords.accuracy,
-            client_scanned_at,
-          }
-          locationRef.current = fresh
-          setLocationState('ready')
-          resolve(fresh)
-        },
-        (err) => {
-          console.warn('Geolocation capture during scan fallback:', err.message)
-          if (cached && cached.latitude != null) {
-            resolve({ ...cached, client_scanned_at })
-          } else {
-            if (err.code === err.PERMISSION_DENIED) setLocationState('denied')
-            resolve({ latitude: null, longitude: null, location_accuracy: null, client_scanned_at })
-          }
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 15000,
-        }
-      )
-    })
-  }, [])
 
   const handleScan = async () => {
     if (cameraState !== 'ready' || scanning) return
@@ -308,10 +306,17 @@ export default function Scanner() {
       setGuestRemaining(currentRemaining)
     }
 
-    const [blob, locationData] = await Promise.all([
-      captureFrame(),
-      getGeolocation(),
-    ])
+    // Instantly use background-cached GPS coordinates (0ms latency, never blocks scan)
+    const cachedLoc = locationRef.current
+    const locationData = {
+      latitude: cachedLoc?.latitude ?? null,
+      longitude: cachedLoc?.longitude ?? null,
+      location_accuracy: cachedLoc?.location_accuracy ?? null,
+      client_scanned_at: new Date().toISOString(),
+    }
+
+    // Capture optimized 640x640 frame
+    const blob = await captureFrame()
 
     if (!blob) {
       setFeedback({ type: 'error', text: 'Could not capture image. Retake photo.' })
@@ -319,6 +324,7 @@ export default function Scanner() {
       return
     }
 
+    // Send ultra-lightweight payload to backend
     const result = await scanImage(blob, locationData)
 
     if (result.ok) {
