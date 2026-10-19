@@ -133,17 +133,24 @@ export default function Scanner() {
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => {
-        track.stop()
-        track.enabled = false
-      })
+      try {
+        streamRef.current.getTracks().forEach(track => {
+          track.stop()
+          track.enabled = false
+        })
+      } catch (err) {
+        console.warn('Error stopping camera tracks:', err)
+      }
       streamRef.current = null
     }
 
     if (videoRef.current) {
-      videoRef.current.pause()
-      videoRef.current.srcObject = null
-      videoRef.current.load()
+      try {
+        videoRef.current.pause()
+        videoRef.current.srcObject = null
+      } catch (err) {
+        console.warn('Error clearing video element:', err)
+      }
     }
 
     setCameraState('off')
@@ -315,13 +322,19 @@ export default function Scanner() {
     const result = await scanImage(blob, locationData)
 
     if (result.ok) {
+      const scanData = {
+        ...result.data,
+        is_guest: !authed,
+        remaining_guest_scans: currentRemaining,
+      }
+      try {
+        sessionStorage.setItem('alescan_last_scan', JSON.stringify(scanData))
+      } catch (err) {
+        console.warn('Could not cache scan result in sessionStorage:', err)
+      }
       stopCamera()
       navigate('/result', {
-        state: {
-          ...result.data,
-          is_guest: !authed,
-          remaining_guest_scans: currentRemaining,
-        },
+        state: scanData,
       })
       return
     }

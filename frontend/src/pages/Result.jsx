@@ -12,16 +12,18 @@ const C = {
 
 // ── Confidence bar ─────────────────────────────────────────────────────
 function ConfBar({ pct, level }) {
-  const color = pct >= 70 || level === 'High' ? C.g500 : pct >= 50 || level === 'Medium' ? '#fbbf24' : '#f87171'
-  const bg = pct >= 70 || level === 'High' ? C.g100 : pct >= 50 || level === 'Medium' ? '#fef3c7' : '#fee2e2'
-  const tag = level || (pct >= 70 ? 'High' : pct >= 50 ? 'Medium' : 'Low')
+  const numericPct = typeof pct === 'number' ? pct : parseFloat(pct)
+  const safePct = isNaN(numericPct) ? 85 : Math.max(0, Math.min(100, numericPct))
+  const color = safePct >= 70 || level === 'High' ? C.g500 : safePct >= 50 || level === 'Medium' ? '#fbbf24' : '#f87171'
+  const bg = safePct >= 70 || level === 'High' ? C.g100 : safePct >= 50 || level === 'Medium' ? '#fef3c7' : '#fee2e2'
+  const tag = level || (safePct >= 70 ? 'High' : safePct >= 50 ? 'Medium' : 'Low')
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 12, fontWeight: 600, color: C.k500 }}>Detection confidence</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 12, fontWeight: 700, color }}>
-            {pct.toFixed(1)}%
+            {safePct.toFixed(1)}%
           </span>
           <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: bg, color }}>
             {tag}
@@ -29,7 +31,7 @@ function ConfBar({ pct, level }) {
         </div>
       </div>
       <div style={{ height: 6, borderRadius: 99, background: C.k100, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: color, borderRadius: 99, transition: 'width .6s ease' }} />
+        <div style={{ height: '100%', width: `${safePct}%`, background: color, borderRadius: 99, transition: 'width .6s ease' }} />
       </div>
     </div>
   )
@@ -37,7 +39,7 @@ function ConfBar({ pct, level }) {
 
 // ── Commodity icon helper ──────────────────────────────────────────────
 function getEmoji(name = '', category = '') {
-  const text = (name + ' ' + category).toLowerCase()
+  const text = (String(name || '') + ' ' + String(category || '')).toLowerCase()
   if (text.includes('pork') || text.includes('liempo')) return '🥩'
   if (text.includes('chicken') || text.includes('poultry') || text.includes('egg')) return '🐔'
   if (text.includes('fish') || text.includes('tilapia') || text.includes('bangus')) return '🐟'
@@ -50,13 +52,74 @@ function getEmoji(name = '', category = '') {
 }
 
 export default function Result() {
-  const { state } = useLocation()
+  const location = useLocation()
   const navigate = useNavigate()
 
-  if (!state) return <Navigate to="/" replace />
+  // Retrieve state from router location, with sessionStorage recovery fallback
+  const state = location.state || (() => {
+    try {
+      const cached = sessionStorage.getItem('alescan_last_scan')
+      return cached ? JSON.parse(cached) : null
+    } catch {
+      return null
+    }
+  })()
+
+  // Graceful empty state: prevents blank screen if accessed directly or if state drops
+  if (!state) {
+    return (
+      <div style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        background: C.k50,
+        fontFamily: "'DM Sans',-apple-system,sans-serif",
+        textAlign: 'center',
+      }}>
+        <div style={{
+          width: 64,
+          height: 64,
+          borderRadius: 18,
+          background: C.g100,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 32,
+          marginBottom: 16,
+        }}>
+          📷
+        </div>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: C.k900, margin: '0 0 8px' }}>
+          No Scan Details Available
+        </h2>
+        <p style={{ fontSize: 14, color: C.k500, maxWidth: 360, margin: '0 0 24px', lineHeight: 1.5 }}>
+          Point your camera at a market commodity to scan its SRP and view official DA Bantay Presyo prices.
+        </p>
+        <button
+          onClick={() => navigate('/scanner')}
+          style={{
+            background: C.g600,
+            color: '#fff',
+            border: 'none',
+            borderRadius: 12,
+            padding: '12px 24px',
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 16px rgba(22,163,74,.3)',
+          }}
+        >
+          Open Scanner
+        </button>
+      </div>
+    )
+  }
 
   const {
-    product, commodity_name, category, specification, unit = 'kg',
+    product, commodity_name, category, specification, unit,
     confidence, confidence_level,
     price_prevailing, price_low, price_high, price_average,
     period_month, period_year, source
@@ -68,6 +131,16 @@ export default function Result() {
   const commTitle = commodity_name || product || 'Commodity'
   const prevailingPrice = price_prevailing ?? price_average ?? price_low ?? 0
   const emoji = getEmoji(commTitle, category)
+  const displayUnit = unit || 'kg'
+
+  const numPrevailing = Number(prevailingPrice)
+  const prevailingFormatted = !isNaN(numPrevailing) ? numPrevailing.toFixed(2) : '0.00'
+
+  const hasRange = (price_low !== null && price_low !== undefined) || (price_high !== null && price_high !== undefined)
+  const numLow = Number(price_low ?? prevailingPrice)
+  const numHigh = Number(price_high ?? prevailingPrice)
+  const lowFormatted = !isNaN(numLow) ? numLow.toFixed(2) : prevailingFormatted
+  const highFormatted = !isNaN(numHigh) ? numHigh.toFixed(2) : prevailingFormatted
 
   const monthLabel = period_month
     ? `${period_month} ${period_year || ''}`.trim()
@@ -169,20 +242,20 @@ export default function Result() {
               fontVariantNumeric: 'tabular-nums',
               animation: 'countUp .4s .15s ease both',
             }}>
-              {Number(prevailingPrice).toFixed(2)}
+              {prevailingFormatted}
             </span>
-            <span style={{ fontSize: 14, color: C.k400, marginLeft: 4 }}>/ {unit}</span>
+            <span style={{ fontSize: 14, color: C.k400, marginLeft: 4 }}>/ {displayUnit}</span>
           </div>
 
           {/* Secondary Low-High Range */}
-          {(price_low !== null || price_high !== null) && (
+          {hasRange && (
             <div style={{
               marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.k100}`,
               display: 'flex', justifyContent: 'space-between', alignItems: 'center'
             }}>
               <span style={{ fontSize: 12, color: C.k500, fontWeight: 500 }}>Monitored Market Range</span>
               <span style={{ fontSize: 13, fontWeight: 700, color: C.k900 }}>
-                ₱{Number(price_low ?? prevailingPrice).toFixed(2)} – ₱{Number(price_high ?? prevailingPrice).toFixed(2)} / {unit}
+                ₱{lowFormatted} – ₱{highFormatted} / {displayUnit}
               </span>
             </div>
           )}

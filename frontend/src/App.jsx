@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import ErrorBoundary from './components/ErrorBoundary'
 import Scanner from './pages/Scanner'
 import Result from './pages/Result'
 import AdminLogin from './pages/AdminLogin'
@@ -14,7 +15,8 @@ export default function App() {
   return (
     <div className="app-shell">
       <BrowserRouter>
-        <Routes>
+        <ErrorBoundary>
+          <Routes>
 
           {/* Consumer PWA */}
           <Route path="/" element={<LandingPage />} />
@@ -36,6 +38,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
     </div>
   )
