@@ -8,6 +8,10 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+_session = requests.Session()
+_cached_token: str | None = None
+_cached_token_expiry: float = 0.0
+
 DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1QW1KwKXEPSPIKqTss0aD56O6knQTFvbK4hjdP5fqdZI/export?format=csv&gid=0"
 SPREADSHEET_ID = "1QW1KwKXEPSPIKqTss0aD56O6knQTFvbK4hjdP5fqdZI"
 
@@ -50,10 +54,14 @@ def _load_service_account_info() -> dict | None:
 
 
 def _get_service_account_token(info: dict) -> str:
-    """Generate Google OAuth2 Bearer Access Token using Service Account RSA key."""
+    """Generate Google OAuth2 Bearer Access Token using Service Account RSA key, with caching."""
+    global _cached_token, _cached_token_expiry
     import time
-    import jwt
     now = int(time.time())
+    if _cached_token and now < (_cached_token_expiry - 120):
+        return _cached_token
+
+    import jwt
     payload = {
         "iss": info["client_email"],
         "scope": "https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/drive.readonly",
@@ -62,7 +70,7 @@ def _get_service_account_token(info: dict) -> str:
         "iat": now
     }
     encoded = jwt.encode(payload, info["private_key"], algorithm="RS256")
-    resp = requests.post(
+    resp = _session.post(
         info.get("token_uri", "https://oauth2.googleapis.com/token"),
         data={
             "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
@@ -71,7 +79,10 @@ def _get_service_account_token(info: dict) -> str:
         timeout=15
     )
     resp.raise_for_status()
-    return resp.json()["access_token"]
+    data = resp.json()
+    _cached_token = data.get("access_token")
+    _cached_token_expiry = now + int(data.get("expires_in", 3600))
+    return _cached_token
 
 
 def extract_spreadsheet_id(url_or_id: str) -> str:
@@ -96,7 +107,7 @@ def fetch_sheet_csv() -> str:
 
     # Strategy 1: Direct CSV export URL
     try:
-        resp = requests.get(csv_url, timeout=15)
+        resp = _session.get(csv_url, timeout=15)
         if resp.status_code == 200 and ("text/csv" in resp.headers.get("Content-Type", "").lower() or resp.text.strip().startswith(("COMMODITY", "Category", "DAILY", "MONTHLY", "Department", "Region", "Republic"))):
             logger.info("Successfully fetched direct CSV stream from Google Sheet")
             return resp.text
@@ -114,7 +125,7 @@ def fetch_sheet_csv() -> str:
             
             # Try Sheets API v4 with Bearer token
             api_url = f"https://sheets.googleapis.com/v4/spreadsheets/{sheet_id}/values/A1:Z300"
-            resp = requests.get(api_url, headers={"Authorization": f"Bearer {token}"}, timeout=15)
+            resp = _session.get(api_url, headers={"Authorization": f"Bearer {token}"}, timeout=15)
             
             if resp.status_code == 200:
                 rows = resp.json().get("values", [])
@@ -127,7 +138,7 @@ def fetch_sheet_csv() -> str:
                 logger.warning(f"Sheets API v4 with Service Account returned status {resp.status_code}: {resp.text}")
 
             # Try direct export URL with Bearer token header
-            export_resp = requests.get(f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0", headers={"Authorization": f"Bearer {token}"}, timeout=15)
+            export_resp = _session.get(f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0", headers={"Authorization": f"Bearer {token}"}, timeout=15)
             if export_resp.status_code == 200:
                 logger.info("Successfully retrieved CSV export with Service Account Bearer token")
                 return export_resp.text
@@ -140,7 +151,7 @@ def fetch_sheet_csv() -> str:
     if api_key:
         logger.info("Attempting Google Sheets API v4 with API Key...")
         api_url = f"https://sheets.googleapis.com/v4/spreadsheets/{sheet_id}/values/A1:Z300?key={api_key}"
-        resp = requests.get(api_url, timeout=15)
+        resp = _session.get(api_url, timeout=15)
         if resp.status_code == 200:
             rows = resp.json().get("values", [])
             output = io.StringIO()
