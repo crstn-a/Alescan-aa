@@ -56,6 +56,12 @@ def get_product_by_name(commodity_name: str) -> dict | None:
         import re
         slug = re.sub(r"[^a-z0-9]+", "_", commodity_name.lower()).strip("_")
 
+        # Map known model class slug aliases to canonical DB slugs
+        COMMODITY_SLUG_ALIASES = {
+            "sugar_wash": "sugar_washed",
+        }
+        slug = COMMODITY_SLUG_ALIASES.get(slug, slug)
+
         # Step 1: Exact slug match
         prod_res_by_slug = (
             sb.table("products")
